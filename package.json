@@ -1,4 +1,30 @@
 {
   "name": "open-educoder",
-  "packageManager": "yarn@4.14.1"
+  "version": "0.1.0",
+  "description": "EffectTS CLI scaffold for open-educoder.",
+  "type": "module",
+  "bin": "./src/index.ts",
+  "packageManager": "yarn@4.14.1",
+  "scripts": {
+    "cli": "tsx src/index.ts",
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "check": "yarn tsc"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "dependencies": {
+    "@effect/platform-node": "^4.0.0-beta.65",
+    "effect": "^4.0.0-beta.65",
+    "ioredis": "^5.10.1",
+    "proxy-agent": "^8.0.1"
+  },
+  "devDependencies": {
+    "@effect/language-service": "^0.85.1",
+    "@types/node": "^25.6.2",
+    "prettier": "^3.8.3",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  }
 }
