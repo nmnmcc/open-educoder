@@ -14,6 +14,19 @@ const CourseRequestQuery = {
   id: NonEmptyString,
   zzud: NonEmptyString,
 };
+/*
+.sample/course2.har: GET /api/courses/MOAPGNLO/left_banner.json
+{
+  "root_id": 1809404,
+  "name": "<module name>",
+  "category_id": 1213301,
+  "category_name": "<category name>",
+  "position": 1,
+  "category_type": "shixun_homework",
+  "second_category_url": "/classrooms/MOAPGNLO/shixun_homework/1213301",
+  "third_category": []
+}
+*/
 const Category = Schema.Struct({
   root_id: Schema.optionalKey(Schema.Int),
   name: Schema.optionalKey(Schema.String),
@@ -24,6 +37,41 @@ const Category = Schema.Struct({
   second_category_url: Schema.optionalKey(Schema.String),
   third_category: Schema.optionalKey(JsonArray),
 });
+/*
+.sample/course2.har: GET /api/courses/MOAPGNLO/homework_commons.json
+{
+  "is_archive": false,
+  "related_poll": false,
+  "is_shixun": false,
+  "homework_id": 3487339,
+  "can_view_details": false,
+  "name": "<homework name>",
+  "private_icon": true,
+  "status": ["提交中"],
+  "status_time": "<status text>",
+  "time_status": 1,
+  "allow_late": false,
+  "author": "<author>",
+  "author_img": "avatars/User/317512?t=1734234539",
+  "author_login": "p4wehmpso",
+  "created_at": "2026-02-27",
+  "unified_setting": true,
+  "upper_category_name": null,
+  "position": 0,
+  "publish_immediately": false,
+  "end_immediately": false,
+  "open_evaluate": null,
+  "lab_status": "none",
+  "work_id": 284732541,
+  "work_status": ["提交作品"],
+  "un_commit_work": true,
+  "publish_time": "2026-05-10 08:30",
+  "end_time": "2026-06-21 23:59",
+  "late_time": "--",
+  "end_time_s": "2026-06-21 23:59:00",
+  "student_work_id": 284732541
+}
+*/
 const Homework = Schema.Struct({
   is_archive: Schema.optionalKey(Schema.Boolean),
   related_poll: Schema.optionalKey(Schema.Boolean),
@@ -74,6 +122,31 @@ const Homework = Schema.Struct({
   finished_challenge_count: Schema.optionalKey(Schema.Int),
   student_work_id: Schema.Int,
 });
+/*
+.sample/course2.har: GET /api/courses/MOAPGNLO/homework_commons.json
+{
+  "course_identity": 5,
+  "homework_type": 1,
+  "course_public": false,
+  "is_end": false,
+  "main_category_id": 1809406,
+  "main_category_name": "<main category>",
+  "category_id": null,
+  "category_name": null,
+  "homeworks": ["<Homework>"],
+  "all_count": 8,
+  "published_count": 6,
+  "unpublished_count": 2,
+  "task_count": 6,
+  "query_total_count": 6,
+  "archive_count": 0,
+  "challenge_count": 0,
+  "finished_challenge_count": 0,
+  "finished_task_count": 0,
+  "min_finished_game": null,
+  "shixun_total_count": 6
+}
+*/
 const HomeworkCommonsResponse = Schema.Struct({
   course_identity: Schema.Int,
   homework_type: Schema.Int,
@@ -96,6 +169,48 @@ const HomeworkCommonsResponse = Schema.Struct({
   min_finished_game: NullableNumber,
   shixun_total_count: Schema.Int,
 });
+/*
+.sample/course2.har: GET /api/v2/courses/MOAPGNLO/exercises.json
+{
+  "id": 198086,
+  "exercise_name": "<exercise name>",
+  "created_at": "2026-03-02T18:40:03.000+08:00",
+  "last_times": 1,
+  "screen_open": false,
+  "screen_num": 3,
+  "is_locked": false,
+  "is_random": true,
+  "ip_limit": "no",
+  "ip_bind": false,
+  "answered_open": false,
+  "identity_verify": false,
+  "is_make_up_exercise": false,
+  "open_phone_video_recording": false,
+  "exercise_type": 1,
+  "simulate_exercise_num": 3,
+  "ai_push_wrong_question": false,
+  "is_encrypt": false,
+  "current_user_created": false,
+  "show_setting_tips": false,
+  "is_normal": true,
+  "exercise_tips": ["已截止"],
+  "current_status": 1,
+  "exercise_left_time": null,
+  "time": 120,
+  "whole_exercise_status": 3,
+  "exercise_status": 3,
+  "exercise_user_id": 30415309,
+  "screen_total_num": 3,
+  "screen_used_num": 0,
+  "user_simulate_num": 0,
+  "commit_method": "countdown_auto",
+  "author": "<author>",
+  "is_redo": 0,
+  "before_start": "",
+  "off_limits": false,
+  "open_appraise": false
+}
+*/
 const ExerciseSummary = Schema.Struct({
   id: Schema.Int,
   exercise_name: Schema.String,
@@ -120,7 +235,7 @@ const ExerciseSummary = Schema.Struct({
   is_normal: Schema.Boolean,
   exercise_tips: Schema.Array(Schema.String),
   current_status: Schema.Int,
-  exercise_left_time: NullableNumber,
+  exercise_left_time: NullableString,
   time: Schema.Int,
   whole_exercise_status: Schema.Int,
   exercise_status: Schema.Int,
@@ -152,6 +267,9 @@ export const Course = HttpApiGroup.make("Course")
         username: NonEmptyString,
         zzud: NonEmptyString,
       },
+      /*
+      .sample: no captured /api/users/:username/courses.json response.
+      */
       success: Schema.Struct({
         count: Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(0))),
         courses: Schema.Array(
@@ -194,6 +312,58 @@ export const Course = HttpApiGroup.make("Course")
     HttpApiEndpoint.get("topBanner", "/api/courses/:courseId/top_banner.json", {
       params: CourseRequestParams,
       query: CourseRequestQuery,
+      /*
+      .sample/course2.har: GET /api/courses/MOAPGNLO/top_banner.json
+      {
+        "copy_completed": true,
+        "is_natural_language_data": false,
+        "name": "<course name>",
+        "teacher_name": "<teacher>",
+        "allow_view_message": true,
+        "allow_apply_teacher": false,
+        "copy_teacher_name": "<teacher>",
+        "teacher_login": "p85shgelb",
+        "teacher_img": "avatars/User/2137897?t=1736177014",
+        "teacher_school": "<school>",
+        "is_public": false,
+        "student_join_approve": false,
+        "student_join_pro": false,
+        "show_unstart_exercise": false,
+        "forbid_end_exercise": false,
+        "switch_to_student": false,
+        "switch_to_teacher": false,
+        "switch_to_assistant": false,
+        "teacher_users": ["<teacher>"],
+        "group_name": "<group>",
+        "teacher_count": 16,
+        "student_count": 1127,
+        "course_group_count": 18,
+        "credit": 3.5,
+        "course_id": 109348,
+        "sub_discipline_id": null,
+        "discipline_id": null,
+        "class_period": 64,
+        "course_end": false,
+        "start_date": null,
+        "deadline": null,
+        "code_halt": false,
+        "show_invite_code": false,
+        "invite_code": "PH4CJ",
+        "invite_code_halt": 0,
+        "visits": 42709,
+        "course_identity": 5,
+        "excellent": false,
+        "subject_identifier": "",
+        "third_party_name": null,
+        "third_party_tip": false,
+        "third_part_login_url": "",
+        "need_third_part_logined": false,
+        "mooc_user_id": null,
+        "mooc_course_id": null,
+        "featured": false,
+        "is_import_student": false
+      }
+      */
       success: Schema.Struct({
         copy_completed: Schema.Boolean,
         is_natural_language_data: Schema.Boolean,
@@ -249,6 +419,32 @@ export const Course = HttpApiGroup.make("Course")
     HttpApiEndpoint.get("leftBanner", "/api/courses/:courseId/left_banner.json", {
       params: CourseRequestParams,
       query: CourseRequestQuery,
+      /*
+      .sample/course2.har: GET /api/courses/MOAPGNLO/left_banner.json
+      {
+        "is_teacher": false,
+        "course_modules": [
+          {
+            "id": 1809404,
+            "name": "<module name>",
+            "init_name": "<init name>",
+            "type": "shixun_homework",
+            "position": 2,
+            "main_id": 109348,
+            "category_url": "/classrooms/MOAPGNLO/shixun_homework",
+            "second_category": ["<Category>"]
+          }
+        ],
+        "hidden_modules": [
+          {
+            "id": 1938853,
+            "name": "<module name>",
+            "type": "teaching_plan",
+            "position": 13
+          }
+        ]
+      }
+      */
       success: Schema.Struct({
         is_teacher: Schema.Boolean,
         course_modules: Schema.Array(
@@ -280,7 +476,7 @@ export const Course = HttpApiGroup.make("Course")
         page: Schema.NullishOr(Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1)))),
         order: Schema.NullishOr(Schema.Int),
         search: Schema.NullishOr(Schema.String),
-        sort_by: Schema.NullishOr(Schema.Literals(["created_at", "updated_at", "name_pinyin"])),
+        sort_by: Schema.NullishOr(Schema.Literals(["created_at", "updated_at", "name_pinyin", "position"])),
         sort_direction: Schema.NullishOr(Schema.Literals(["asc", "desc"])),
         zzud: NonEmptyString,
       },
@@ -298,6 +494,18 @@ export const Course = HttpApiGroup.make("Course")
         page: Schema.NullishOr(Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1)))),
         zzud: NonEmptyString,
       },
+      /*
+      .sample/course2.har: GET /api/v2/courses/MOAPGNLO/exercises.json
+      {
+        "status": 0,
+        "message": "响应成功",
+        "total_count": 6,
+        "exercises_counts": {
+          "exercises_all_counts": 6
+        },
+        "exercises": ["<ExerciseSummary>"]
+      }
+      */
       success: Schema.Struct({
         status: Schema.Int,
         message: Schema.String,

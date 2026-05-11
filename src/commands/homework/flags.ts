@@ -1,7 +1,6 @@
 import { Argument, Flag } from "effect/unstable/cli";
 
-export const HomeworkTypeChoices = ["common", "shixun"] as const;
-export const HomeworkSortByChoices = ["created_at", "updated_at", "name_pinyin"] as const;
+export const HomeworkSortByChoices = ["created_at", "updated_at", "name_pinyin", "position"] as const;
 export const SortDirectionChoices = ["desc", "asc"] as const;
 
 export const HomeworkTypeCode = {
@@ -27,6 +26,7 @@ export const NonEmptyStringFlag = (name: string) =>
 
 export const CourseId = Argument.string("course-id");
 export const TaskId = Argument.string("task-id");
+export const HomeworkIdArgument = Argument.string("homework-id");
 export const RepositoryPath = Argument.string("path");
 export const HomeworkId = NonEmptyStringFlag("homework-id");
 export const Content = Flag.string("content").pipe(Flag.optional);

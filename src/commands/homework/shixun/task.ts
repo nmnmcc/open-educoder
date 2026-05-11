@@ -1,7 +1,7 @@
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { HomeworkId, TaskId } from "./flags.js";
-import { fetchTaskInfo, formatTaskInfo, inspectOptions, printJson, resolveLogin } from "./shared.js";
+import { HomeworkId, TaskId } from "../flags.js";
+import { fetchTaskInfo, formatTaskInfo, inspectOptions, printJson, resolveLogin } from "../shared.js";
 
 export const taskCommand = Command.make(
   "task",
@@ -10,7 +10,7 @@ export const taskCommand = Command.make(
     homeworkId: HomeworkId,
     json: Flag.boolean("json"),
   },
-  Effect.fn("homework.task")(function* (input) {
+  Effect.fn("homework.shixun.task")(function* (input) {
     const login = yield* resolveLogin();
     const response = yield* fetchTaskInfo({
       taskId: input.taskId,
@@ -28,11 +28,11 @@ export const taskCommand = Command.make(
   Command.withDescription("Fetch task context for a shixun homework game."),
   Command.withExamples([
     {
-      command: "open-educoder homework task sflmr2fxi4wn --homework-id 3487324",
+      command: "open-educoder homework shixun task sflmr2fxi4wn --homework-id 3487324",
       description: "Inspect task details by task and homework ID",
     },
     {
-      command: "open-educoder homework task sflmr2fxi4wn --homework-id 3487324 --json",
+      command: "open-educoder homework shixun task sflmr2fxi4wn --homework-id 3487324 --json",
       description: "Print the raw task response as JSON",
     },
   ]),

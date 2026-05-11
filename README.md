@@ -10,16 +10,27 @@ yarn cli profile list
 yarn cli profile add default --username "$EDUCODER_LOGIN" --password "$EDUCODER_PASSWORD"
 yarn cli course list
 yarn cli course list --status all --json
-yarn cli homework list MOAPGNLO --type shixun --category 1213302
-yarn cli homework list MOAPGNLO --type shixun --category 1213302 --sort-by name_pinyin --sort-direction desc
-yarn cli homework list MOAPGNLO --type shixun --category 1213302 --search 123 --status 7
-yarn cli homework task sflmr2fxi4wn --homework-id 3487324
-yarn cli homework content sflmr2fxi4wn case1/code.sh --homework-id 3487324
-yarn cli homework edit sflmr2fxi4wn case1/code.sh --homework-id 3487324
-yarn cli homework save sflmr2fxi4wn case1/code.sh --homework-id 3487324 --file ./code.sh
-yarn cli homework evaluate sflmr2fxi4wn case1/code.sh --homework-id 3487324 --file ./code.sh --poll
-yarn cli homework status sflmr2fxi4wn --homework-id 3487324 --sec-key "$SEC_KEY"
-yarn cli homework ssh sflmr2fxi4wn --homework-id 3487324
+yarn cli homework common list MOAPGNLO --sort-by position --sort-direction desc
+yarn cli homework common info 3487339
+yarn cli homework common works 109348 3487339
+yarn cli homework common draft 109348 3487339
+yarn cli homework common members 109348 3487339 --search 0424
+yarn cli homework common comments 109348 3487339
+yarn cli homework common settings 109348 3487339
+yarn cli homework common redo-logs 3487339 --type 2
+yarn cli homework shixun list MOAPGNLO --category 1213302
+yarn cli homework shixun list MOAPGNLO --category 1213302 --sort-by name_pinyin --sort-direction desc
+yarn cli homework shixun list MOAPGNLO --category 1213302 --search 123 --status 7
+yarn cli homework shixun task sflmr2fxi4wn --homework-id 3487324
+yarn cli homework shixun content sflmr2fxi4wn case1/code.sh --homework-id 3487324
+yarn cli homework shixun repository sflmr2fxi4wn --homework-id 3487324 --path case1
+yarn cli homework shixun passed-code sflmr2fxi4wn case1/code.sh
+yarn cli homework shixun edit sflmr2fxi4wn case1/code.sh --homework-id 3487324
+yarn cli homework shixun save sflmr2fxi4wn case1/code.sh --homework-id 3487324 --file ./code.sh
+yarn cli homework shixun evaluate sflmr2fxi4wn case1/code.sh --homework-id 3487324 --file ./code.sh --poll
+yarn cli homework shixun status sflmr2fxi4wn --homework-id 3487324 --sec-key "$SEC_KEY"
+yarn cli homework shixun reset sflmr2fxi4wn --homework-id 3487324
+yarn cli homework shixun ssh sflmr2fxi4wn --homework-id 3487324
 yarn cli exam list MOAPGNLO
 yarn cli exam info MOAPGNLO 198085
 yarn cli exam start MOAPGNLO 198085
@@ -37,7 +48,9 @@ Uppercase aliases indicate operations that may cause irreversible side effects.
 
 - `profile` -> `p`; `list` -> `l`; `add` -> `a`; `remove` -> `R`
 - `course` -> `c`; `list` -> `l`; `info` -> `i`; `modules` -> `m`
-- `homework` -> `h`; `list` -> `l`; `task` -> `t`; `content` -> `c`; `edit` -> `D`; `save` -> `S`; `build` -> `B`; `status` -> `s`; `evaluate` -> `E`; `log-output` -> `o`; `commit-files` -> `C`; `pull-files` -> `P`; `ssh` -> `r`
+- `homework` -> `h`; `common` -> `c`; `shixun` -> `x`
+- `homework common`: `list` -> `l`; `info` -> `i`; `works` -> `w`; `draft` -> `n`; `members` -> `u`; `comments` -> `q`; `settings` -> `g`; `redo-logs` -> `d`
+- `homework shixun`: `list` -> `l`; `task` -> `t`; `content` -> `c`; `repository` -> `f`; `passed-code` -> `a`; `edit` -> `D`; `save` -> `S`; `build` -> `B`; `status` -> `s`; `evaluate` -> `E`; `log-output` -> `o`; `commit-files` -> `C`; `pull-files` -> `P`; `reset` -> `R`; `remaining-time` -> `m`; `prune-versions` -> `V`; `ssh` -> `r`
 - `exam` -> `e`; `list` -> `l`; `info` -> `i`; `start` -> `S`; `show` -> `H`; `submit` -> `U`; `answer` -> `A`
 - `exam answer`: `single` -> `S`; `multiple` -> `M`; `text` -> `T`
 

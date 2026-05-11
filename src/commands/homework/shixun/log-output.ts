@@ -1,8 +1,8 @@
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../services/educoder-api/index.js";
-import { EnvironmentId, HomeworkId, TabType, TaskId } from "./flags.js";
-import { fetchTaskInfo, inspectOptions, parseTaskContext, printJson, resolveLogin } from "./shared.js";
+import { EducoderApi } from "../../../services/educoder-api/index.js";
+import { EnvironmentId, HomeworkId, TabType, TaskId } from "../flags.js";
+import { inspectOptions, printJson, resolveHomeworkContext } from "../shared.js";
 
 export const logOutputCommand = Command.make(
   "log-output",
@@ -13,21 +13,20 @@ export const logOutputCommand = Command.make(
     tabType: TabType,
     json: Flag.boolean("json"),
   },
-  Effect.fn("homework.logOutput")(function* (input) {
+  Effect.fn("homework.shixun.logOutput")(function* (input) {
     const educoder = yield* EducoderApi;
-    const login = yield* resolveLogin();
-    const taskInfo = yield* fetchTaskInfo({
+    const { user, context } = yield* resolveHomeworkContext({
       taskId: input.taskId,
       homeworkId: input.homeworkId,
-      login,
+      envId: input.envId,
+      tabType: input.tabType,
     });
-    const context = yield* parseTaskContext(taskInfo, input.envId, input.tabType);
     const response = yield* educoder.Task.logOutput({
       params: {
         taskId: input.taskId,
       },
       query: {
-        zzud: login,
+        zzud: user.login,
       },
       payload: {
         shixun_environment_id: context.environmentId,
@@ -53,7 +52,7 @@ export const logOutputCommand = Command.make(
   Command.withDescription("Fetch terminal or evaluation log output for a shixun homework environment."),
   Command.withExamples([
     {
-      command: "open-educoder homework log-output sflmr2fxi4wn --homework-id 3487324 --env-id 1128633",
+      command: "open-educoder homework shixun log-output sflmr2fxi4wn --homework-id 3487324 --env-id 1128633",
       description: "Fetch logs for the specified environment",
     },
   ]),

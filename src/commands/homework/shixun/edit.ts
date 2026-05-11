@@ -4,19 +4,18 @@ import { tmpdir } from "node:os";
 import nodePath from "node:path";
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../services/educoder-api/index.js";
-import { EnvironmentId, HomeworkId, RepositoryPath, TabType, TaskId } from "./flags.js";
+import { EnvironmentId, HomeworkId, RepositoryPath, TabType, TaskId } from "../flags.js";
 import {
   decodeBase64,
   failInput,
-  fetchTaskInfo,
+  fetchRepositoryContent,
+  formatSaveResponse,
   HomeworkInputError,
   inspectOptions,
-  makeUpdateFilePayload,
-  parseTaskContext,
   printJson,
-  resolveCurrentUser,
-} from "./shared.js";
+  resolveHomeworkContext,
+  saveRepositoryFile,
+} from "../shared.js";
 
 type EditedContent = {
   readonly editor: string;
@@ -88,7 +87,7 @@ const runEditor = (editor: string, file: string) =>
     });
   });
 
-const editContent = Effect.fn("homework.editContent")(function* (input: {
+const editContent = Effect.fn("homework.shixun.editContent")(function* (input: {
   readonly repositoryPath: string;
   readonly content: string;
 }) {
@@ -141,25 +140,19 @@ export const editCommand = Command.make(
     tabType: TabType,
     json: Flag.boolean("json"),
   },
-  Effect.fn("homework.edit")(function* (input) {
-    const educoder = yield* EducoderApi;
-    const user = yield* resolveCurrentUser();
-    const taskInfo = yield* fetchTaskInfo({
+  Effect.fn("homework.shixun.edit")(function* (input) {
+    const { user, context } = yield* resolveHomeworkContext({
       taskId: input.taskId,
       homeworkId: input.homeworkId,
-      login: user.login,
+      envId: input.envId,
+      tabType: input.tabType,
     });
-    const context = yield* parseTaskContext(taskInfo, input.envId, input.tabType);
-    const contentResponse = yield* educoder.Task.repContent({
-      params: {
-        taskId: input.taskId,
-      },
-      query: {
-        path: input.path,
-        homework_common_id: input.homeworkId,
-        exercise_id: input.exerciseId,
-        zzud: user.login,
-      },
+    const contentResponse = yield* fetchRepositoryContent({
+      taskId: input.taskId,
+      path: input.path,
+      homeworkId: input.homeworkId,
+      exerciseId: input.exerciseId,
+      login: user.login,
     });
     const currentContent = decodeBase64(contentResponse.content.content);
     const edited = yield* editContent({
@@ -194,22 +187,14 @@ export const editCommand = Command.make(
       );
     }
 
-    const saveResponse = yield* educoder.Myshixun.updateFile({
-      params: {
-        myshixunId: context.myshixunIdentifier,
-      },
-      query: {
-        zzud: user.login,
-      },
-      payload: makeUpdateFilePayload({
-        homeworkId: input.homeworkId,
-        path: input.path,
-        content: edited.content,
-        evaluate: input.evaluate,
-        context,
-        user,
-        tabType: input.tabType,
-      }),
+    const saveResponse = yield* saveRepositoryFile({
+      homeworkId: input.homeworkId,
+      path: input.path,
+      content: edited.content,
+      evaluate: input.evaluate,
+      context,
+      user,
+      tabType: input.tabType,
     }).pipe(
       Effect.mapError(
         (error) =>
@@ -235,14 +220,9 @@ export const editCommand = Command.make(
     yield* Console.dir(
       {
         edit: {
-          path: input.path,
           editor: edited.editor,
           changed,
-          commitId: saveResponse.content.commitID,
-          secKey: saveResponse.sec_key,
-          resubmit: saveResponse.resubmit,
-          contentModified: saveResponse.content_modified,
-          size: saveResponse.content.size,
+          ...formatSaveResponse(input.path, saveResponse),
         },
       },
       inspectOptions,
@@ -252,11 +232,12 @@ export const editCommand = Command.make(
   Command.withDescription("Edit a shixun homework repository file with $VISUAL or $EDITOR, then save changes."),
   Command.withExamples([
     {
-      command: "open-educoder homework edit sflmr2fxi4wn case1/code.sh --homework-id 3487324",
+      command: "open-educoder homework shixun edit sflmr2fxi4wn case1/code.sh --homework-id 3487324",
       description: "Open a task file in $VISUAL or $EDITOR and save it back after changes",
     },
     {
-      command: "VISUAL='code --wait' open-educoder homework edit sflmr2fxi4wn case1/code.sh --homework-id 3487324",
+      command:
+        "VISUAL='code --wait' open-educoder homework shixun edit sflmr2fxi4wn case1/code.sh --homework-id 3487324",
       description: "Use an editor command that waits until the edit is complete",
     },
   ]),

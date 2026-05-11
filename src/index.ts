@@ -23,7 +23,7 @@ const app = Command.make("open-educoder").pipe(
       description: "Inspect a course by course ID",
     },
     {
-      command: "open-educoder homework list MOAPGNLO --type shixun --category 1213302",
+      command: "open-educoder homework shixun list MOAPGNLO --category 1213302",
       description: "List shixun homeworks in a course category",
     },
     {

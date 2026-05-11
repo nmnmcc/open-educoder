@@ -1,8 +1,8 @@
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../services/educoder-api/index.js";
-import { EnvironmentId, HomeworkId, TaskId } from "./flags.js";
-import { fetchTaskInfo, inspectOptions, parseTaskContext, printJson, resolveLogin } from "./shared.js";
+import { EducoderApi } from "../../../services/educoder-api/index.js";
+import { EnvironmentId, HomeworkId, TaskId } from "../flags.js";
+import { inspectOptions, printJson, resolveHomeworkContext } from "../shared.js";
 
 export const commitFilesCommand = Command.make(
   "commit-files",
@@ -12,22 +12,21 @@ export const commitFilesCommand = Command.make(
     envId: EnvironmentId,
     json: Flag.boolean("json"),
   },
-  Effect.fn("homework.commitFiles")(function* (input) {
+  Effect.fn("homework.shixun.commitFiles")(function* (input) {
     const educoder = yield* EducoderApi;
-    const login = yield* resolveLogin();
-    const taskInfo = yield* fetchTaskInfo({
+    const { user, context } = yield* resolveHomeworkContext({
       taskId: input.taskId,
       homeworkId: input.homeworkId,
-      login,
+      envId: input.envId,
+      tabType: 1,
     });
-    const context = yield* parseTaskContext(taskInfo, input.envId, 1);
     const response = yield* educoder.Task.commitFiles({
       params: {
         taskId: input.taskId,
       },
       query: {
         shixun_environment_id: context.environmentId,
-        zzud: login,
+        zzud: user.login,
       },
     });
 
@@ -46,7 +45,7 @@ export const commitFilesCommand = Command.make(
   Command.withDescription("Commit repository files for a shixun homework environment."),
   Command.withExamples([
     {
-      command: "open-educoder homework commit-files sflmr2fxi4wn --homework-id 3487324 --env-id 1128633",
+      command: "open-educoder homework shixun commit-files sflmr2fxi4wn --homework-id 3487324 --env-id 1128633",
       description: "Commit files for the specified environment",
     },
   ]),

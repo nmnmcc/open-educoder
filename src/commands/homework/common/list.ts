@@ -1,21 +1,13 @@
 import { Console, Effect, Option } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../services/educoder-api/index.js";
-import {
-  CourseId,
-  HomeworkSortByChoices,
-  HomeworkTypeChoices,
-  HomeworkTypeCode,
-  PositiveInteger,
-  SortDirectionChoices,
-} from "./flags.js";
-import { formatLabels, formatOperation, inspectOptions, printJson, resolveLogin } from "./shared.js";
+import { EducoderApi } from "../../../services/educoder-api/index.js";
+import { CourseId, HomeworkSortByChoices, HomeworkTypeCode, PositiveInteger, SortDirectionChoices } from "../flags.js";
+import { formatLabels, inspectOptions, printJson, resolveLogin } from "../shared.js";
 
 export const listCommand = Command.make(
   "list",
   {
     courseId: CourseId,
-    type: Flag.choice("type", HomeworkTypeChoices),
     category: PositiveInteger("category").pipe(Flag.optional),
     status: Flag.integer("status").pipe(Flag.withDefault(0)),
     page: PositiveInteger("page").pipe(Flag.withDefault(1)),
@@ -26,7 +18,7 @@ export const listCommand = Command.make(
     sortDirection: Flag.choice("sort-direction", SortDirectionChoices).pipe(Flag.optional),
     json: Flag.boolean("json"),
   },
-  Effect.fn("homework.list")(function* (input) {
+  Effect.fn("homework.common.list")(function* (input) {
     const educoder = yield* EducoderApi;
     const login = yield* resolveLogin();
     const order = Option.isSome(input.order) ? input.order.value : input.status;
@@ -41,7 +33,7 @@ export const listCommand = Command.make(
         coursesId: input.courseId,
         id: input.courseId,
         limit: input.limit,
-        type: HomeworkTypeCode[input.type],
+        type: HomeworkTypeCode.common,
         status: input.status,
         category: Option.isSome(input.category) ? input.category.value : undefined,
         page: input.page,
@@ -58,7 +50,7 @@ export const listCommand = Command.make(
     }
 
     if (response.homeworks.length === 0) {
-      return yield* Console.log("No homeworks found.");
+      return yield* Console.log("No common homeworks found.");
     }
 
     yield* Console.dir(
@@ -78,8 +70,9 @@ export const listCommand = Command.make(
           unpublished: response.unpublished_count,
         },
         homeworks: Object.fromEntries(
-          response.homeworks.map((item) => {
-            const base = {
+          response.homeworks.map((item) => [
+            item.homework_id,
+            {
               name: item.name,
               category: item.upper_category_name ?? response.category_name,
               status: formatLabels(item.status),
@@ -92,52 +85,31 @@ export const listCommand = Command.make(
               endTime: item.end_time,
               lateTime: item.late_time,
               studentWorkId: item.student_work_id,
-            };
-
-            return [
-              item.homework_id,
-              input.type === "shixun"
-                ? {
-                    ...base,
-                    shixunIdentifier: item.shixun_identifier,
-                    myshixunIdentifier: item.myshixun_identifier,
-                    progress: {
-                      finished: item.finished_challenge_count,
-                      checked: item.checked_challenge_count,
-                      total: item.challenge_count,
-                    },
-                    operation: formatOperation(item.task_operation),
-                    shixunStatus: item.shixun_finished_status,
-                  }
-                : {
-                    ...base,
-                    workId: item.work_id,
-                    workStatus: item.work_status === undefined ? null : formatLabels(item.work_status),
-                    uncommitted: item.un_commit_work,
-                    labStatus: item.lab_status,
-                  },
-            ];
-          }),
+              workId: item.work_id,
+              workStatus: item.work_status === undefined ? null : formatLabels(item.work_status),
+              uncommitted: item.un_commit_work,
+              labStatus: item.lab_status,
+            },
+          ]),
         ),
       },
       inspectOptions,
     );
   }),
 ).pipe(
-  Command.withDescription("List course homeworks with the filters Educoder uses in the homework page."),
+  Command.withDescription("List common homeworks with the filters Educoder uses in the homework page."),
   Command.withExamples([
     {
-      command: "open-educoder homework list MOAPGNLO --type shixun --category 1213302",
-      description: "List shixun homeworks from a category",
+      command: "open-educoder homework common list MOAPGNLO --sort-by position --sort-direction desc",
+      description: "List common homeworks by category position",
     },
     {
-      command:
-        "open-educoder homework list MOAPGNLO --type shixun --category 1213302 --sort-by name_pinyin --sort-direction desc",
-      description: "Sort the homework list by name",
+      command: "open-educoder homework common list MOAPGNLO --sort-by updated_at --sort-direction asc --order 7",
+      description: "Sort and filter common homeworks",
     },
     {
-      command: "open-educoder homework list MOAPGNLO --type shixun --category 1213302 --search 123 --status 7",
-      description: "Search within a homework category",
+      command: "open-educoder homework common list MOAPGNLO --search 123 --status 0",
+      description: "Search common homeworks",
     },
   ]),
   Command.withAlias("l"),

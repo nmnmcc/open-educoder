@@ -21,6 +21,7 @@ export type TaskContext = {
   readonly gameId: number;
   readonly challengeId: number;
   readonly challengePath: string;
+  readonly myshixunId: number;
   readonly myshixunIdentifier: string;
   readonly environmentId: number;
 };
@@ -196,9 +197,52 @@ export const parseTaskContext = Effect.fn("homework.parseTaskContext")(function*
     gameId: yield* requiredNumber(game["id"], "game.id"),
     challengeId: yield* requiredNumber(challenge["id"], "challenge.id"),
     challengePath: yield* requiredString(challenge["path"], "challenge.path"),
+    myshixunId: yield* requiredNumber(myshixun["id"] ?? game["myshixun_id"], "myshixun.id"),
     myshixunIdentifier: yield* requiredString(myshixun["identifier"], "myshixun.identifier"),
     environmentId,
   } satisfies TaskContext;
+});
+
+export const resolveHomeworkContext = Effect.fn("homework.resolveHomeworkContext")(function* (input: {
+  readonly taskId: string;
+  readonly homeworkId: string;
+  readonly envId: Option.Option<number>;
+  readonly tabType: number;
+}) {
+  const user = yield* resolveCurrentUser();
+  const taskInfo = yield* fetchTaskInfo({
+    taskId: input.taskId,
+    homeworkId: input.homeworkId,
+    login: user.login,
+  });
+  const context = yield* parseTaskContext(taskInfo, input.envId, input.tabType);
+
+  return {
+    user,
+    context,
+  };
+});
+
+export const fetchRepositoryContent = Effect.fn("homework.fetchRepositoryContent")(function* (input: {
+  readonly taskId: string;
+  readonly homeworkId: string;
+  readonly path: string;
+  readonly exerciseId: string;
+  readonly login: string;
+}) {
+  const educoder = yield* EducoderApi;
+
+  return yield* educoder.Task.repContent({
+    params: {
+      taskId: input.taskId,
+    },
+    query: {
+      path: input.path,
+      homework_common_id: input.homeworkId,
+      exercise_id: input.exerciseId,
+      zzud: input.login,
+    },
+  });
 });
 
 export const formatTaskInfo = (value: unknown) => {
@@ -374,6 +418,28 @@ export const makeUpdateFilePayload = (input: {
   },
 });
 
+export const saveRepositoryFile = Effect.fn("homework.saveRepositoryFile")(function* (input: {
+  readonly homeworkId: string;
+  readonly path: string;
+  readonly content: string;
+  readonly evaluate: boolean;
+  readonly context: TaskContext;
+  readonly user: CurrentUser;
+  readonly tabType: number;
+}) {
+  const educoder = yield* EducoderApi;
+
+  return yield* educoder.Myshixun.updateFile({
+    params: {
+      myshixunId: input.context.myshixunIdentifier,
+    },
+    query: {
+      zzud: input.user.login,
+    },
+    payload: makeUpdateFilePayload(input),
+  });
+});
+
 export const makeGameBuildPayload = (input: {
   readonly homeworkId: string;
   readonly secKey: string;
@@ -400,6 +466,50 @@ export const makeGameBuildPayload = (input: {
     commitID: input.commitId,
     currentUserId: input.user.userId,
   },
+});
+
+export const buildRepositoryFile = Effect.fn("homework.buildRepositoryFile")(function* (input: {
+  readonly taskId: string;
+  readonly homeworkId: string;
+  readonly secKey: string;
+  readonly resubmit: string;
+  readonly commitId: string;
+  readonly contentModified: number;
+  readonly context: TaskContext;
+  readonly user: CurrentUser;
+  readonly tabType: number;
+}) {
+  const educoder = yield* EducoderApi;
+
+  return yield* educoder.Task.gameBuild({
+    params: {
+      taskId: input.taskId,
+    },
+    query: {
+      zzud: input.user.login,
+    },
+    payload: makeGameBuildPayload(input),
+  });
+});
+
+export const formatSaveResponse = (
+  path: string,
+  response: {
+    readonly content: {
+      readonly commitID: string;
+      readonly size: number;
+    };
+    readonly sec_key: string | null | undefined;
+    readonly resubmit: string | null | undefined;
+    readonly content_modified: number;
+  },
+) => ({
+  path,
+  commitId: response.content.commitID,
+  secKey: response.sec_key,
+  resubmit: response.resubmit,
+  contentModified: response.content_modified,
+  size: response.content.size,
 });
 
 export const makeStatusRequest = (input: {

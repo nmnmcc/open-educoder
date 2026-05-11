@@ -7,6 +7,27 @@ const TaskRequestParams = {
   taskId: NonEmptyString,
 };
 
+/*
+.sample/homework1.har: POST /api/tasks/sflmr2fxi4wn/game_build.json
+{
+  "sec_key": "<sec_key>",
+  "resubmit": "",
+  "first": 1,
+  "content_modified": 0,
+  "shixun_environment_id": 1128633,
+  "tab_type": 1,
+  "extras": {
+    "exercise_id": "",
+    "question_id": "",
+    "challenge_id": 3475325,
+    "subject_id": "",
+    "homework_common_id": "3487324",
+    "competition_entry_id": "",
+    "commitID": "<commit sha>",
+    "currentUserId": 123
+  }
+}
+*/
 const GameBuildPayload = Schema.Struct({
   sec_key: NonEmptyString,
   resubmit: Schema.String,
@@ -26,6 +47,16 @@ const GameBuildPayload = Schema.Struct({
   }),
 }).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
 
+/*
+.sample/homework1.har: POST /api/tasks/sflmr2fxi4wn/log_output
+{
+  "shixun_environment_id": 1128633,
+  "tab_type": 1,
+  "extras": {
+    "homework_common_id": "3487324"
+  }
+}
+*/
 const LogOutputPayload = Schema.Struct({
   shixun_environment_id: Schema.Int,
   tab_type: Schema.Int,
@@ -34,6 +65,18 @@ const LogOutputPayload = Schema.Struct({
   }),
 }).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
 
+/*
+.sample/homework1.har: GET /api/tasks/sflmr2fxi4wn/rep_content.json
+{
+  "content": {
+    "content": "<base64>",
+    "size": 122
+  },
+  "language": "shell",
+  "file_type": "txt",
+  "filename": "code.sh"
+}
+*/
 const RepositoryContentResponse = Schema.Struct({
   content: Schema.Struct({
     content: Schema.String,
@@ -44,9 +87,28 @@ const RepositoryContentResponse = Schema.Struct({
   filename: Schema.String,
 });
 
+/*
+.sample/homework1.har: GET /api/tasks/sflmr2fxi4wn/commit_files.json
+{
+  "status": 0,
+  "message": "success"
+}
+*/
 const SimpleResponse = Schema.Struct({
   status: Schema.Int,
   message: Schema.String,
+});
+
+/*
+.sample/homework2.har: GET /api/tasks/sflmr2fxi4wn/reset_passed_code.json
+{
+  "content": "<file content>",
+  "language": "shell"
+}
+*/
+const ResetPassedCodeResponse = Schema.Struct({
+  content: Schema.String,
+  language: Schema.String,
 });
 
 export const Task = HttpApiGroup.make("Task")
@@ -126,5 +188,15 @@ export const Task = HttpApiGroup.make("Task")
         zzud: NonEmptyString,
       },
       success: SimpleResponse,
+    }),
+  )
+  .add(
+    HttpApiEndpoint.get("resetPassedCode", "/api/tasks/:taskId/reset_passed_code.json", {
+      params: TaskRequestParams,
+      query: {
+        path: NonEmptyString,
+        zzud: NonEmptyString,
+      },
+      success: ResetPassedCodeResponse,
     }),
   );

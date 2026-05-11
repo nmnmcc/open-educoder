@@ -8,4 +8,6 @@
 
 不要把开发过程、解释性备注、自我说明、TODO、调试信息或给人看的临时注释写入生产文件。生产文件只保留最终运行或发布所必需的内容。任何解释都放在聊天回复里，不要进入文件。
 
+例外：在新增或修改 `src/services/educoder-api/interfaces` 下的 API Schema 定义时，必须根据 `.sample` HAR 中对应的请求或响应，在每一个 API Schema 定义之前内联注释样例供字段结构参考；样例必须精简并脱敏，不得写入真实个人信息、密钥、Cookie 或大段正文。
+
 所有 `Command.make(...)` 定义的 command 都必须提供单字母 alias；具有不可逆副作用的 command alias 必须是大写单字母。
