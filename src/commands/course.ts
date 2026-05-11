@@ -35,6 +35,18 @@ const makeCourseRequest = (courseId: string, login: string) => ({
 });
 
 export const course = Command.make("course").pipe(
+  Command.withDescription("Inspect Educoder courses, course metadata, and course navigation modules."),
+  Command.withExamples([
+    { command: "open-educoder course list --status all", description: "List all courses for the current user" },
+    {
+      command: "open-educoder course info MOAPGNLO",
+      description: "Inspect a course by course ID",
+    },
+    {
+      command: "open-educoder course modules MOAPGNLO",
+      description: "Show modules and nested categories for a course",
+    },
+  ]),
   Command.withAlias("c"),
   Command.withSubcommands([
     Command.make(
@@ -101,7 +113,18 @@ export const course = Command.make("course").pipe(
           inspectOptions,
         );
       }),
-    ).pipe(Command.withAlias("l")),
+    ).pipe(
+      Command.withDescription("List courses visible to the current Educoder account."),
+      Command.withExamples([
+        { command: "open-educoder course list", description: "List ongoing courses sorted by latest update" },
+        { command: "open-educoder course list --status all --json", description: "List all courses as JSON" },
+        {
+          command: "open-educoder course list --status end --sort-by created_at --sort-direction asc",
+          description: "List ended courses by creation time",
+        },
+      ]),
+      Command.withAlias("l"),
+    ),
     Command.make(
       "info",
       {
@@ -141,7 +164,17 @@ export const course = Command.make("course").pipe(
           inspectOptions,
         );
       }),
-    ).pipe(Command.withAlias("i")),
+    ).pipe(
+      Command.withDescription("Show top-banner metadata for a course, including teachers, counts, and visibility."),
+      Command.withExamples([
+        {
+          command: "open-educoder course info MOAPGNLO",
+          description: "Inspect a course by course ID",
+        },
+        { command: "open-educoder course info MOAPGNLO --json", description: "Print the raw course metadata as JSON" },
+      ]),
+      Command.withAlias("i"),
+    ),
     Command.make(
       "modules",
       {
@@ -189,6 +222,13 @@ export const course = Command.make("course").pipe(
           inspectOptions,
         );
       }),
-    ).pipe(Command.withAlias("m")),
+    ).pipe(
+      Command.withDescription("Show course navigation modules and nested category IDs."),
+      Command.withExamples([
+        { command: "open-educoder course modules MOAPGNLO", description: "List modules for a course" },
+        { command: "open-educoder course modules MOAPGNLO --json", description: "Print raw module data as JSON" },
+      ]),
+      Command.withAlias("m"),
+    ),
   ]),
 );

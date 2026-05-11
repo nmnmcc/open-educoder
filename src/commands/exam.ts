@@ -126,6 +126,16 @@ const answerQuestion = Effect.fn("exam.answerQuestion")(function* (input: {
 });
 
 export const exam = Command.make("exam").pipe(
+  Command.withDescription("Inspect, answer, and submit Educoder exams for the authenticated user."),
+  Command.withExamples([
+    { command: "open-educoder exam list MOAPGNLO", description: "List exams for a course" },
+    {
+      command: "open-educoder exam show MOAPGNLO 198085 --with-choice-content",
+      description: "Show questions for an exam",
+    },
+    { command: "open-educoder exam answer single 12263457 35397429", description: "Save a single-choice answer" },
+    { command: "open-educoder exam submit MOAPGNLO 198085", description: "Submit an exam attempt" },
+  ]),
   Command.withAlias("e"),
   Command.withSubcommands([
     Command.make(
@@ -191,7 +201,17 @@ export const exam = Command.make("exam").pipe(
           inspectOptions,
         );
       }),
-    ).pipe(Command.withAlias("l")),
+    ).pipe(
+      Command.withDescription("List exams for a course."),
+      Command.withExamples([
+        { command: "open-educoder exam list MOAPGNLO", description: "List exams by course ID" },
+        {
+          command: "open-educoder exam list MOAPGNLO --page 1 --limit 20 --json",
+          description: "Print exam list as JSON",
+        },
+      ]),
+      Command.withAlias("l"),
+    ),
     Command.make(
       "info",
       {
@@ -206,7 +226,17 @@ export const exam = Command.make("exam").pipe(
 
         yield* printJson(response);
       }),
-    ).pipe(Command.withAlias("i")),
+    ).pipe(
+      Command.withDescription("Fetch raw exam user information before or during an exam."),
+      Command.withExamples([
+        { command: "open-educoder exam info MOAPGNLO 198085", description: "Inspect exam user info" },
+        {
+          command: "open-educoder exam info MOAPGNLO 198085 --login pl2kfhv6g",
+          description: "Inspect as an explicit login",
+        },
+      ]),
+      Command.withAlias("i"),
+    ),
     Command.make(
       "start",
       {
@@ -221,7 +251,17 @@ export const exam = Command.make("exam").pipe(
 
         yield* printJson(response);
       }),
-    ).pipe(Command.withAlias("S")),
+    ).pipe(
+      Command.withDescription("Start or resume an Educoder exam attempt and print the raw response."),
+      Command.withExamples([
+        { command: "open-educoder exam start MOAPGNLO 198085", description: "Start or resume an exam" },
+        {
+          command: "open-educoder exam start MOAPGNLO 198085 --login pl2kfhv6g",
+          description: "Start with an explicit login",
+        },
+      ]),
+      Command.withAlias("S"),
+    ),
     Command.make(
       "show",
       {
@@ -279,7 +319,17 @@ export const exam = Command.make("exam").pipe(
           inspectOptions,
         );
       }),
-    ).pipe(Command.withAlias("H")),
+    ).pipe(
+      Command.withDescription("Start or resume an exam and render its questions in a compact shape."),
+      Command.withExamples([
+        { command: "open-educoder exam show MOAPGNLO 198085", description: "Show question IDs and selected choices" },
+        {
+          command: "open-educoder exam show MOAPGNLO 198085 --with-choice-content",
+          description: "Include choice text in the question list",
+        },
+      ]),
+      Command.withAlias("H"),
+    ),
     Command.make(
       "submit",
       {
@@ -326,8 +376,30 @@ export const exam = Command.make("exam").pipe(
           inspectOptions,
         );
       }),
-    ).pipe(Command.withAlias("U")),
+    ).pipe(
+      Command.withDescription("Submit an exam attempt after checking remaining time and unanswered counts."),
+      Command.withExamples([
+        {
+          command: "open-educoder exam submit MOAPGNLO 198085",
+          description: "Submit an exam with commit method 1",
+        },
+        {
+          command: "open-educoder exam submit MOAPGNLO 198085 --commit-method 1 --json",
+          description: "Print the submit workflow responses as JSON",
+        },
+      ]),
+      Command.withAlias("U"),
+    ),
     Command.make("answer").pipe(
+      Command.withDescription("Save answers for individual Educoder exam questions."),
+      Command.withExamples([
+        { command: "open-educoder exam answer single 12263457 35397429", description: "Save a single-choice answer" },
+        {
+          command: "open-educoder exam answer multiple 12263483 35397470,35397469",
+          description: "Save a multiple-choice answer",
+        },
+        { command: 'open-educoder exam answer text 12263490 "12"', description: "Save a text answer" },
+      ]),
       Command.withAlias("A"),
       Command.withSubcommands([
         Command.make(
@@ -345,7 +417,16 @@ export const exam = Command.make("exam").pipe(
               login: input.login,
             });
           }),
-        ).pipe(Command.withAlias("S")),
+        ).pipe(
+          Command.withDescription("Save a single-choice answer by question ID and choice ID."),
+          Command.withExamples([
+            {
+              command: "open-educoder exam answer single 12263457 35397429",
+              description: "Save using a question ID and a choice ID",
+            },
+          ]),
+          Command.withAlias("S"),
+        ),
         Command.make(
           "multiple",
           {
@@ -363,7 +444,16 @@ export const exam = Command.make("exam").pipe(
               login: input.login,
             });
           }),
-        ).pipe(Command.withAlias("M")),
+        ).pipe(
+          Command.withDescription("Save a multiple-choice answer from a comma-separated list of choice IDs."),
+          Command.withExamples([
+            {
+              command: "open-educoder exam answer multiple 12263483 35397470,35397469",
+              description: "Save using a question ID and comma-separated choice IDs",
+            },
+          ]),
+          Command.withAlias("M"),
+        ),
         Command.make(
           "text",
           {
@@ -379,7 +469,16 @@ export const exam = Command.make("exam").pipe(
               login: input.login,
             });
           }),
-        ).pipe(Command.withAlias("T")),
+        ).pipe(
+          Command.withDescription("Save a free-text answer for a question."),
+          Command.withExamples([
+            {
+              command: 'open-educoder exam answer text 12263490 "12"',
+              description: "Save text for a question ID",
+            },
+          ]),
+          Command.withAlias("T"),
+        ),
       ]),
     ),
   ]),

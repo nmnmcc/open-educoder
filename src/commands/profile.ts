@@ -24,6 +24,15 @@ class ProfileNotFoundError extends Data.TaggedError("ProfileNotFoundError")<{
 }> {}
 
 export const profile = Command.make("profile").pipe(
+  Command.withDescription("Manage local Educoder login profiles and session cookies."),
+  Command.withExamples([
+    { command: "open-educoder profile list", description: "List saved profiles" },
+    {
+      command: 'open-educoder profile add --username "$EDUCODER_USERNAME" --password "$EDUCODER_PASSWORD" default',
+      description: "Log in and save cookies for the default profile",
+    },
+    { command: "open-educoder profile remove old-profile", description: "Log out and delete a saved profile" },
+  ]),
   Command.withAlias("p"),
   Command.withSubcommands([
     Command.make(
@@ -65,7 +74,14 @@ export const profile = Command.make("profile").pipe(
           inspectOptions,
         );
       }),
-    ).pipe(Command.withAlias("l")),
+    ).pipe(
+      Command.withDescription("List saved profiles and mark the active one."),
+      Command.withExamples([
+        { command: "open-educoder profile list", description: "Show profiles as an inspectable table" },
+        { command: "open-educoder profile list --json", description: "Print profiles as JSON" },
+      ]),
+      Command.withAlias("l"),
+    ),
     Command.make(
       "add",
       {
@@ -104,7 +120,20 @@ export const profile = Command.make("profile").pipe(
 
         yield* Console.log(`Profile "${input.name}" added`);
       }),
-    ).pipe(Command.withAlias("a")),
+    ).pipe(
+      Command.withDescription("Log in to Educoder and store the returned cookies in a named profile."),
+      Command.withExamples([
+        {
+          command: 'open-educoder profile add --username "$EDUCODER_USERNAME" --password "$EDUCODER_PASSWORD"',
+          description: "Add or refresh the default profile",
+        },
+        {
+          command: 'open-educoder profile add --username "$EDUCODER_USERNAME" --password "$EDUCODER_PASSWORD" lab',
+          description: "Save credentials under a separate profile name",
+        },
+      ]),
+      Command.withAlias("a"),
+    ),
     Command.make(
       "remove",
       {
@@ -147,7 +176,14 @@ export const profile = Command.make("profile").pipe(
         yield* config.write($$profile.replace(undefined, state));
         yield* Console.log(`Profile "${input.name}" removed`);
       }),
-    ).pipe(Command.withAlias("R")),
+    ).pipe(
+      Command.withDescription("Log out of Educoder and remove a saved local profile."),
+      Command.withExamples([
+        { command: "open-educoder profile remove default", description: "Remove the default profile" },
+        { command: "open-educoder profile remove lab", description: "Remove a named profile" },
+      ]),
+      Command.withAlias("R"),
+    ),
   ]),
 );
 

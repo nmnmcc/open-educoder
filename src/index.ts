@@ -9,12 +9,28 @@ import { homedir } from "node:os";
 import path from "node:path";
 import { course } from "./commands/course.js";
 import { exam } from "./commands/exam.js";
-import { homework } from "./commands/homework.js";
+import { homework } from "./commands/homework/index.js";
 import { profile } from "./commands/profile.js";
 import { AppConfig } from "./services/config/index.js";
 import { AppContext } from "./services/context/index.js";
 
 const app = Command.make("open-educoder").pipe(
+  Command.withDescription("Local CLI for authenticated Educoder workflows."),
+  Command.withExamples([
+    { command: "open-educoder profile list", description: "List saved login profiles" },
+    {
+      command: "open-educoder course info MOAPGNLO",
+      description: "Inspect a course by course ID",
+    },
+    {
+      command: "open-educoder homework list MOAPGNLO --type shixun --category 1213302",
+      description: "List shixun homeworks in a course category",
+    },
+    {
+      command: "open-educoder exam show MOAPGNLO 198085 --with-choice-content",
+      description: "Show questions for an exam",
+    },
+  ]),
   Command.withSharedFlags({
     url: Flag.string("url").pipe(Flag.withDefault("https://data.educoder.net")),
     profile: Flag.string("profile").pipe(Flag.withDefault("default")),

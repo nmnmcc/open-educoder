@@ -1,0 +1,38 @@
+import { Argument, Flag } from "effect/unstable/cli";
+
+export const HomeworkTypeChoices = ["common", "shixun"] as const;
+export const HomeworkSortByChoices = ["created_at", "updated_at", "name_pinyin"] as const;
+export const SortDirectionChoices = ["desc", "asc"] as const;
+
+export const HomeworkTypeCode = {
+  common: 1,
+  shixun: 4,
+} as const;
+
+export const PositiveInteger = (name: string) =>
+  Flag.integer(name).pipe(
+    Flag.filter(
+      (value) => value >= 1,
+      (value) => `${name} must be greater than or equal to 1, got ${value}`,
+    ),
+  );
+
+export const NonEmptyStringFlag = (name: string) =>
+  Flag.string(name).pipe(
+    Flag.filter(
+      (value) => value.length >= 1,
+      (value) => `${name} must not be empty, got ${value}`,
+    ),
+  );
+
+export const CourseId = Argument.string("course-id");
+export const TaskId = Argument.string("task-id");
+export const RepositoryPath = Argument.string("path");
+export const HomeworkId = NonEmptyStringFlag("homework-id");
+export const Content = Flag.string("content").pipe(Flag.optional);
+export const ContentFile = Flag.path("file").pipe(Flag.optional);
+export const EnvironmentId = PositiveInteger("env-id").pipe(Flag.optional);
+export const TabType = PositiveInteger("tab-type").pipe(Flag.withDefault(1));
+export const TerminalTabType = PositiveInteger("tab-type").pipe(Flag.withDefault(4));
+export const SecKey = NonEmptyStringFlag("sec-key");
+export const CommitId = NonEmptyStringFlag("commit-id");
