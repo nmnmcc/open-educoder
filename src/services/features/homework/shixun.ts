@@ -152,6 +152,7 @@ type RemainingTimeRaw = EducoderApiResponse<"Myshixun", "getRemainingTime">;
 type StartSshRaw = EducoderApiResponse<"Myshixun", "start">;
 
 type ListShixunHomeworksView = {
+  readonly total: number;
   readonly filters: {
     readonly status: number;
     readonly order: number;
@@ -486,6 +487,7 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
         return {
           raw,
           view: {
+            total: raw.query_total_count,
             filters: {
               status: input.status,
               order,

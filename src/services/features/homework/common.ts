@@ -263,6 +263,7 @@ type CommonHomeworkSettingsRaw = EducoderApiResponse<"HomeworkCommon", "settings
 type CommonHomeworkRedoLogsRaw = EducoderApiResponse<"HomeworkCommon", "redoLogs">;
 
 type ListCommonHomeworksView = {
+  readonly total: number;
   readonly filters: {
     readonly status: number;
     readonly order: number;
@@ -396,6 +397,7 @@ export class HomeworkCommonFeature extends Context.Service<HomeworkCommonFeature
         return {
           raw,
           view: {
+            total: raw.query_total_count,
             filters: {
               status: input.status,
               order,

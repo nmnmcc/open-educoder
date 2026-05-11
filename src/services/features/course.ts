@@ -39,6 +39,7 @@ type CourseInfoRaw = EducoderApiResponse<"Course", "topBanner">;
 type CourseModulesRaw = EducoderApiResponse<"Course", "leftBanner">;
 
 type ListCoursesView = {
+  readonly total: number;
   readonly courses: Record<
     string,
     {
@@ -141,6 +142,7 @@ export class CourseFeature extends Context.Service<CourseFeature, CourseFeatureS
         return {
           raw,
           view: {
+            total: raw.count,
             courses: Object.fromEntries(
               raw.courses.map((course) => [
                 course.id,
