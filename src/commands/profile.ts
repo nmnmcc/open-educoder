@@ -6,10 +6,15 @@ import { EducoderApi } from "../services/educoder-api/index.js";
 import { AppConfig, AppConfigSchema } from "../services/config/index.js";
 import { AppContext } from "../services/context/index.js";
 
-const passwordKey = "5183666c72eec9e4" as const;
+const PasswordKey = "5183666c72eec9e4" as const;
+const DefaultProfileName = "default" as const;
 const $profile = Optic.id<typeof AppConfigSchema.Type>().key("profile");
 
 class LoginError extends Data.TaggedError("LoginError")<{
+  readonly message: string;
+}> {}
+
+class LogoutError extends Data.TaggedError("LogoutError")<{
   readonly message: string;
 }> {}
 
@@ -21,11 +26,51 @@ export const profile = Command.make("profile").pipe(
   Command.withAlias("auth"),
   Command.withSubcommands([
     Command.make(
+      "list",
+      {
+        json: Flag.boolean("json"),
+      },
+      Effect.fn("profile.list")(function* (input) {
+        const ctx = yield* AppContext;
+        const profiles = Object.entries(ctx.config.profile)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([name, profile]) => ({
+            name,
+            current: name === ctx.profile,
+            url: profile.url.href,
+          }));
+
+        if (input.json) {
+          return yield* Console.log(JSON.stringify(profiles, null, 2));
+        }
+
+        if (profiles.length === 0) {
+          return yield* Console.log("No profiles found.");
+        }
+
+        yield* Console.dir(
+          {
+            current: ctx.profile,
+            profiles: Object.fromEntries(
+              profiles.map((profile) => [
+                profile.name,
+                {
+                  current: profile.current,
+                  url: profile.url,
+                },
+              ]),
+            ),
+          },
+          { colors: true, depth: null },
+        );
+      }),
+    ),
+    Command.make(
       "add",
       {
         username: Flag.string("username").pipe(Flag.withAlias("u")),
         password: Flag.string("password").pipe(Flag.withAlias("p")),
-        name: Argument.string("name").pipe(Argument.withDefault("default")),
+        name: Argument.string("name").pipe(Argument.withDefault(DefaultProfileName)),
       },
       Effect.fn("profile.add")(function* (input) {
         const ctx = yield* AppContext;
@@ -69,10 +114,32 @@ export const profile = Command.make("profile").pipe(
         const config = yield* AppConfig;
         const state = ctx.config;
         const $$profile = $profile.optionalKey(input.name);
+        const profile = $$profile.get(state);
 
-        if ($$profile.get(state) === undefined) {
+        if (profile === undefined) {
           return yield* new ProfileNotFoundError({
             message: `Profile "${input.name}" does not exist`,
+          });
+        }
+
+        const educoder = yield* EducoderApi.make(profile.url).pipe(
+          Effect.provideService(AppContext, {
+            ...ctx,
+            url: profile.url.href,
+            profile: input.name,
+          }),
+        );
+        const user = yield* educoder.User.getInfo();
+        const response = yield* educoder.Account.logout({
+          query: {
+            zzud: user.login,
+          },
+          responseMode: "response-only",
+        });
+
+        if (response.status < 200 || response.status >= 300) {
+          return yield* new LogoutError({
+            message: `Logout failed with status ${response.status}`,
           });
         }
 
@@ -84,7 +151,7 @@ export const profile = Command.make("profile").pipe(
 );
 
 const encryptPassword = (password: string) => {
-  const cipher = createCipheriv("aes-128-cbc", Buffer.from(passwordKey), Buffer.from(passwordKey));
+  const cipher = createCipheriv("aes-128-cbc", Buffer.from(PasswordKey), Buffer.from(PasswordKey));
 
   return Buffer.concat([cipher.update(password, "utf8"), cipher.final()]).toString("base64");
 };

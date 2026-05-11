@@ -53,25 +53,30 @@ export const course = Command.make("course").pipe(
           return yield* Console.log(JSON.stringify(response, null, 2));
         }
 
-        yield* Console.log(`Total: ${response.count}`);
-
         if (response.courses.length === 0) {
           return yield* Console.log("No courses found.");
         }
 
-        yield* Console.table(
-          response.courses.map((course) => ({
-            id: course.id,
-            name: course.name,
-            school: course.school,
-            teacher: course.teacher.real_name,
-            members: course.members_count,
-            homeworks: course.homework_commons_count,
-            attachments: course.attachments_count,
-            visits: course.visits,
-            status: course.is_end ? "end" : "processing",
-            created: course.created_at,
-          })),
+        yield* Console.dir(
+          {
+            courses: Object.fromEntries(
+              response.courses.map((course) => [
+                course.id,
+                {
+                  name: course.name,
+                  school: course.school,
+                  teacher: course.teacher.real_name,
+                  members: course.members_count,
+                  homeworks: course.homework_commons_count,
+                  attachments: course.attachments_count,
+                  visits: course.visits,
+                  status: course.is_end ? "end" : "processing",
+                  created: course.created_at,
+                },
+              ]),
+            ),
+          },
+          { colors: true, depth: null },
         );
       }),
     ),

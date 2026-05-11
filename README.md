@@ -6,9 +6,14 @@ EffectTS CLI scaffold.
 
 ```bash
 yarn cli --help
+yarn cli profile list
 yarn cli profile add default --username "$EDUCODER_LOGIN" --password "$EDUCODER_PASSWORD"
 yarn cli course list
 yarn cli course list --status all --json
+yarn cli exam info MOAPGNLO 198085
+yarn cli exam start MOAPGNLO 198085
+yarn cli exam show MOAPGNLO 198085
+yarn cli exam answer 12263457 --choice-id 35397429
 ```
 
 ## Scripts

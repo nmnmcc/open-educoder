@@ -8,6 +8,7 @@ import { EducoderApi } from "./services/educoder-api/index.js";
 import { homedir } from "node:os";
 import path from "node:path";
 import { course } from "./commands/course.js";
+import { exam } from "./commands/exam.js";
 import { profile } from "./commands/profile.js";
 import { AppConfig } from "./services/config/index.js";
 import { AppContext } from "./services/context/index.js";
@@ -18,7 +19,7 @@ const app = Command.make("open-educoder").pipe(
     profile: Flag.string("profile").pipe(Flag.withDefault("default")),
     config: Flag.path("config").pipe(Flag.withDefault(path.join(homedir(), ".config", meta.name))),
   }),
-  Command.withSubcommands([profile, course]),
+  Command.withSubcommands([profile, course, exam]),
   Command.provide(({ url, profile, config }) =>
     EducoderApi.layer(url).pipe(
       Layer.provideMerge(

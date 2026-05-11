@@ -13,8 +13,14 @@ export class EducoderApi extends Context.Service<EducoderApi>()("open-educoder/s
       const state = ctx.config;
       const cookiesRef = yield* Ref.make(state.profile[ctx.profile]?.cookies ?? Cookies.empty);
       const educoderHttpClient = httpClient.pipe(
-        HttpClient.mapRequest((request) => HttpClientRequest.setHeaders(request, makeEducoderHeaders(request.method))),
         HttpClient.withCookiesRef(cookiesRef),
+        HttpClient.mapRequestEffect((request) =>
+          Ref.get(cookiesRef).pipe(
+            Effect.map((cookies) =>
+              HttpClientRequest.setHeaders(request, makeEducoderHeaders(request.method, cookies)),
+            ),
+          ),
+        ),
       );
 
       return yield* HttpApiClient.makeWith(Interfaces, {
