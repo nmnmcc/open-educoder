@@ -1,23 +1,23 @@
 import { Command } from "effect/unstable/cli";
-import { buildCommand } from "./build.js";
-import { commitFilesCommand } from "./commit-files.js";
-import { contentCommand } from "./content.js";
-import { editCommand } from "./edit.js";
-import { evaluateCommand } from "./evaluate.js";
-import { listCommand } from "./list.js";
-import { logOutputCommand } from "./log-output.js";
-import { passedCodeCommand } from "./passed-code.js";
-import { pruneVersionsCommand } from "./prune-versions.js";
-import { pullFilesCommand } from "./pull-files.js";
-import { remainingTimeCommand } from "./remaining-time.js";
-import { repositoryCommand } from "./repository.js";
-import { resetCommand } from "./reset.js";
-import { saveCommand } from "./save.js";
-import { statusCommand } from "./status.js";
-import { taskCommand } from "./task.js";
-import { sshCommand } from "./ssh.js";
+import { Build } from "./build.js";
+import { CommitFiles } from "./commit-files.js";
+import { Content } from "./content.js";
+import { Edit } from "./edit.js";
+import { Evaluate } from "./evaluate.js";
+import { List } from "./list.js";
+import { LogOutput } from "./log-output.js";
+import { PassedCode } from "./passed-code.js";
+import { PruneVersions } from "./prune-versions.js";
+import { PullFiles } from "./pull-files.js";
+import { RemainingTime } from "./remaining-time.js";
+import { Repository } from "./repository.js";
+import { Reset } from "./reset.js";
+import { Save } from "./save.js";
+import { Status } from "./status.js";
+import { Task } from "./task.js";
+import { Ssh } from "./ssh.js";
 
-export const shixunHomework = Command.make("shixun").pipe(
+export const Shixun = Command.make("shixun").pipe(
   Command.withDescription("Inspect and operate Educoder shixun homework task files, repositories, and evaluations."),
   Command.withExamples([
     {
@@ -40,22 +40,22 @@ export const shixunHomework = Command.make("shixun").pipe(
   ]),
   Command.withAlias("x"),
   Command.withSubcommands([
-    listCommand,
-    taskCommand,
-    contentCommand,
-    repositoryCommand,
-    passedCodeCommand,
-    editCommand,
-    saveCommand,
-    buildCommand,
-    statusCommand,
-    evaluateCommand,
-    logOutputCommand,
-    commitFilesCommand,
-    pullFilesCommand,
-    resetCommand,
-    remainingTimeCommand,
-    pruneVersionsCommand,
-    sshCommand,
+    List,
+    Task,
+    Content,
+    Repository,
+    PassedCode,
+    Edit,
+    Save,
+    Build,
+    Status,
+    Evaluate,
+    LogOutput,
+    CommitFiles,
+    PullFiles,
+    Reset,
+    RemainingTime,
+    PruneVersions,
+    Ssh,
   ]),
 );

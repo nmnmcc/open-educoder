@@ -4,7 +4,7 @@ import { EducoderApi } from "../../../services/educoder-api/index.js";
 import { CourseId, HomeworkSortByChoices, HomeworkTypeCode, PositiveInteger, SortDirectionChoices } from "../flags.js";
 import { formatLabels, inspectOptions, printJson, resolveLogin } from "../shared.js";
 
-export const listCommand = Command.make(
+export const List = Command.make(
   "list",
   {
     courseId: CourseId,

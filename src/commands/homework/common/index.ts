@@ -1,16 +1,8 @@
 import { Command } from "effect/unstable/cli";
-import {
-  commentsCommand,
-  draftCommand,
-  infoCommand,
-  membersCommand,
-  redoLogsCommand,
-  settingsCommand,
-  worksCommand,
-} from "./commands.js";
-import { listCommand } from "./list.js";
+import { Comments, Draft, Info, Members, RedoLogs, Settings, Works } from "./commands.js";
+import { List } from "./list.js";
 
-export const commonHomework = Command.make("common").pipe(
+export const Common = Command.make("common").pipe(
   Command.withDescription("Inspect common Educoder homework workflows, metadata, members, settings, and work status."),
   Command.withExamples([
     {
@@ -31,14 +23,5 @@ export const commonHomework = Command.make("common").pipe(
     },
   ]),
   Command.withAlias("c"),
-  Command.withSubcommands([
-    listCommand,
-    infoCommand,
-    worksCommand,
-    draftCommand,
-    membersCommand,
-    commentsCommand,
-    settingsCommand,
-    redoLogsCommand,
-  ]),
+  Command.withSubcommands([List, Info, Works, Draft, Members, Comments, Settings, RedoLogs]),
 );

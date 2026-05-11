@@ -4,7 +4,7 @@ import { EducoderApi } from "../../../services/educoder-api/index.js";
 import { HomeworkId, TaskId } from "../flags.js";
 import { inspectOptions, printJson, resolveHomeworkContext } from "../shared.js";
 
-export const remainingTimeCommand = Command.make(
+export const RemainingTime = Command.make(
   "remaining-time",
   {
     taskId: TaskId,

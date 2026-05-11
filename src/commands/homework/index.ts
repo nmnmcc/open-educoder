@@ -1,8 +1,8 @@
 import { Command } from "effect/unstable/cli";
-import { commonHomework } from "./common/index.js";
-import { shixunHomework } from "./shixun/index.js";
+import { Common } from "./common/index.js";
+import { Shixun } from "./shixun/index.js";
 
-export const homework = Command.make("homework").pipe(
+export const Homework = Command.make("homework").pipe(
   Command.withDescription("Inspect and operate Educoder homework workflows by homework type."),
   Command.withExamples([
     {
@@ -23,5 +23,5 @@ export const homework = Command.make("homework").pipe(
     },
   ]),
   Command.withAlias("h"),
-  Command.withSubcommands([commonHomework, shixunHomework]),
+  Command.withSubcommands([Common, Shixun]),
 );

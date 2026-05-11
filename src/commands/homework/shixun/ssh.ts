@@ -45,7 +45,7 @@ const runSsh = Effect.fn("homework.shixun.ssh.runSsh")(function* (args: Readonly
   });
 });
 
-export const sshCommand = Command.make(
+export const Ssh = Command.make(
   "ssh",
   {
     taskId: TaskId,

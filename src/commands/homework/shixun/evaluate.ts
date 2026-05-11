@@ -22,7 +22,7 @@ import {
   saveRepositoryFile,
 } from "../shared.js";
 
-export const evaluateCommand = Command.make(
+export const Evaluate = Command.make(
   "evaluate",
   {
     taskId: TaskId,

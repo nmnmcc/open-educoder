@@ -4,7 +4,7 @@ import { EducoderApi } from "../../../services/educoder-api/index.js";
 import { RepositoryPath, TaskId } from "../flags.js";
 import { printJson, resolveLogin } from "../shared.js";
 
-export const passedCodeCommand = Command.make(
+export const PassedCode = Command.make(
   "passed-code",
   {
     taskId: TaskId,

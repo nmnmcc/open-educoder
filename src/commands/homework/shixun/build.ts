@@ -3,7 +3,7 @@ import { Command, Flag } from "effect/unstable/cli";
 import { CommitId, EnvironmentId, HomeworkId, SecKey, TabType, TaskId } from "../flags.js";
 import { buildRepositoryFile, inspectOptions, printJson, resolveHomeworkContext } from "../shared.js";
 
-export const buildCommand = Command.make(
+export const Build = Command.make(
   "build",
   {
     taskId: TaskId,

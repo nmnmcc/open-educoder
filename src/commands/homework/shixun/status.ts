@@ -4,7 +4,7 @@ import { EducoderApi } from "../../../services/educoder-api/index.js";
 import { HomeworkId, SecKey, TaskId } from "../flags.js";
 import { makeStatusRequest, printStatusResponse, resolveHomeworkContext } from "../shared.js";
 
-export const statusCommand = Command.make(
+export const Status = Command.make(
   "status",
   {
     taskId: TaskId,

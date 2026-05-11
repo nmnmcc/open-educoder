@@ -206,7 +206,7 @@ const formatSettingsResponse = (value: unknown) => {
   };
 };
 
-export const infoCommand = Command.make(
+export const Info = Command.make(
   "info",
   {
     homeworkId: HomeworkIdArgument,
@@ -245,7 +245,7 @@ export const infoCommand = Command.make(
   Command.withAlias("i"),
 );
 
-export const worksCommand = Command.make(
+export const Works = Command.make(
   "works",
   {
     courseId: CourseId,
@@ -291,7 +291,7 @@ export const worksCommand = Command.make(
   Command.withAlias("w"),
 );
 
-export const draftCommand = Command.make(
+export const Draft = Command.make(
   "draft",
   {
     courseId: CourseId,
@@ -336,7 +336,7 @@ export const draftCommand = Command.make(
   Command.withAlias("n"),
 );
 
-export const membersCommand = Command.make(
+export const Members = Command.make(
   "members",
   {
     courseId: CourseId,
@@ -393,7 +393,7 @@ export const membersCommand = Command.make(
   Command.withAlias("u"),
 );
 
-export const commentsCommand = Command.make(
+export const Comments = Command.make(
   "comments",
   {
     courseId: CourseId,
@@ -445,7 +445,7 @@ export const commentsCommand = Command.make(
   Command.withAlias("q"),
 );
 
-export const settingsCommand = Command.make(
+export const Settings = Command.make(
   "settings",
   {
     courseId: CourseId,
@@ -485,7 +485,7 @@ export const settingsCommand = Command.make(
   Command.withAlias("g"),
 );
 
-export const redoLogsCommand = Command.make(
+export const RedoLogs = Command.make(
   "redo-logs",
   {
     homeworkId: HomeworkIdArgument,

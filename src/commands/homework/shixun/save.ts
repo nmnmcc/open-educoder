@@ -10,7 +10,7 @@ import {
   saveRepositoryFile,
 } from "../shared.js";
 
-export const saveCommand = Command.make(
+export const Save = Command.make(
   "save",
   {
     taskId: TaskId,

@@ -4,7 +4,7 @@ import { EducoderApi } from "../../../services/educoder-api/index.js";
 import { EnvironmentId, HomeworkId, TaskId } from "../flags.js";
 import { inspectOptions, printJson, resolveHomeworkContext } from "../shared.js";
 
-export const pullFilesCommand = Command.make(
+export const PullFiles = Command.make(
   "pull-files",
   {
     taskId: TaskId,

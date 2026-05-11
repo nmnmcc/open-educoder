@@ -4,7 +4,7 @@ import { EducoderApi } from "../../../services/educoder-api/index.js";
 import { EnvironmentId, HomeworkId, TabType, TaskId } from "../flags.js";
 import { inspectOptions, printJson, resolveHomeworkContext } from "../shared.js";
 
-export const logOutputCommand = Command.make(
+export const LogOutput = Command.make(
   "log-output",
   {
     taskId: TaskId,

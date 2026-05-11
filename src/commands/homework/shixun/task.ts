@@ -3,7 +3,7 @@ import { Command, Flag } from "effect/unstable/cli";
 import { HomeworkId, TaskId } from "../flags.js";
 import { fetchTaskInfo, formatTaskInfo, inspectOptions, printJson, resolveLogin } from "../shared.js";
 
-export const taskCommand = Command.make(
+export const Task = Command.make(
   "task",
   {
     taskId: TaskId,

@@ -4,7 +4,7 @@ import { EducoderApi } from "../../../services/educoder-api/index.js";
 import { HomeworkId, TaskId } from "../flags.js";
 import { inspectOptions, printJson, resolveHomeworkContext } from "../shared.js";
 
-export const resetCommand = Command.make(
+export const Reset = Command.make(
   "reset",
   {
     taskId: TaskId,

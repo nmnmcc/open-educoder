@@ -7,14 +7,14 @@ import { ProxyAgent } from "proxy-agent";
 import { EducoderApi } from "./services/educoder-api/index.js";
 import { homedir } from "node:os";
 import path from "node:path";
-import { course } from "./commands/course.js";
-import { exam } from "./commands/exam.js";
-import { homework } from "./commands/homework/index.js";
-import { profile } from "./commands/profile.js";
+import { Course } from "./commands/course.js";
+import { Exam } from "./commands/exam.js";
+import { Homework } from "./commands/homework/index.js";
+import { Profile } from "./commands/profile.js";
 import { AppConfig } from "./services/config/index.js";
 import { AppContext } from "./services/context/index.js";
 
-const app = Command.make("open-educoder").pipe(
+const OpenEducoder = Command.make("open-educoder").pipe(
   Command.withDescription("Local CLI for authenticated Educoder workflows."),
   Command.withExamples([
     { command: "open-educoder profile list", description: "List saved login profiles" },
@@ -36,7 +36,7 @@ const app = Command.make("open-educoder").pipe(
     profile: Flag.string("profile").pipe(Flag.withDefault("default")),
     config: Flag.path("config").pipe(Flag.withDefault(path.join(homedir(), ".config", meta.name))),
   }),
-  Command.withSubcommands([profile, course, homework, exam]),
+  Command.withSubcommands([Profile, Course, Homework, Exam]),
   Command.provide(({ url, profile, config }) =>
     EducoderApi.layer(url).pipe(
       Layer.provideMerge(
@@ -65,7 +65,7 @@ const layer = Layer.mergeAll(
 );
 
 const program = Effect.gen(function* () {
-  return yield* Command.run(app, { version: meta.version }).pipe(Effect.provide(layer));
+  return yield* Command.run(OpenEducoder, { version: meta.version }).pipe(Effect.provide(layer));
 });
 
 NodeRuntime.runMain(program);

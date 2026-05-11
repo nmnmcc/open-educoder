@@ -128,7 +128,7 @@ const cleanupTemporaryDirectory = (directory: string) =>
     await rm(directory, { recursive: true, force: true }).catch(() => undefined);
   });
 
-export const editCommand = Command.make(
+export const Edit = Command.make(
   "edit",
   {
     taskId: TaskId,
