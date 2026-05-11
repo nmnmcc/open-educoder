@@ -1,11 +1,11 @@
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../../services/educoder-api/index.js";
-import { EnvironmentId, HomeworkId, TabType, TaskId } from "../flags.js";
-import { inspectOptions, printJson, resolveHomeworkContext } from "../shared.js";
+import { EducoderApi } from "../../../../services/educoder-api/index.js";
+import { EnvironmentId, HomeworkId, TabType, TaskId } from "../../flags.js";
+import { inspectOptions, printJson, resolveHomeworkContext } from "../../shared.js";
 
-export const LogOutput = Command.make(
-  "log-output",
+export const Logs = Command.make(
+  "logs",
   {
     taskId: TaskId,
     homeworkId: HomeworkId,
@@ -13,7 +13,7 @@ export const LogOutput = Command.make(
     tabType: TabType,
     json: Flag.boolean("json"),
   },
-  Effect.fn("homework.shixun.logOutput")(function* (input) {
+  Effect.fn("homework.shixun.logs")(function* (input) {
     const educoder = yield* EducoderApi;
     const { user, context } = yield* resolveHomeworkContext({
       taskId: input.taskId,
@@ -43,7 +43,7 @@ export const LogOutput = Command.make(
 
     yield* Console.dir(
       {
-        logOutput: response,
+        logs: response,
       },
       inspectOptions,
     );
@@ -52,7 +52,7 @@ export const LogOutput = Command.make(
   Command.withDescription("Fetch terminal or evaluation log output for a shixun homework environment."),
   Command.withExamples([
     {
-      command: "open-educoder homework shixun log-output sflmr2fxi4wn --homework-id 3487324 --env-id 1128633",
+      command: "open-educoder homework shixun logs sflmr2fxi4wn --homework-id 3487324 --env-id 1128633",
       description: "Fetch logs for the specified environment",
     },
   ]),

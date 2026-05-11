@@ -1,5 +1,6 @@
 import { Console, Data, Effect, Option } from "effect";
 import { Argument, Command, Flag } from "effect/unstable/cli";
+import { AppContext } from "../services/context/index.js";
 import { EducoderApi } from "../services/educoder-api/index.js";
 import { inspectOptions } from "../utils/inspect-options.js";
 
@@ -94,8 +95,8 @@ const resolveLogin = Effect.fn("exam.resolveLogin")(function* (login: Option.Opt
     return login.value;
   }
 
-  const educoder = yield* EducoderApi;
-  const user = yield* educoder.User.getInfo();
+  const ctx = yield* AppContext;
+  const user = yield* ctx.user;
 
   return user.login;
 });

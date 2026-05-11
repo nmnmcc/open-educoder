@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import { readFile } from "node:fs/promises";
 import { Console, Data, Effect, Option } from "effect";
+import { AppContext } from "../../services/context/index.js";
 import { EducoderApi } from "../../services/educoder-api/index.js";
 import { inspectOptions } from "../../utils/inspect-options.js";
 
@@ -29,8 +30,8 @@ export type TaskContext = {
 export const printJson = (value: unknown) => Console.log(JSON.stringify(value, null, 2));
 
 export const resolveCurrentUser = Effect.fn("homework.resolveCurrentUser")(function* () {
-  const educoder = yield* EducoderApi;
-  const user = yield* educoder.User.getInfo();
+  const ctx = yield* AppContext;
+  const user = yield* ctx.user;
 
   return {
     login: user.login,

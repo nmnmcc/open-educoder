@@ -1,18 +1,18 @@
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../../services/educoder-api/index.js";
-import { EnvironmentId, HomeworkId, TaskId } from "../flags.js";
-import { inspectOptions, printJson, resolveHomeworkContext } from "../shared.js";
+import { EducoderApi } from "../../../../services/educoder-api/index.js";
+import { EnvironmentId, HomeworkId, TaskId } from "../../flags.js";
+import { inspectOptions, printJson, resolveHomeworkContext } from "../../shared.js";
 
-export const CommitFiles = Command.make(
-  "commit-files",
+export const Pull = Command.make(
+  "pull",
   {
     taskId: TaskId,
     homeworkId: HomeworkId,
     envId: EnvironmentId,
     json: Flag.boolean("json"),
   },
-  Effect.fn("homework.shixun.commitFiles")(function* (input) {
+  Effect.fn("homework.shixun.pull")(function* (input) {
     const educoder = yield* EducoderApi;
     const { user, context } = yield* resolveHomeworkContext({
       taskId: input.taskId,
@@ -20,7 +20,7 @@ export const CommitFiles = Command.make(
       envId: input.envId,
       tabType: 1,
     });
-    const response = yield* educoder.Task.commitFiles({
+    const response = yield* educoder.Task.pullFiles({
       params: {
         taskId: input.taskId,
       },
@@ -36,18 +36,18 @@ export const CommitFiles = Command.make(
 
     yield* Console.dir(
       {
-        commitFiles: response,
+        pull: response,
       },
       inspectOptions,
     );
   }),
 ).pipe(
-  Command.withDescription("Commit repository files for a shixun homework environment."),
+  Command.withDescription("Pull repository files from Educoder for a shixun homework environment."),
   Command.withExamples([
     {
-      command: "open-educoder homework shixun commit-files sflmr2fxi4wn --homework-id 3487324 --env-id 1128633",
-      description: "Commit files for the specified environment",
+      command: "open-educoder homework shixun pull sflmr2fxi4wn --homework-id 3487324 --env-id 1128633",
+      description: "Pull files for the specified environment",
     },
   ]),
-  Command.withAlias("C"),
+  Command.withAlias("P"),
 );

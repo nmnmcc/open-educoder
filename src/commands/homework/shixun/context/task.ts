@@ -1,7 +1,7 @@
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { HomeworkId, TaskId } from "../flags.js";
-import { fetchTaskInfo, formatTaskInfo, inspectOptions, printJson, resolveLogin } from "../shared.js";
+import { HomeworkId, TaskId } from "../../flags.js";
+import { fetchTaskInfo, formatTaskInfo, inspectOptions, printJson, resolveLogin } from "../../shared.js";
 
 export const Task = Command.make(
   "task",

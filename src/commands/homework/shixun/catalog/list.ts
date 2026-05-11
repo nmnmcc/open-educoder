@@ -1,8 +1,8 @@
 import { Console, Effect, Option } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../../services/educoder-api/index.js";
-import { CourseId, HomeworkSortByChoices, HomeworkTypeCode, PositiveInteger, SortDirectionChoices } from "../flags.js";
-import { formatLabels, formatOperation, inspectOptions, printJson, resolveLogin } from "../shared.js";
+import { EducoderApi } from "../../../../services/educoder-api/index.js";
+import { CourseId, HomeworkSortByChoices, HomeworkTypeCode, PositiveInteger, SortDirectionChoices } from "../../flags.js";
+import { formatLabels, formatOperation, inspectOptions, printJson, resolveLogin } from "../../shared.js";
 
 export const List = Command.make(
   "list",

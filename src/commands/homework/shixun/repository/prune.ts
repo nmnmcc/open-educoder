@@ -1,17 +1,17 @@
 import { Console, Effect, Option } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../../services/educoder-api/index.js";
-import { HomeworkId, TaskId } from "../flags.js";
-import { inspectOptions, printJson, resolveHomeworkContext } from "../shared.js";
+import { EducoderApi } from "../../../../services/educoder-api/index.js";
+import { HomeworkId, TaskId } from "../../flags.js";
+import { inspectOptions, printJson, resolveHomeworkContext } from "../../shared.js";
 
-export const PruneVersions = Command.make(
-  "prune-versions",
+export const Prune = Command.make(
+  "prune",
   {
     taskId: TaskId,
     homeworkId: HomeworkId,
     json: Flag.boolean("json"),
   },
-  Effect.fn("homework.shixun.pruneVersions")(function* (input) {
+  Effect.fn("homework.shixun.prune")(function* (input) {
     const educoder = yield* EducoderApi;
     const { user, context } = yield* resolveHomeworkContext({
       taskId: input.taskId,
@@ -34,7 +34,7 @@ export const PruneVersions = Command.make(
 
     yield* Console.dir(
       {
-        pruneVersions: response,
+        prune: response,
       },
       inspectOptions,
     );
@@ -43,7 +43,7 @@ export const PruneVersions = Command.make(
   Command.withDescription("Delete expired repository versions for a shixun homework when Educoder marks them expired."),
   Command.withExamples([
     {
-      command: "open-educoder homework shixun prune-versions sflmr2fxi4wn --homework-id 3487324",
+      command: "open-educoder homework shixun prune sflmr2fxi4wn --homework-id 3487324",
       description: "Run Educoder's expired repository version cleanup",
     },
   ]),

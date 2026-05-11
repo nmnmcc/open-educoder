@@ -1,8 +1,8 @@
 import { Effect, Option } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../../services/educoder-api/index.js";
-import { HomeworkId, SecKey, TaskId } from "../flags.js";
-import { makeStatusRequest, printStatusResponse, resolveHomeworkContext } from "../shared.js";
+import { EducoderApi } from "../../../../services/educoder-api/index.js";
+import { HomeworkId, SecKey, TaskId } from "../../flags.js";
+import { makeStatusRequest, printStatusResponse, resolveHomeworkContext } from "../../shared.js";
 
 export const Status = Command.make(
   "status",

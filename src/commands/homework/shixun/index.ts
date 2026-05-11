@@ -1,21 +1,5 @@
 import { Command } from "effect/unstable/cli";
-import { Build } from "./build.js";
-import { CommitFiles } from "./commit-files.js";
-import { Content } from "./content.js";
-import { Edit } from "./edit.js";
-import { Evaluate } from "./evaluate.js";
-import { List } from "./list.js";
-import { LogOutput } from "./log-output.js";
-import { PassedCode } from "./passed-code.js";
-import { PruneVersions } from "./prune-versions.js";
-import { PullFiles } from "./pull-files.js";
-import { RemainingTime } from "./remaining-time.js";
-import { Repository } from "./repository.js";
-import { Reset } from "./reset.js";
-import { Save } from "./save.js";
-import { Status } from "./status.js";
-import { Task } from "./task.js";
-import { Ssh } from "./ssh.js";
+import { ShixunSubcommands } from "./subcommands.js";
 
 export const Shixun = Command.make("shixun").pipe(
   Command.withDescription("Inspect and operate Educoder shixun homework task files, repositories, and evaluations."),
@@ -29,8 +13,7 @@ export const Shixun = Command.make("shixun").pipe(
       description: "Read a task repository file",
     },
     {
-      command:
-        "open-educoder homework shixun evaluate sflmr2fxi4wn case1/code.sh --homework-id 3487324 --file ./code.sh --poll",
+      command: "open-educoder homework shixun evaluate sflmr2fxi4wn case1/code.sh --homework-id 3487324 --file ./code.sh --poll",
       description: "Save a file and poll the evaluation status",
     },
     {
@@ -39,23 +22,5 @@ export const Shixun = Command.make("shixun").pipe(
     },
   ]),
   Command.withAlias("x"),
-  Command.withSubcommands([
-    List,
-    Task,
-    Content,
-    Repository,
-    PassedCode,
-    Edit,
-    Save,
-    Build,
-    Status,
-    Evaluate,
-    LogOutput,
-    CommitFiles,
-    PullFiles,
-    Reset,
-    RemainingTime,
-    PruneVersions,
-    Ssh,
-  ]),
+  Command.withSubcommands(ShixunSubcommands),
 );

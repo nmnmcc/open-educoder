@@ -1,18 +1,18 @@
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../../services/educoder-api/index.js";
-import { EnvironmentId, HomeworkId, TaskId } from "../flags.js";
-import { inspectOptions, printJson, resolveHomeworkContext } from "../shared.js";
+import { EducoderApi } from "../../../../services/educoder-api/index.js";
+import { EnvironmentId, HomeworkId, TaskId } from "../../flags.js";
+import { inspectOptions, printJson, resolveHomeworkContext } from "../../shared.js";
 
-export const PullFiles = Command.make(
-  "pull-files",
+export const Commit = Command.make(
+  "commit",
   {
     taskId: TaskId,
     homeworkId: HomeworkId,
     envId: EnvironmentId,
     json: Flag.boolean("json"),
   },
-  Effect.fn("homework.shixun.pullFiles")(function* (input) {
+  Effect.fn("homework.shixun.commit")(function* (input) {
     const educoder = yield* EducoderApi;
     const { user, context } = yield* resolveHomeworkContext({
       taskId: input.taskId,
@@ -20,7 +20,7 @@ export const PullFiles = Command.make(
       envId: input.envId,
       tabType: 1,
     });
-    const response = yield* educoder.Task.pullFiles({
+    const response = yield* educoder.Task.commitFiles({
       params: {
         taskId: input.taskId,
       },
@@ -36,18 +36,18 @@ export const PullFiles = Command.make(
 
     yield* Console.dir(
       {
-        pullFiles: response,
+        commit: response,
       },
       inspectOptions,
     );
   }),
 ).pipe(
-  Command.withDescription("Pull repository files from Educoder for a shixun homework environment."),
+  Command.withDescription("Commit repository files for a shixun homework environment."),
   Command.withExamples([
     {
-      command: "open-educoder homework shixun pull-files sflmr2fxi4wn --homework-id 3487324 --env-id 1128633",
-      description: "Pull files for the specified environment",
+      command: "open-educoder homework shixun commit sflmr2fxi4wn --homework-id 3487324 --env-id 1128633",
+      description: "Commit files for the specified environment",
     },
   ]),
-  Command.withAlias("P"),
+  Command.withAlias("C"),
 );

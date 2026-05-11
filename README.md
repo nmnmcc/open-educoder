@@ -24,7 +24,7 @@ yarn cli homework shixun list MOAPGNLO --category 1213302 --search 123 --status 
 yarn cli homework shixun task sflmr2fxi4wn --homework-id 3487324
 yarn cli homework shixun content sflmr2fxi4wn case1/code.sh --homework-id 3487324
 yarn cli homework shixun repository sflmr2fxi4wn --homework-id 3487324 --path case1
-yarn cli homework shixun passed-code sflmr2fxi4wn case1/code.sh
+yarn cli homework shixun passed sflmr2fxi4wn case1/code.sh
 yarn cli homework shixun edit sflmr2fxi4wn case1/code.sh --homework-id 3487324
 yarn cli homework shixun save sflmr2fxi4wn case1/code.sh --homework-id 3487324 --file ./code.sh
 yarn cli homework shixun evaluate sflmr2fxi4wn case1/code.sh --homework-id 3487324 --file ./code.sh --poll
@@ -50,7 +50,7 @@ Uppercase aliases indicate operations that may cause irreversible side effects.
 - `course` -> `c`; `list` -> `l`; `info` -> `i`; `modules` -> `m`
 - `homework` -> `h`; `common` -> `c`; `shixun` -> `x`
 - `homework common`: `list` -> `l`; `info` -> `i`; `works` -> `w`; `draft` -> `n`; `members` -> `u`; `comments` -> `q`; `settings` -> `g`; `redo-logs` -> `d`
-- `homework shixun`: `list` -> `l`; `task` -> `t`; `content` -> `c`; `repository` -> `f`; `passed-code` -> `a`; `edit` -> `D`; `save` -> `S`; `build` -> `B`; `status` -> `s`; `evaluate` -> `E`; `log-output` -> `o`; `commit-files` -> `C`; `pull-files` -> `P`; `reset` -> `R`; `remaining-time` -> `m`; `prune-versions` -> `V`; `ssh` -> `r`
+- `homework shixun`: `list` -> `l`; `task` -> `t`; `content` -> `c`; `repository` -> `f`; `passed` -> `a`; `edit` -> `D`; `save` -> `S`; `build` -> `B`; `status` -> `s`; `evaluate` -> `E`; `logs` -> `o`; `commit` -> `C`; `pull` -> `P`; `reset` -> `R`; `remaining-time` -> `m`; `prune` -> `V`; `ssh` -> `r`
 - `exam` -> `e`; `list` -> `l`; `info` -> `i`; `start` -> `S`; `show` -> `H`; `submit` -> `U`; `answer` -> `A`
 - `exam answer`: `single` -> `S`; `multiple` -> `M`; `text` -> `T`
 

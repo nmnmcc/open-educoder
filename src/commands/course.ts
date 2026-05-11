@@ -1,5 +1,6 @@
 import { Console, Effect } from "effect";
 import { Argument, Command, Flag } from "effect/unstable/cli";
+import { AppContext } from "../services/context/index.js";
 import { EducoderApi } from "../services/educoder-api/index.js";
 import { inspectOptions } from "../utils/inspect-options.js";
 
@@ -18,8 +19,8 @@ const CourseId = Argument.string("course-id");
 const printJson = (value: unknown) => Console.log(JSON.stringify(value, null, 2));
 
 const resolveLogin = Effect.fn("course.resolveLogin")(function* () {
-  const educoder = yield* EducoderApi;
-  const user = yield* educoder.User.getInfo();
+  const ctx = yield* AppContext;
+  const user = yield* ctx.user;
 
   return user.login;
 });
@@ -47,8 +48,7 @@ const List = Command.make(
   },
   Effect.fn("course.list")(function* (input) {
     const educoder = yield* EducoderApi;
-    const user = yield* educoder.User.getInfo();
-    const login = user.login;
+    const login = yield* resolveLogin();
     const status = input.status === "all" ? undefined : input.status;
     const category = input.category === "" ? undefined : input.category;
 

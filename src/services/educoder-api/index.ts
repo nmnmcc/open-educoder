@@ -1,17 +1,21 @@
 import { Context, Effect, Layer, Ref } from "effect";
 import { Cookies, HttpClient, HttpClientRequest } from "effect/unstable/http";
 import { HttpApiClient } from "effect/unstable/httpapi";
-import { AppContext } from "../context/index.js";
+import type { AppConfigState } from "../config/index.js";
 import { makeEducoderHeaders } from "./headers.js";
 import { Interfaces } from "./interfaces/index.js";
 
+export interface EducoderApiConfig {
+  readonly url?: string | URL | undefined;
+  readonly profile: string;
+  readonly config: AppConfigState;
+}
+
 export class EducoderApi extends Context.Service<EducoderApi>()("open-educoder/services/educoder-api/EducoderApi", {
-  make: (baseUrl?: string | URL | undefined) =>
+  make: ({ url: baseUrl, profile, config }: EducoderApiConfig) =>
     Effect.gen(function* () {
-      const ctx = yield* AppContext;
       const httpClient = yield* HttpClient.HttpClient;
-      const state = ctx.config;
-      const cookiesRef = yield* Ref.make(state.profile[ctx.profile]?.cookies ?? Cookies.empty);
+      const cookiesRef = yield* Ref.make(config.profile[profile]?.cookies ?? Cookies.empty);
       const educoderHttpClient = httpClient.pipe(
         HttpClient.withCookiesRef(cookiesRef),
         HttpClient.mapRequestEffect((request) =>
@@ -29,6 +33,5 @@ export class EducoderApi extends Context.Service<EducoderApi>()("open-educoder/s
       });
     }),
 }) {
-  public static readonly layer = (baseUrl?: string | URL | undefined) =>
-    Layer.effect(EducoderApi, EducoderApi.make(baseUrl));
+  public static readonly layer = (config: EducoderApiConfig) => Layer.effect(EducoderApi, EducoderApi.make(config));
 }

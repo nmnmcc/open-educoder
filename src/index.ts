@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import meta from "../package.json" with { type: "json" };
 import { NodeHttpClient, NodeRuntime, NodeServices } from "@effect/platform-node";
-import { Effect, Layer } from "effect";
+import { Context, Effect, Layer } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 import { ProxyAgent } from "proxy-agent";
 import { EducoderApi } from "./services/educoder-api/index.js";
@@ -38,22 +38,24 @@ const OpenEducoder = Command.make("open-educoder").pipe(
   }),
   Command.withSubcommands([Profile, Course, Homework, Exam]),
   Command.provide(({ url, profile, config }) =>
-    EducoderApi.layer(url).pipe(
-      Layer.provideMerge(
-        Layer.effect(
-          AppContext,
-          AppConfig.use((config) =>
-            config.read.pipe(
-              Effect.map((state) => ({
-                url,
-                profile,
-                config: state,
-              })),
-            ),
-          ),
-        ).pipe(Layer.provideMerge(AppConfig.layer(config))),
+    Layer.effectContext(
+      AppConfig.use((appConfig) =>
+        Effect.gen(function* () {
+          const state = yield* appConfig.read;
+          const educoder = yield* EducoderApi.make({ url, profile, config: state });
+          const user = yield* Effect.cached(educoder.User.getInfo());
+
+          return Context.make(EducoderApi, educoder).pipe(
+            Context.add(AppContext, {
+              url,
+              profile,
+              config: state,
+              user,
+            }),
+          );
+        }),
       ),
-    ),
+    ).pipe(Layer.provideMerge(AppConfig.layer(config))),
   ),
 );
 

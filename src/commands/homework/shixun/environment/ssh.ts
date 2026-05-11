@@ -1,9 +1,9 @@
 import { Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process";
-import { EducoderApi } from "../../../services/educoder-api/index.js";
-import { EnvironmentId, HomeworkId, TaskId, TerminalTabType } from "../flags.js";
-import { asRecord, failInput, printJson, resolveHomeworkContext, stringField } from "../shared.js";
+import { EducoderApi } from "../../../../services/educoder-api/index.js";
+import { EnvironmentId, HomeworkId, TaskId, TerminalTabType } from "../../flags.js";
+import { asRecord, failInput, printJson, resolveHomeworkContext, stringField } from "../../shared.js";
 
 const parsePort = (value: unknown) => {
   const port = typeof value === "number" ? value : typeof value === "string" ? Number.parseInt(value, 10) : Number.NaN;

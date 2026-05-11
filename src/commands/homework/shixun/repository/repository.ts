@@ -1,8 +1,8 @@
 import { Console, Effect, Option } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../../services/educoder-api/index.js";
-import { HomeworkId, TaskId } from "../flags.js";
-import { inspectOptions, printJson, resolveHomeworkContext } from "../shared.js";
+import { EducoderApi } from "../../../../services/educoder-api/index.js";
+import { HomeworkId, TaskId } from "../../flags.js";
+import { inspectOptions, printJson, resolveHomeworkContext } from "../../shared.js";
 
 export const Repository = Command.make(
   "repository",

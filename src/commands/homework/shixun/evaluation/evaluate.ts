@@ -9,7 +9,7 @@ import {
   RepositoryPath,
   TabType,
   TaskId,
-} from "../flags.js";
+} from "../../flags.js";
 import {
   buildRepositoryFile,
   failInput,
@@ -20,7 +20,7 @@ import {
   readContent,
   resolveHomeworkContext,
   saveRepositoryFile,
-} from "../shared.js";
+} from "../../shared.js";
 
 export const Evaluate = Command.make(
   "evaluate",

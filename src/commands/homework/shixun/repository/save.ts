@@ -1,6 +1,6 @@
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { Content, ContentFile, EnvironmentId, HomeworkId, RepositoryPath, TabType, TaskId } from "../flags.js";
+import { Content, ContentFile, EnvironmentId, HomeworkId, RepositoryPath, TabType, TaskId } from "../../flags.js";
 import {
   formatSaveResponse,
   inspectOptions,
@@ -8,7 +8,7 @@ import {
   readContent,
   resolveHomeworkContext,
   saveRepositoryFile,
-} from "../shared.js";
+} from "../../shared.js";
 
 export const Save = Command.make(
   "save",

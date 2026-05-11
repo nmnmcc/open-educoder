@@ -142,13 +142,7 @@ const Remove = Command.make(
       });
     }
 
-    const educoder = yield* EducoderApi.make(profile.url).pipe(
-      Effect.provideService(AppContext, {
-        ...ctx,
-        url: profile.url.href,
-        profile: input.name,
-      }),
-    );
+    const educoder = yield* EducoderApi.make({ url: profile.url, profile: input.name, config: state });
     const user = yield* educoder.User.getInfo();
     const response = yield* educoder.Account.logout({
       query: {
