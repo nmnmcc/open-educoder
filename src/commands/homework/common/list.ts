@@ -1,8 +1,8 @@
-import { Console, Effect, Option } from "effect";
+import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../../services/educoder-api/index.js";
-import { CourseId, HomeworkSortByChoices, HomeworkTypeCode, PositiveInteger, SortDirectionChoices } from "../flags.js";
-import { formatLabels, inspectOptions, printJson, resolveLogin } from "../shared.js";
+import { HomeworkCommonFeature } from "../../../services/features/homework/common.js";
+import { CourseId, HomeworkSortByChoices, PositiveInteger, SortDirectionChoices } from "../flags.js";
+import { inspectOptions, optionToUndefined, printJson } from "../shared.js";
 
 export const List = Command.make(
   "list",
@@ -19,82 +19,28 @@ export const List = Command.make(
     json: Flag.boolean("json"),
   },
   Effect.fn("homework.common.list")(function* (input) {
-    const educoder = yield* EducoderApi;
-    const login = yield* resolveLogin();
-    const order = Option.isSome(input.order) ? input.order.value : input.status;
-    const search = Option.isSome(input.search) ? input.search.value : undefined;
-    const sortBy = Option.isSome(input.sortBy) ? input.sortBy.value : undefined;
-    const sortDirection = Option.isSome(input.sortDirection) ? input.sortDirection.value : undefined;
-    const response = yield* educoder.Course.homeworkCommons({
-      params: {
-        courseId: input.courseId,
-      },
-      query: {
-        coursesId: input.courseId,
-        id: input.courseId,
-        limit: input.limit,
-        type: HomeworkTypeCode.common,
-        status: input.status,
-        category: Option.isSome(input.category) ? input.category.value : undefined,
-        page: input.page,
-        order,
-        search,
-        sort_by: sortBy,
-        sort_direction: sortDirection,
-        zzud: login,
-      },
+    const homeworkCommonFeature = yield* HomeworkCommonFeature;
+    const result = yield* homeworkCommonFeature.list({
+      courseId: input.courseId,
+      category: optionToUndefined(input.category),
+      status: input.status,
+      page: input.page,
+      limit: input.limit,
+      order: optionToUndefined(input.order),
+      search: optionToUndefined(input.search),
+      sortBy: optionToUndefined(input.sortBy),
+      sortDirection: optionToUndefined(input.sortDirection),
     });
 
     if (input.json) {
-      return yield* printJson(response);
+      return yield* printJson(result.raw);
     }
 
-    if (response.homeworks.length === 0) {
+    if (result.raw.homeworks.length === 0) {
       return yield* Console.log("No common homeworks found.");
     }
 
-    yield* Console.dir(
-      {
-        filters: {
-          status: input.status,
-          order,
-          search: search ?? null,
-          sortBy: sortBy ?? null,
-          sortDirection: sortDirection ?? null,
-        },
-        category: {
-          id: response.category_id,
-          name: response.category_name ?? response.main_category_name,
-          total: response.query_total_count,
-          published: response.published_count,
-          unpublished: response.unpublished_count,
-        },
-        homeworks: Object.fromEntries(
-          response.homeworks.map((item) => [
-            item.homework_id,
-            {
-              name: item.name,
-              category: item.upper_category_name ?? response.category_name,
-              status: formatLabels(item.status),
-              statusTime: item.status_time,
-              timeStatus: item.time_status,
-              allowLate: item.allow_late,
-              author: item.author,
-              created: item.created_at,
-              publishTime: item.publish_time,
-              endTime: item.end_time,
-              lateTime: item.late_time,
-              studentWorkId: item.student_work_id,
-              workId: item.work_id,
-              workStatus: item.work_status === undefined ? null : formatLabels(item.work_status),
-              uncommitted: item.un_commit_work,
-              labStatus: item.lab_status,
-            },
-          ]),
-        ),
-      },
-      inspectOptions,
-    );
+    yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
   Command.withDescription("List common homeworks with the filters Educoder uses in the homework page."),

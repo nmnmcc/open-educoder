@@ -1,31 +1,9 @@
 import { Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process";
-import { EducoderApi } from "../../../../services/educoder-api/index.js";
+import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
 import { EnvironmentId, HomeworkId, TaskId, TerminalTabType } from "../../flags.js";
-import { asRecord, failInput, printJson, resolveHomeworkContext, stringField } from "../../shared.js";
-
-const parsePort = (value: unknown) => {
-  const port = typeof value === "number" ? value : typeof value === "string" ? Number.parseInt(value, 10) : Number.NaN;
-
-  return Number.isInteger(port) && port >= 1 && port <= 65535 ? port : null;
-};
-
-const resolveSshArgs = (value: unknown) => {
-  const root = asRecord(value);
-  const data = asRecord(root?.["data"]) ?? root;
-  const host = stringField(data, "ssh_address") ?? stringField(data, "sshAddress") ?? stringField(data, "host");
-  const user = stringField(data, "username") ?? stringField(data, "user") ?? stringField(data, "login");
-  const port = parsePort(data?.["port"]);
-
-  if (host === null) {
-    return failInput("Cannot infer SSH target from terminal start response. Re-run with --json to inspect it.");
-  }
-
-  const target = user === null ? host : `${user}@${host}`;
-
-  return Effect.succeed(port === null ? [target] : ["-p", String(port), target]);
-};
+import { optionToUndefined, printJson } from "../../shared.js";
 
 const runSsh = Effect.fn("homework.shixun.ssh.runSsh")(function* (args: ReadonlyArray<string>) {
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
@@ -55,33 +33,22 @@ export const Ssh = Command.make(
     json: Flag.boolean("json"),
   },
   Effect.fn("homework.shixun.ssh")(function* (input) {
-    const educoder = yield* EducoderApi;
-    const { user, context } = yield* resolveHomeworkContext({
+    const homeworkShixunFeature = yield* HomeworkShixunFeature;
+    const result = yield* homeworkShixunFeature.startSsh({
       taskId: input.taskId,
       homeworkId: input.homeworkId,
-      envId: input.envId,
+      envId: optionToUndefined(input.envId),
       tabType: input.tabType,
-    });
-    const response = yield* educoder.Myshixun.start({
-      params: {
-        myshixunId: context.myshixunIdentifier,
-      },
-      query: {
-        shixun_environment_id: context.environmentId,
-        tab_type: input.tabType,
-        game_id: context.gameId,
-        homework_common_id: input.homeworkId,
-        zzud: user.login,
-      },
+      resolveArgs: !input.json,
     });
 
     if (input.json) {
-      return yield* printJson(response);
+      return yield* printJson(result.raw);
     }
 
-    const sshArgs = yield* resolveSshArgs(response);
-
-    yield* runSsh(sshArgs);
+    if (result.view.sshArgs !== null) {
+      yield* runSsh(result.view.sshArgs);
+    }
   }),
 ).pipe(
   Command.withDescription("Start an SSH session for a shixun homework environment."),

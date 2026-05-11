@@ -5,6 +5,7 @@ import { Context, Effect, Layer } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 import { ProxyAgent } from "proxy-agent";
 import { EducoderApi } from "./services/educoder-api/index.js";
+import { FeatureLayer } from "./services/features/index.js";
 import { homedir } from "node:os";
 import path from "node:path";
 import { Course } from "./commands/course.js";
@@ -37,8 +38,8 @@ const OpenEducoder = Command.make("open-educoder").pipe(
     config: Flag.path("config").pipe(Flag.withDefault(path.join(homedir(), ".config", meta.name))),
   }),
   Command.withSubcommands([Profile, Course, Homework, Exam]),
-  Command.provide(({ url, profile, config }) =>
-    Layer.effectContext(
+  Command.provide(({ url, profile, config }) => {
+    const appLayer = Layer.effectContext(
       AppConfig.use((appConfig) =>
         Effect.gen(function* () {
           const state = yield* appConfig.read;
@@ -55,8 +56,10 @@ const OpenEducoder = Command.make("open-educoder").pipe(
           );
         }),
       ),
-    ).pipe(Layer.provideMerge(AppConfig.layer(config))),
-  ),
+    ).pipe(Layer.provideMerge(AppConfig.layer(config)));
+
+    return FeatureLayer.pipe(Layer.provideMerge(appLayer));
+  }),
 );
 
 const layer = Layer.mergeAll(

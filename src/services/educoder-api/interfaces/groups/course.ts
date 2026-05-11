@@ -6,7 +6,8 @@ const IdFromString = Schema.NumberFromString.pipe(Schema.check(Schema.isInt()));
 const NullableString = Schema.NullishOr(Schema.String);
 const NullableNumber = Schema.NullishOr(Schema.Number);
 const NullableBoolean = Schema.NullishOr(Schema.Boolean);
-const JsonArray = Schema.Array(Schema.Json);
+const EmptyArray = Schema.Array(Schema.Never);
+const TaskOperationItem = Schema.Union([Schema.String, Schema.Boolean]);
 const CourseRequestParams = {
   courseId: NonEmptyString,
 };
@@ -15,7 +16,7 @@ const CourseRequestQuery = {
   zzud: NonEmptyString,
 };
 /*
-.sample/course2.har: GET /api/courses/MOAPGNLO/left_banner.json
+Sample: GET /api/courses/MOAPGNLO/left_banner.json
 {
   "root_id": 1809404,
   "name": "<module name>",
@@ -30,15 +31,15 @@ const CourseRequestQuery = {
 const Category = Schema.Struct({
   root_id: Schema.optionalKey(Schema.Int),
   name: Schema.optionalKey(Schema.String),
-  category_id: Schema.Int,
+  category_id: Schema.NullOr(Schema.Int),
   category_name: Schema.String,
   position: Schema.optionalKey(Schema.Int),
   category_type: Schema.optionalKey(Schema.String),
   second_category_url: Schema.optionalKey(Schema.String),
-  third_category: Schema.optionalKey(JsonArray),
+  third_category: Schema.optionalKey(EmptyArray),
 });
 /*
-.sample/course2.har: GET /api/courses/MOAPGNLO/homework_commons.json
+Sample: GET /api/courses/MOAPGNLO/homework_commons.json
 {
   "is_archive": false,
   "related_poll": false,
@@ -101,13 +102,13 @@ const Homework = Schema.Struct({
   shixun_identifier: Schema.optionalKey(Schema.String),
   shixun_status: Schema.optionalKey(Schema.Int),
   shixun_name: Schema.optionalKey(Schema.String),
-  schools: Schema.optionalKey(JsonArray),
+  schools: Schema.optionalKey(EmptyArray),
   opening_time: Schema.optionalKey(NullableString),
   is_enter_shixun: Schema.optionalKey(Schema.Boolean),
   shixun_enter_status: Schema.optionalKey(Schema.Int),
-  shixun_marks: Schema.optionalKey(JsonArray),
+  shixun_marks: Schema.optionalKey(EmptyArray),
   redo: Schema.optionalKey(Schema.Boolean),
-  task_operation: Schema.optionalKey(JsonArray),
+  task_operation: Schema.optionalKey(Schema.Array(TaskOperationItem)),
   shixun_finished_status: Schema.optionalKey(Schema.Int),
   student_passed_time: Schema.optionalKey(Schema.String),
   is_jupyter: Schema.optionalKey(Schema.Boolean),
@@ -123,7 +124,7 @@ const Homework = Schema.Struct({
   student_work_id: Schema.Int,
 });
 /*
-.sample/course2.har: GET /api/courses/MOAPGNLO/homework_commons.json
+Sample: GET /api/courses/MOAPGNLO/homework_commons.json
 {
   "course_identity": 5,
   "homework_type": 1,
@@ -170,7 +171,7 @@ const HomeworkCommonsResponse = Schema.Struct({
   shixun_total_count: Schema.Int,
 });
 /*
-.sample/course2.har: GET /api/v2/courses/MOAPGNLO/exercises.json
+Sample: GET /api/v2/courses/MOAPGNLO/exercises.json
 {
   "id": 198086,
   "exercise_name": "<exercise name>",
@@ -251,6 +252,22 @@ const ExerciseSummary = Schema.Struct({
   open_appraise: Schema.Boolean,
 });
 
+/*
+Sample: GET /api/courses/MOAPGNLO/left_banner.json
+{
+  "id": 1938853,
+  "name": "<module name>",
+  "type": "teaching_plan",
+  "position": 13
+}
+*/
+const HiddenModule = Schema.Struct({
+  id: Schema.Int,
+  name: Schema.String,
+  type: Schema.String,
+  position: Schema.Int,
+});
+
 export const Course = HttpApiGroup.make("Course")
   .add(
     HttpApiEndpoint.get("list", "/api/users/:username/courses.json", {
@@ -268,7 +285,7 @@ export const Course = HttpApiGroup.make("Course")
         zzud: NonEmptyString,
       },
       /*
-      .sample: no captured /api/users/:username/courses.json response.
+      Sample unavailable: no captured /api/users/:username/courses.json response.
       */
       success: Schema.Struct({
         count: Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(0))),
@@ -313,7 +330,7 @@ export const Course = HttpApiGroup.make("Course")
       params: CourseRequestParams,
       query: CourseRequestQuery,
       /*
-      .sample/course2.har: GET /api/courses/MOAPGNLO/top_banner.json
+      Sample: GET /api/courses/MOAPGNLO/top_banner.json
       {
         "copy_completed": true,
         "is_natural_language_data": false,
@@ -420,7 +437,7 @@ export const Course = HttpApiGroup.make("Course")
       params: CourseRequestParams,
       query: CourseRequestQuery,
       /*
-      .sample/course2.har: GET /api/courses/MOAPGNLO/left_banner.json
+      Sample: GET /api/courses/MOAPGNLO/left_banner.json
       {
         "is_teacher": false,
         "course_modules": [
@@ -455,11 +472,11 @@ export const Course = HttpApiGroup.make("Course")
             type: Schema.String,
             position: Schema.Int,
             main_id: Schema.Int,
-            category_url: Schema.String,
+            category_url: NullableString,
             second_category: Schema.optionalKey(Schema.Array(Category)),
           }),
         ),
-        hidden_modules: Schema.Array(Schema.Json),
+        hidden_modules: Schema.Array(HiddenModule),
       }),
     }),
   )
@@ -495,7 +512,7 @@ export const Course = HttpApiGroup.make("Course")
         zzud: NonEmptyString,
       },
       /*
-      .sample/course2.har: GET /api/v2/courses/MOAPGNLO/exercises.json
+      Sample: GET /api/v2/courses/MOAPGNLO/exercises.json
       {
         "status": 0,
         "message": "响应成功",

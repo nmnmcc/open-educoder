@@ -1,8 +1,8 @@
-import { Console, Effect, Option } from "effect";
+import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../../../services/educoder-api/index.js";
+import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
 import { HomeworkId, TaskId } from "../../flags.js";
-import { inspectOptions, printJson, resolveHomeworkContext } from "../../shared.js";
+import { inspectOptions, printJson } from "../../shared.js";
 
 export const Reset = Command.make(
   "reset",
@@ -12,36 +12,17 @@ export const Reset = Command.make(
     json: Flag.boolean("json"),
   },
   Effect.fn("homework.shixun.reset")(function* (input) {
-    const educoder = yield* EducoderApi;
-    const { user, context } = yield* resolveHomeworkContext({
+    const homeworkShixunFeature = yield* HomeworkShixunFeature;
+    const result = yield* homeworkShixunFeature.resetRepository({
       taskId: input.taskId,
       homeworkId: input.homeworkId,
-      envId: Option.none(),
-      tabType: 1,
-    });
-    const response = yield* educoder.Myshixun.resetRepository({
-      params: {
-        myshixunId: context.myshixunIdentifier,
-      },
-      query: {
-        zzud: user.login,
-      },
-      payload: {
-        challenge_id: context.challengeId,
-        homework_common_id: input.homeworkId,
-      },
     });
 
     if (input.json) {
-      return yield* printJson(response);
+      return yield* printJson(result.raw);
     }
 
-    yield* Console.dir(
-      {
-        reset: response,
-      },
-      inspectOptions,
-    );
+    yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
   Command.withDescription("Reset the shixun homework repository for the current task."),

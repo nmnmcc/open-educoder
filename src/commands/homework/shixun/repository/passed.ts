@@ -1,8 +1,8 @@
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../../../services/educoder-api/index.js";
+import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
 import { RepositoryPath, TaskId } from "../../flags.js";
-import { printJson, resolveLogin } from "../../shared.js";
+import { printJson } from "../../shared.js";
 
 export const Passed = Command.make(
   "passed",
@@ -12,23 +12,17 @@ export const Passed = Command.make(
     json: Flag.boolean("json"),
   },
   Effect.fn("homework.shixun.passed")(function* (input) {
-    const educoder = yield* EducoderApi;
-    const login = yield* resolveLogin();
-    const response = yield* educoder.Task.resetPassedCode({
-      params: {
-        taskId: input.taskId,
-      },
-      query: {
-        path: input.path,
-        zzud: login,
-      },
+    const homeworkShixunFeature = yield* HomeworkShixunFeature;
+    const result = yield* homeworkShixunFeature.getPassedCode({
+      taskId: input.taskId,
+      path: input.path,
     });
 
     if (input.json) {
-      return yield* printJson(response);
+      return yield* printJson(result.raw);
     }
 
-    yield* Console.log(response.content);
+    yield* Console.log(result.raw.content);
   }),
 ).pipe(
   Command.withDescription("Fetch the last passed code for a shixun homework file."),

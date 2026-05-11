@@ -5,7 +5,7 @@ const NonEmptyString = Schema.String.pipe(Schema.check(Schema.isMinLength(1)));
 const IdFromString = Schema.NumberFromString.pipe(Schema.check(Schema.isInt()));
 const NullableString = Schema.NullOr(Schema.String);
 const NullableBoolean = Schema.NullOr(Schema.Boolean);
-const JsonArray = Schema.Array(Schema.Json);
+const EmptyArray = Schema.Array(Schema.Never);
 const ExamQuery = {
   coursesId: NonEmptyString,
   categoryId: IdFromString,
@@ -13,7 +13,7 @@ const ExamQuery = {
   zzud: NonEmptyString,
 };
 /*
-.sample/exam1.har: GET /api/exercises/198085/start.json
+Sample: GET /api/exercises/198085/start.json
 {
   "id": 397176,
   "reminder_time": 30,
@@ -26,7 +26,7 @@ const ExerciseEvent = Schema.Struct({
   reminder_content: Schema.String,
 });
 /*
-.sample/exam1.har: GET /api/exercises/198085/get_exercise_user_info.json
+Sample: GET /api/exercises/198085/get_exercise_user_info.json
 {
   "check_camera": false,
   "is_ip_limit": false,
@@ -81,7 +81,7 @@ const ExerciseInfoData = Schema.Struct({
   exercise_type: Schema.Int,
 });
 /*
-.sample/exam1.har: GET /api/exercises/198085/get_exercise_user_info.json
+Sample: GET /api/exercises/198085/get_exercise_user_info.json
 {
   "status": 0,
   "message": "success",
@@ -94,7 +94,7 @@ const ExerciseInfoResponse = Schema.Struct({
   data: ExerciseInfoData,
 });
 /*
-.sample/exam1.har: GET /api/exercises/198085/start.json
+Sample: GET /api/exercises/198085/start.json
 {
   "id": 198085,
   "exercise_name": "<exercise name>",
@@ -161,9 +161,9 @@ const Exercise = Schema.Struct({
   forbid_screen: Schema.Boolean,
   screen_key: NullableString,
   use_white_list: Schema.Boolean,
-  white_list: JsonArray,
+  white_list: EmptyArray,
   net_limit: Schema.Boolean,
-  net_limit_list: Schema.NullOr(JsonArray),
+  net_limit_list: Schema.NullOr(EmptyArray),
   show_acm: Schema.Boolean,
   hack_rank_rule: Schema.Int,
   punish_time: Schema.Number,
@@ -175,7 +175,7 @@ const Exercise = Schema.Struct({
   unlimit_user_ids: Schema.Array(Schema.Int),
   only_on_client: Schema.Boolean,
   have_hacks: Schema.Boolean,
-  unlimit_users: JsonArray,
+  unlimit_users: EmptyArray,
   left_time: Schema.Int,
   is_unlimit_user: Schema.Boolean,
   user_name: Schema.String,
@@ -187,7 +187,7 @@ const Exercise = Schema.Struct({
   exercise_events: Schema.Array(ExerciseEvent),
 });
 /*
-.sample/exam1.har: GET /api/exercises/198085/start.json
+Sample: GET /api/exercises/198085/start.json
 {
   "choice_id": 35397428,
   "choice_text": "<choice text>",
@@ -202,7 +202,7 @@ const QuestionChoice = Schema.Struct({
   user_answer_boolean: Schema.Boolean,
 });
 /*
-.sample/exam1.har: GET /api/exercises/198085/start.json
+Sample: GET /api/exercises/198085/start.json
 {
   "model": 1,
   "position": 1
@@ -213,7 +213,25 @@ const StandardAnswer = Schema.Struct({
   position: Schema.Int,
 });
 /*
-.sample/exam1.har: GET /api/exercises/198085/start.json
+Sample: GET /api/exercises/198085/start.json
+{
+  "choice_id": 1,
+  "answer_text": "<answer text>"
+}
+*/
+const UserAnswerChoice = Schema.Struct({
+  choice_id: Schema.Int,
+  answer_text: Schema.String,
+});
+/*
+Sample: GET /api/exercises/198085/start.json
+[
+  "<text answer>"
+]
+*/
+const UserAnswer = Schema.Array(Schema.Union([Schema.String, UserAnswerChoice]));
+/*
+Sample: GET /api/exercises/198085/start.json
 {
   "question_num": 13,
   "question_id": 12263490,
@@ -246,11 +264,11 @@ const ExerciseQuestion = Schema.Struct({
   downcase: Schema.optionalKey(Schema.Boolean),
   multi_count: Schema.optionalKey(Schema.Int),
   standard_answers: Schema.optionalKey(Schema.Array(StandardAnswer)),
-  user_answer: Schema.optionalKey(JsonArray),
+  user_answer: Schema.optionalKey(UserAnswer),
   ques_status: Schema.Int,
 });
 /*
-.sample/exam1.har: GET /api/exercises/198085/start.json
+Sample: GET /api/exercises/198085/start.json
 {
   "question_type_id": 1,
   "question_type": 0,
@@ -271,7 +289,7 @@ const ExerciseQuestionType = Schema.Struct({
   sub_questions_count: Schema.Int,
 });
 /*
-.sample/exam1.har: GET /api/exercises/198085/start.json
+Sample: GET /api/exercises/198085/start.json
 {
   "q_counts": 17,
   "q_scores": "100.0"
@@ -282,7 +300,7 @@ const ExerciseTypes = Schema.Struct({
   q_scores: Schema.String,
 });
 /*
-.sample/exam1.har: GET /api/exercises/198085/start.json
+Sample: GET /api/exercises/198085/start.json
 {
   "left_banner_id": 1809409,
   "left_banner_name": "<banner name>",
@@ -299,7 +317,7 @@ const ExerciseStartResponse = Schema.Struct({
   exercise_types: ExerciseTypes,
 });
 /*
-.sample/exam1.har: POST /api/exercise_questions/12263457/exercise_answers.json
+Sample: POST /api/exercise_questions/12263457/exercise_answers.json
 {
   "questionId": 12263457,
   "exercise_choice_id": 35397429,
@@ -312,7 +330,7 @@ const AnswerPayload = Schema.Struct({
   answer_text: Schema.NullOr(Schema.String),
 }).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
 /*
-.sample/exam1.har: POST /api/exercise_questions/12263457/exercise_answers.json
+Sample: POST /api/exercise_questions/12263457/exercise_answers.json
 {
   "status": 0,
   "message": "回答成功",
@@ -322,10 +340,10 @@ const AnswerPayload = Schema.Struct({
 const AnswerResponse = Schema.Struct({
   status: Schema.Int,
   message: Schema.String,
-  alert: Schema.optional(JsonArray),
+  alert: Schema.optional(EmptyArray),
 });
 /*
-.sample/exam4.har: GET /api/exercises/198085/exercise_time.json
+Sample: GET /api/exercises/198085/exercise_time.json
 {
   "has_time": true,
   "left_time": 1481,
@@ -342,7 +360,7 @@ const ExerciseTimeResponse = Schema.Struct({
   user_total_end_time: Schema.String,
 });
 /*
-.sample/exam4.har: GET /api/exercises/198085/begin_commit.json
+Sample: GET /api/exercises/198085/begin_commit.json
 {
   "shixun_undo": 0,
   "question_undo": 0,
@@ -357,7 +375,7 @@ const BeginCommitResponse = Schema.Struct({
   end_time: Schema.String,
 });
 /*
-.sample/exam4.har: POST /api/exercises/198085/commit_exercise.json
+Sample: POST /api/exercises/198085/commit_exercise.json
 {
   "categoryId": "198085",
   "commit_method": 1
@@ -368,7 +386,7 @@ const CommitPayload = Schema.Struct({
   commit_method: Schema.Int,
 }).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
 /*
-.sample/exam4.har: POST /api/exercises/198085/commit_exercise.json
+Sample: POST /api/exercises/198085/commit_exercise.json
 {
   "commit_time": "2026-05-11 10:57:36",
   "user_exercise_time": "1时 35分 24秒"
@@ -379,7 +397,7 @@ const CommitResponseData = Schema.Struct({
   user_exercise_time: Schema.String,
 });
 /*
-.sample/exam4.har: POST /api/exercises/198085/commit_exercise.json
+Sample: POST /api/exercises/198085/commit_exercise.json
 {
   "status": 0,
   "message": "试卷提交成功！",

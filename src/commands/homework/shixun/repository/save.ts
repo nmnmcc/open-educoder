@@ -1,14 +1,8 @@
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
+import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
 import { Content, ContentFile, EnvironmentId, HomeworkId, RepositoryPath, TabType, TaskId } from "../../flags.js";
-import {
-  formatSaveResponse,
-  inspectOptions,
-  printJson,
-  readContent,
-  resolveHomeworkContext,
-  saveRepositoryFile,
-} from "../../shared.js";
+import { inspectOptions, optionToUndefined, printJson, readContent } from "../../shared.js";
 
 export const Save = Command.make(
   "save",
@@ -24,36 +18,26 @@ export const Save = Command.make(
     json: Flag.boolean("json"),
   },
   Effect.fn("homework.shixun.save")(function* (input) {
-    const { user, context } = yield* resolveHomeworkContext({
-      taskId: input.taskId,
-      homeworkId: input.homeworkId,
-      envId: input.envId,
-      tabType: input.tabType,
-    });
     const content = yield* readContent({
       content: input.content,
       file: input.file,
     });
-    const response = yield* saveRepositoryFile({
-      homeworkId: input.homeworkId,
+    const homeworkShixunFeature = yield* HomeworkShixunFeature;
+    const result = yield* homeworkShixunFeature.saveRepositoryFile({
+      taskId: input.taskId,
       path: input.path,
+      homeworkId: input.homeworkId,
       content,
       evaluate: input.evaluate,
-      context,
-      user,
+      envId: optionToUndefined(input.envId),
       tabType: input.tabType,
     });
 
     if (input.json) {
-      return yield* printJson(response);
+      return yield* printJson(result.raw);
     }
 
-    yield* Console.dir(
-      {
-        saved: formatSaveResponse(input.path, response),
-      },
-      inspectOptions,
-    );
+    yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
   Command.withDescription("Save local content into an Educoder shixun repository file."),

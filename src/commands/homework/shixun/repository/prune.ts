@@ -1,8 +1,8 @@
-import { Console, Effect, Option } from "effect";
+import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../../../services/educoder-api/index.js";
+import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
 import { HomeworkId, TaskId } from "../../flags.js";
-import { inspectOptions, printJson, resolveHomeworkContext } from "../../shared.js";
+import { inspectOptions, printJson } from "../../shared.js";
 
 export const Prune = Command.make(
   "prune",
@@ -12,32 +12,17 @@ export const Prune = Command.make(
     json: Flag.boolean("json"),
   },
   Effect.fn("homework.shixun.prune")(function* (input) {
-    const educoder = yield* EducoderApi;
-    const { user, context } = yield* resolveHomeworkContext({
+    const homeworkShixunFeature = yield* HomeworkShixunFeature;
+    const result = yield* homeworkShixunFeature.pruneRepository({
       taskId: input.taskId,
       homeworkId: input.homeworkId,
-      envId: Option.none(),
-      tabType: 1,
-    });
-    const response = yield* educoder.Myshixun.versionRepositoryDelete({
-      params: {
-        myshixunId: String(context.myshixunId),
-      },
-      query: {
-        zzud: user.login,
-      },
     });
 
     if (input.json) {
-      return yield* printJson(response);
+      return yield* printJson(result.raw);
     }
 
-    yield* Console.dir(
-      {
-        prune: response,
-      },
-      inspectOptions,
-    );
+    yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
   Command.withDescription("Delete expired repository versions for a shixun homework when Educoder marks them expired."),

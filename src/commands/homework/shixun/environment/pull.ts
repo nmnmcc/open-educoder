@@ -1,8 +1,8 @@
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../../../services/educoder-api/index.js";
+import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
 import { EnvironmentId, HomeworkId, TaskId } from "../../flags.js";
-import { inspectOptions, printJson, resolveHomeworkContext } from "../../shared.js";
+import { inspectOptions, optionToUndefined, printJson } from "../../shared.js";
 
 export const Pull = Command.make(
   "pull",
@@ -13,33 +13,18 @@ export const Pull = Command.make(
     json: Flag.boolean("json"),
   },
   Effect.fn("homework.shixun.pull")(function* (input) {
-    const educoder = yield* EducoderApi;
-    const { user, context } = yield* resolveHomeworkContext({
+    const homeworkShixunFeature = yield* HomeworkShixunFeature;
+    const result = yield* homeworkShixunFeature.pullFiles({
       taskId: input.taskId,
       homeworkId: input.homeworkId,
-      envId: input.envId,
-      tabType: 1,
-    });
-    const response = yield* educoder.Task.pullFiles({
-      params: {
-        taskId: input.taskId,
-      },
-      query: {
-        shixun_environment_id: context.environmentId,
-        zzud: user.login,
-      },
+      envId: optionToUndefined(input.envId),
     });
 
     if (input.json) {
-      return yield* printJson(response);
+      return yield* printJson(result.raw);
     }
 
-    yield* Console.dir(
-      {
-        pull: response,
-      },
-      inspectOptions,
-    );
+    yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
   Command.withDescription("Pull repository files from Educoder for a shixun homework environment."),

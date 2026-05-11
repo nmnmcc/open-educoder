@@ -1,5 +1,6 @@
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
+import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
 import {
   Content,
   ContentFile,
@@ -11,15 +12,13 @@ import {
   TaskId,
 } from "../../flags.js";
 import {
-  buildRepositoryFile,
-  failInput,
   inspectOptions,
-  pollGameStatus,
+  optionToUndefined,
   printJson,
   printStatusResponse,
   readContent,
-  resolveHomeworkContext,
-  saveRepositoryFile,
+  stringField,
+  asRecord,
 } from "../../shared.js";
 
 export const Evaluate = Command.make(
@@ -38,82 +37,39 @@ export const Evaluate = Command.make(
     json: Flag.boolean("json"),
   },
   Effect.fn("homework.shixun.evaluate")(function* (input) {
-    const { user, context } = yield* resolveHomeworkContext({
-      taskId: input.taskId,
-      homeworkId: input.homeworkId,
-      envId: input.envId,
-      tabType: input.tabType,
-    });
     const content = yield* readContent({
       content: input.content,
       file: input.file,
     });
-    const saveResponse = yield* saveRepositoryFile({
-      homeworkId: input.homeworkId,
-      path: input.path,
-      content,
-      evaluate: true,
-      context,
-      user,
-      tabType: input.tabType,
-    });
-    const secKey = saveResponse.sec_key ?? "";
-
-    if (secKey.length === 0) {
-      return yield* failInput("Educoder did not return sec_key for this evaluation.");
-    }
-
-    const buildResponse = yield* buildRepositoryFile({
+    const homeworkShixunFeature = yield* HomeworkShixunFeature;
+    const result = yield* homeworkShixunFeature.evaluateRepositoryFile({
       taskId: input.taskId,
+      path: input.path,
       homeworkId: input.homeworkId,
-      secKey,
-      resubmit: saveResponse.resubmit ?? "",
-      commitId: saveResponse.content.commitID,
-      contentModified: saveResponse.content_modified,
-      context,
-      user,
+      content,
+      envId: optionToUndefined(input.envId),
       tabType: input.tabType,
+      poll: input.poll,
+      pollInterval: input.pollInterval,
+      pollLimit: input.pollLimit,
+      onRunning: input.json
+        ? undefined
+        : ({ attempt, limit, response }) => {
+            const running = asRecord(response);
+
+            return Console.log(`[${attempt}/${limit}] ${stringField(running, "running_code_message") ?? "running"}`);
+          },
     });
-    const statusResponse = input.poll
-      ? yield* pollGameStatus({
-          taskId: input.taskId,
-          homeworkId: input.homeworkId,
-          login: user.login,
-          secKey,
-          challengeId: context.challengeId,
-          resubmit: saveResponse.resubmit ?? "",
-          timeOut: false,
-          port: 0,
-          subjectId: "",
-          interval: input.pollInterval,
-          limit: input.pollLimit,
-          quiet: input.json,
-        })
-      : null;
 
     if (input.json) {
-      return yield* printJson({
-        save: saveResponse,
-        build: buildResponse,
-        status: statusResponse,
-      });
+      return yield* printJson(result.raw);
     }
 
-    if (statusResponse !== null) {
-      return yield* printStatusResponse(statusResponse, false);
+    if (result.raw.status !== null) {
+      return yield* printStatusResponse(result.raw.status, false);
     }
 
-    yield* Console.dir(
-      {
-        evaluate: {
-          path: input.path,
-          commitId: saveResponse.content.commitID,
-          secKey,
-          build: buildResponse,
-        },
-      },
-      inspectOptions,
-    );
+    yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
   Command.withDescription("Save a shixun homework file, trigger evaluation, and optionally poll until completion."),

@@ -4,18 +4,9 @@ import { tmpdir } from "node:os";
 import nodePath from "node:path";
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
+import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
 import { EnvironmentId, HomeworkId, RepositoryPath, TabType, TaskId } from "../../flags.js";
-import {
-  decodeBase64,
-  failInput,
-  fetchRepositoryContent,
-  formatSaveResponse,
-  HomeworkInputError,
-  inspectOptions,
-  printJson,
-  resolveHomeworkContext,
-  saveRepositoryFile,
-} from "../../shared.js";
+import { failInput, HomeworkInputError, inspectOptions, optionToUndefined, printJson } from "../../shared.js";
 
 type EditedContent = {
   readonly editor: string;
@@ -141,20 +132,14 @@ export const Edit = Command.make(
     json: Flag.boolean("json"),
   },
   Effect.fn("homework.shixun.edit")(function* (input) {
-    const { user, context } = yield* resolveHomeworkContext({
-      taskId: input.taskId,
-      homeworkId: input.homeworkId,
-      envId: input.envId,
-      tabType: input.tabType,
-    });
-    const contentResponse = yield* fetchRepositoryContent({
+    const homeworkShixunFeature = yield* HomeworkShixunFeature;
+    const contentResult = yield* homeworkShixunFeature.getRepositoryContent({
       taskId: input.taskId,
       path: input.path,
       homeworkId: input.homeworkId,
       exerciseId: input.exerciseId,
-      login: user.login,
     });
-    const currentContent = decodeBase64(contentResponse.content.content);
+    const currentContent = contentResult.view.decodedContent;
     const edited = yield* editContent({
       repositoryPath: input.path,
       content: currentContent,
@@ -187,22 +172,24 @@ export const Edit = Command.make(
       );
     }
 
-    const saveResponse = yield* saveRepositoryFile({
-      homeworkId: input.homeworkId,
-      path: input.path,
-      content: edited.content,
-      evaluate: input.evaluate,
-      context,
-      user,
-      tabType: input.tabType,
-    }).pipe(
-      Effect.mapError(
-        (error) =>
-          new HomeworkInputError({
-            message: `Failed to save edited content; edited file kept at ${edited.file}: ${formatUnknownError(error)}`,
-          }),
-      ),
-    );
+    const saveResult = yield* homeworkShixunFeature
+      .saveRepositoryFile({
+        taskId: input.taskId,
+        path: input.path,
+        homeworkId: input.homeworkId,
+        content: edited.content,
+        evaluate: input.evaluate,
+        envId: optionToUndefined(input.envId),
+        tabType: input.tabType,
+      })
+      .pipe(
+        Effect.mapError(
+          (error) =>
+            new HomeworkInputError({
+              message: `Failed to save edited content; edited file kept at ${edited.file}: ${formatUnknownError(error)}`,
+            }),
+        ),
+      );
 
     yield* cleanupTemporaryDirectory(edited.directory);
 
@@ -213,7 +200,7 @@ export const Edit = Command.make(
           editor: edited.editor,
           changed,
         },
-        save: saveResponse,
+        save: saveResult.raw,
       });
     }
 
@@ -222,7 +209,7 @@ export const Edit = Command.make(
         edit: {
           editor: edited.editor,
           changed,
-          ...formatSaveResponse(input.path, saveResponse),
+          ...saveResult.view.saved,
         },
       },
       inspectOptions,

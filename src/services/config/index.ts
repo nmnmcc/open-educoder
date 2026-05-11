@@ -16,10 +16,10 @@ export type AppConfigState = typeof AppConfigSchema.Type;
 
 export type AppConfigError = PlatformError.PlatformError | Schema.SchemaError | MigrateError;
 
-export interface AppConfigShape {
+export type AppConfigShape = {
   readonly read: Effect.Effect<AppConfigState, AppConfigError>;
   readonly write: (next: AppConfigState) => Effect.Effect<void, AppConfigError>;
-}
+};
 
 const readJson = (fs: FileSystem.FileSystem, location: string): Effect.Effect<{}, PlatformError.PlatformError> =>
   fs.readFileString(location).pipe(
@@ -44,7 +44,7 @@ const makeJsonSchema = () => {
   };
 };
 
-export class AppConfig extends Context.Service<AppConfig, AppConfigShape>()("open-educoder/config/AppConfig", {
+export class AppConfig extends Context.Service<AppConfig, AppConfigShape>()("open-educoder/services/config/AppConfig", {
   make: (directory: string) =>
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;

@@ -1,7 +1,8 @@
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
+import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
 import { HomeworkId, TaskId } from "../../flags.js";
-import { fetchTaskInfo, formatTaskInfo, inspectOptions, printJson, resolveLogin } from "../../shared.js";
+import { inspectOptions, printJson } from "../../shared.js";
 
 export const Task = Command.make(
   "task",
@@ -11,18 +12,17 @@ export const Task = Command.make(
     json: Flag.boolean("json"),
   },
   Effect.fn("homework.shixun.task")(function* (input) {
-    const login = yield* resolveLogin();
-    const response = yield* fetchTaskInfo({
+    const homeworkShixunFeature = yield* HomeworkShixunFeature;
+    const result = yield* homeworkShixunFeature.getTask({
       taskId: input.taskId,
       homeworkId: input.homeworkId,
-      login,
     });
 
     if (input.json) {
-      return yield* printJson(response);
+      return yield* printJson(result.raw);
     }
 
-    yield* Console.dir(formatTaskInfo(response), inspectOptions);
+    yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
   Command.withDescription("Fetch task context for a shixun homework game."),

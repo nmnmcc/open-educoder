@@ -1,7 +1,8 @@
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
+import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
 import { HomeworkId, RepositoryPath, TaskId } from "../../flags.js";
-import { decodeBase64, fetchRepositoryContent, printJson, resolveLogin } from "../../shared.js";
+import { printJson } from "../../shared.js";
 
 export const Content = Command.make(
   "content",
@@ -14,24 +15,19 @@ export const Content = Command.make(
     json: Flag.boolean("json"),
   },
   Effect.fn("homework.shixun.content")(function* (input) {
-    const login = yield* resolveLogin();
-    const response = yield* fetchRepositoryContent({
+    const homeworkShixunFeature = yield* HomeworkShixunFeature;
+    const result = yield* homeworkShixunFeature.getRepositoryContent({
       taskId: input.taskId,
       path: input.path,
       homeworkId: input.homeworkId,
       exerciseId: input.exerciseId,
-      login,
     });
-    const decodedContent = decodeBase64(response.content.content);
 
     if (input.json) {
-      return yield* printJson({
-        ...response,
-        decodedContent,
-      });
+      return yield* printJson(result.view);
     }
 
-    yield* Console.log(input.raw ? response.content.content : decodedContent);
+    yield* Console.log(input.raw ? result.raw.content.content : result.view.decodedContent);
   }),
 ).pipe(
   Command.withDescription("Fetch a repository file from a shixun task and decode its base64 content."),

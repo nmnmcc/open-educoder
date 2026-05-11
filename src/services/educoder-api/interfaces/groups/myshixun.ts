@@ -9,7 +9,7 @@ const MyshixunRequestParams = {
 };
 
 /*
-.sample/homework2.har: POST /api/myshixuns/iwk6hzbgyf/reset_repository.json
+Sample: POST /api/myshixuns/iwk6hzbgyf/reset_repository.json
 {
   "status": 0,
   "message": "success"
@@ -21,7 +21,7 @@ const SimpleResponse = Schema.Struct({
 });
 
 /*
-.sample/homework1.har: POST /api/myshixuns/iwk6hzbgyf/update_file.json
+Sample: POST /api/myshixuns/iwk6hzbgyf/update_file.json
 {
   "path": "case1/code.sh",
   "evaluate": 0,
@@ -61,7 +61,7 @@ const UpdateFilePayload = Schema.Struct({
 }).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
 
 /*
-.sample/homework1.har: POST /api/myshixuns/iwk6hzbgyf/update_file.json
+Sample: POST /api/myshixuns/iwk6hzbgyf/update_file.json
 {
   "content": {
     "commitID": "<commit sha>",
@@ -85,7 +85,7 @@ const UpdateFileResponse = Schema.Struct({
 });
 
 /*
-.sample/homework2.har: POST /api/myshixuns/iwk6hzbgyf/reset_repository.json
+Sample: POST /api/myshixuns/iwk6hzbgyf/reset_repository.json
 {
   "challenge_id": 3475325,
   "homework_common_id": "3487324"
@@ -97,7 +97,7 @@ const ResetRepositoryPayload = Schema.Struct({
 }).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
 
 /*
-.sample/homework2.har: POST /api/myshixuns/iwk6hzbgyf/repository.json
+Sample: POST /api/myshixuns/iwk6hzbgyf/repository.json
 {}
 */
 const RepositoryPayload = Schema.Struct({
@@ -105,7 +105,7 @@ const RepositoryPayload = Schema.Struct({
 }).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
 
 /*
-.sample/homework2.har: POST /api/myshixuns/iwk6hzbgyf/repository.json
+Sample: POST /api/myshixuns/iwk6hzbgyf/repository.json
 {
   "trees": [
     {
@@ -125,7 +125,7 @@ const RepositoryResponse = Schema.Struct({
 });
 
 /*
-.sample/homework1.har: GET /api/myshixuns/64773861/version_repository_delete.json
+Sample: GET /api/myshixuns/64773861/version_repository_delete.json
 {
   "status": 0,
   "message": "success",
@@ -136,6 +136,55 @@ const VersionRepositoryDeleteResponse = Schema.Struct({
   status: Schema.Int,
   message: Schema.String,
   delete_expired: Schema.Boolean,
+});
+
+/*
+Sample: GET /api/myshixuns/iwk6hzbgyf/start.json
+{
+  "status": 0,
+  "message": "success",
+  "data": {
+    "host": "<ssh host>",
+    "port": "12345",
+    "username": "<ssh username>",
+    "password": "<ssh password>",
+    "ssh_address": "<ssh address>",
+    "remaining_time": 1800000
+  }
+}
+*/
+const StartResponse = Schema.Struct({
+  status: Schema.Int,
+  message: Schema.String,
+  data: Schema.Struct({
+    host: Schema.String,
+    link_url: Schema.String,
+    myshixun_id: Schema.Int,
+    password: Schema.String,
+    port: Schema.String,
+    remaining_time: Schema.Int,
+    ssh_address: Schema.String,
+    username: Schema.String,
+    webssh_url: Schema.String,
+  }),
+});
+
+/*
+Sample: GET /api/myshixuns/iwk6hzbgyf/get_remaining_time.json
+{
+  "status": 0,
+  "message": "success",
+  "data": {
+    "remainingTime": 1378000
+  }
+}
+*/
+const RemainingTimeResponse = Schema.Struct({
+  status: Schema.Int,
+  message: Schema.String,
+  data: Schema.Struct({
+    remainingTime: Schema.Int,
+  }),
 });
 
 export const Myshixun = HttpApiGroup.make("Myshixun")
@@ -159,7 +208,7 @@ export const Myshixun = HttpApiGroup.make("Myshixun")
         homework_common_id: NonEmptyString,
         zzud: NonEmptyString,
       },
-      success: Schema.Json,
+      success: StartResponse,
     }),
   )
   .add(
@@ -168,7 +217,7 @@ export const Myshixun = HttpApiGroup.make("Myshixun")
       query: {
         zzud: NonEmptyString,
       },
-      success: Schema.Json,
+      success: RemainingTimeResponse,
     }),
   )
   .add(

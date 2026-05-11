@@ -1,8 +1,8 @@
-import { Effect, Option } from "effect";
+import { Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../../../services/educoder-api/index.js";
+import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
 import { HomeworkId, SecKey, TaskId } from "../../flags.js";
-import { makeStatusRequest, printStatusResponse, resolveHomeworkContext } from "../../shared.js";
+import { printStatusResponse } from "../../shared.js";
 
 export const Status = Command.make(
   "status",
@@ -17,28 +17,18 @@ export const Status = Command.make(
     json: Flag.boolean("json"),
   },
   Effect.fn("homework.shixun.status")(function* (input) {
-    const educoder = yield* EducoderApi;
-    const { user, context } = yield* resolveHomeworkContext({
+    const homeworkShixunFeature = yield* HomeworkShixunFeature;
+    const result = yield* homeworkShixunFeature.getEvaluationStatus({
       taskId: input.taskId,
       homeworkId: input.homeworkId,
-      envId: Option.none(),
-      tabType: 1,
+      secKey: input.secKey,
+      resubmit: input.resubmit,
+      timeOut: input.timeOut,
+      port: input.port,
+      subjectId: input.subjectId,
     });
-    const response = yield* educoder.Task.gameStatus(
-      makeStatusRequest({
-        taskId: input.taskId,
-        homeworkId: input.homeworkId,
-        login: user.login,
-        secKey: input.secKey,
-        challengeId: context.challengeId,
-        resubmit: input.resubmit,
-        timeOut: input.timeOut,
-        port: input.port,
-        subjectId: input.subjectId,
-      }),
-    );
 
-    yield* printStatusResponse(response, input.json);
+    yield* printStatusResponse(result.raw, input.json);
   }),
 ).pipe(
   Command.withDescription("Read evaluation status for a shixun homework build."),

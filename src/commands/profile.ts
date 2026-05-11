@@ -1,27 +1,7 @@
-import { Console, Data, Effect, Optic } from "effect";
+import { Console, Effect } from "effect";
 import { Argument, Command, Flag } from "effect/unstable/cli";
-import { Cookies } from "effect/unstable/http";
-import { createCipheriv } from "node:crypto";
-import { EducoderApi } from "../services/educoder-api/index.js";
-import { AppConfig, AppConfigSchema } from "../services/config/index.js";
-import { AppContext } from "../services/context/index.js";
+import { DefaultProfileName, ProfileFeature } from "../services/features/profile.js";
 import { inspectOptions } from "../utils/inspect-options.js";
-
-const PasswordKey = "5183666c72eec9e4" as const;
-const DefaultProfileName = "default" as const;
-const $profile = Optic.id<typeof AppConfigSchema.Type>().key("profile");
-
-class LoginError extends Data.TaggedError("LoginError")<{
-  readonly message: string;
-}> {}
-
-class LogoutError extends Data.TaggedError("LogoutError")<{
-  readonly message: string;
-}> {}
-
-class ProfileNotFoundError extends Data.TaggedError("ProfileNotFoundError")<{
-  readonly message: string;
-}> {}
 
 const List = Command.make(
   "list",
@@ -29,38 +9,18 @@ const List = Command.make(
     json: Flag.boolean("json"),
   },
   Effect.fn("profile.list")(function* (input) {
-    const ctx = yield* AppContext;
-    const profiles = Object.entries(ctx.config.profile)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([name, profile]) => ({
-        name,
-        current: name === ctx.profile,
-        url: profile.url.href,
-      }));
+    const profileFeature = yield* ProfileFeature;
+    const result = yield* profileFeature.list();
 
     if (input.json) {
-      return yield* Console.log(JSON.stringify(profiles, null, 2));
+      return yield* Console.log(JSON.stringify(result.raw, null, 2));
     }
 
-    if (profiles.length === 0) {
+    if (result.raw.length === 0) {
       return yield* Console.log("No profiles found.");
     }
 
-    yield* Console.dir(
-      {
-        current: ctx.profile,
-        profiles: Object.fromEntries(
-          profiles.map((profile) => [
-            profile.name,
-            {
-              current: profile.current,
-              url: profile.url,
-            },
-          ]),
-        ),
-      },
-      inspectOptions,
-    );
+    yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
   Command.withDescription("List saved profiles and mark the active one."),
@@ -79,35 +39,14 @@ const Add = Command.make(
     name: Argument.string("name").pipe(Argument.withDefault(DefaultProfileName)),
   },
   Effect.fn("profile.add")(function* (input) {
-    const ctx = yield* AppContext;
-    const educoder = yield* EducoderApi;
-    const config = yield* AppConfig;
-    const response = yield* educoder.Account.login({
-      payload: {
-        login: input.username,
-        password: encryptPassword(input.password),
-      },
-      responseMode: "response-only",
+    const profileFeature = yield* ProfileFeature;
+    const result = yield* profileFeature.add({
+      username: input.username,
+      password: input.password,
+      name: input.name,
     });
 
-    if (response.status < 200 || response.status >= 300) {
-      return yield* new LoginError({
-        message: `Login failed with status ${response.status}`,
-      });
-    }
-
-    const state = ctx.config;
-    const $$profile = $profile.optionalKey(input.name);
-    const url = new URL(ctx.url);
-
-    yield* config.write(
-      $$profile.modify((profile) => ({
-        cookies: Cookies.merge(profile?.cookies ?? Cookies.empty, response.cookies),
-        url,
-      }))(state),
-    );
-
-    yield* Console.log(`Profile "${input.name}" added`);
+    yield* Console.log(result.view.message);
   }),
 ).pipe(
   Command.withDescription("Log in to Educoder and store the returned cookies in a named profile."),
@@ -130,35 +69,10 @@ const Remove = Command.make(
     name: Argument.string("name"),
   },
   Effect.fn("profile.remove")(function* (input) {
-    const ctx = yield* AppContext;
-    const config = yield* AppConfig;
-    const state = ctx.config;
-    const $$profile = $profile.optionalKey(input.name);
-    const profile = $$profile.get(state);
+    const profileFeature = yield* ProfileFeature;
+    const result = yield* profileFeature.remove({ name: input.name });
 
-    if (profile === undefined) {
-      return yield* new ProfileNotFoundError({
-        message: `Profile "${input.name}" does not exist`,
-      });
-    }
-
-    const educoder = yield* EducoderApi.make({ url: profile.url, profile: input.name, config: state });
-    const user = yield* educoder.User.getInfo();
-    const response = yield* educoder.Account.logout({
-      query: {
-        zzud: user.login,
-      },
-      responseMode: "response-only",
-    });
-
-    if (response.status < 200 || response.status >= 300) {
-      return yield* new LogoutError({
-        message: `Logout failed with status ${response.status}`,
-      });
-    }
-
-    yield* config.write($$profile.replace(undefined, state));
-    yield* Console.log(`Profile "${input.name}" removed`);
+    yield* Console.log(result.view.message);
   }),
 ).pipe(
   Command.withDescription("Log out of Educoder and remove a saved local profile."),
@@ -182,9 +96,3 @@ export const Profile = Command.make("profile").pipe(
   Command.withAlias("p"),
   Command.withSubcommands([List, Add, Remove]),
 );
-
-const encryptPassword = (password: string) => {
-  const cipher = createCipheriv("aes-128-cbc", Buffer.from(PasswordKey), Buffer.from(PasswordKey));
-
-  return Buffer.concat([cipher.update(password, "utf8"), cipher.final()]).toString("base64");
-};

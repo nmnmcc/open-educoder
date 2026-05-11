@@ -1,7 +1,8 @@
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
+import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
 import { CommitId, EnvironmentId, HomeworkId, SecKey, TabType, TaskId } from "../../flags.js";
-import { buildRepositoryFile, inspectOptions, printJson, resolveHomeworkContext } from "../../shared.js";
+import { inspectOptions, optionToUndefined, printJson } from "../../shared.js";
 
 export const Build = Command.make(
   "build",
@@ -17,34 +18,23 @@ export const Build = Command.make(
     json: Flag.boolean("json"),
   },
   Effect.fn("homework.shixun.build")(function* (input) {
-    const { user, context } = yield* resolveHomeworkContext({
-      taskId: input.taskId,
-      homeworkId: input.homeworkId,
-      envId: input.envId,
-      tabType: input.tabType,
-    });
-    const response = yield* buildRepositoryFile({
+    const homeworkShixunFeature = yield* HomeworkShixunFeature;
+    const result = yield* homeworkShixunFeature.buildRepositoryFile({
       taskId: input.taskId,
       homeworkId: input.homeworkId,
       secKey: input.secKey,
       resubmit: input.resubmit,
       commitId: input.commitId,
       contentModified: input.contentModified,
-      context,
-      user,
+      envId: optionToUndefined(input.envId),
       tabType: input.tabType,
     });
 
     if (input.json) {
-      return yield* printJson(response);
+      return yield* printJson(result.raw);
     }
 
-    yield* Console.dir(
-      {
-        build: response,
-      },
-      inspectOptions,
-    );
+    yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
   Command.withDescription("Trigger Educoder game_build for a saved shixun homework file."),

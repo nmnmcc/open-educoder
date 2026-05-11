@@ -1,8 +1,8 @@
-import { Console, Effect, Option } from "effect";
+import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { EducoderApi } from "../../../../services/educoder-api/index.js";
+import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
 import { HomeworkId, TaskId } from "../../flags.js";
-import { inspectOptions, printJson, resolveHomeworkContext } from "../../shared.js";
+import { inspectOptions, optionToUndefined, printJson } from "../../shared.js";
 
 export const Repository = Command.make(
   "repository",
@@ -13,45 +13,18 @@ export const Repository = Command.make(
     json: Flag.boolean("json"),
   },
   Effect.fn("homework.shixun.repository")(function* (input) {
-    const educoder = yield* EducoderApi;
-    const { user, context } = yield* resolveHomeworkContext({
+    const homeworkShixunFeature = yield* HomeworkShixunFeature;
+    const result = yield* homeworkShixunFeature.listRepository({
       taskId: input.taskId,
       homeworkId: input.homeworkId,
-      envId: Option.none(),
-      tabType: 1,
-    });
-    const path = Option.isSome(input.path) ? input.path.value : "";
-    const response = yield* educoder.Myshixun.repository({
-      params: {
-        myshixunId: context.myshixunIdentifier,
-      },
-      query: {
-        zzud: user.login,
-      },
-      payload: path.length >= 1 ? { path } : {},
+      path: optionToUndefined(input.path),
     });
 
     if (input.json) {
-      return yield* printJson(response);
+      return yield* printJson(result.raw);
     }
 
-    yield* Console.dir(
-      {
-        repository: {
-          path: path.length >= 1 ? path : ".",
-          entries: Object.fromEntries(
-            response.trees.map((entry) => [
-              entry.name,
-              {
-                type: entry.type,
-                path: path.length >= 1 ? `${path}/${entry.name}` : entry.name,
-              },
-            ]),
-          ),
-        },
-      },
-      inspectOptions,
-    );
+    yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
   Command.withDescription("List files and directories in a shixun homework repository."),
