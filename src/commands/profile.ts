@@ -5,6 +5,7 @@ import { createCipheriv } from "node:crypto";
 import { EducoderApi } from "../services/educoder-api/index.js";
 import { AppConfig, AppConfigSchema } from "../services/config/index.js";
 import { AppContext } from "../services/context/index.js";
+import { inspectOptions } from "../utils/inspect-options.js";
 
 const PasswordKey = "5183666c72eec9e4" as const;
 const DefaultProfileName = "default" as const;
@@ -23,7 +24,7 @@ class ProfileNotFoundError extends Data.TaggedError("ProfileNotFoundError")<{
 }> {}
 
 export const profile = Command.make("profile").pipe(
-  Command.withAlias("auth"),
+  Command.withAlias("p"),
   Command.withSubcommands([
     Command.make(
       "list",
@@ -61,10 +62,10 @@ export const profile = Command.make("profile").pipe(
               ]),
             ),
           },
-          { colors: true, depth: null },
+          inspectOptions,
         );
       }),
-    ),
+    ).pipe(Command.withAlias("l")),
     Command.make(
       "add",
       {
@@ -103,7 +104,7 @@ export const profile = Command.make("profile").pipe(
 
         yield* Console.log(`Profile "${input.name}" added`);
       }),
-    ),
+    ).pipe(Command.withAlias("a")),
     Command.make(
       "remove",
       {
@@ -146,7 +147,7 @@ export const profile = Command.make("profile").pipe(
         yield* config.write($$profile.replace(undefined, state));
         yield* Console.log(`Profile "${input.name}" removed`);
       }),
-    ),
+    ).pipe(Command.withAlias("R")),
   ]),
 );
 

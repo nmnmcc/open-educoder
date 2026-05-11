@@ -142,13 +142,39 @@ const ExerciseStartResponse = Schema.Struct({
 });
 const AnswerPayload = Schema.Struct({
   questionId: Schema.Int,
-  exercise_choice_id: Schema.NullOr(Schema.Union([Schema.Int, Schema.Array(Schema.Int)])),
-  answer_text: Schema.NullOr(Schema.Union([Schema.String, Schema.Array(Schema.String)])),
+  exercise_choice_id: Schema.Union([Schema.Int, Schema.Array(Schema.Int)]),
+  answer_text: Schema.NullOr(Schema.String),
 }).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
 const AnswerResponse = Schema.Struct({
   status: Schema.Int,
   message: Schema.String,
   alert: Schema.optional(JsonArray),
+});
+const ExerciseTimeResponse = Schema.Struct({
+  has_time: Schema.Boolean,
+  left_time: Schema.Int,
+  student_left_minutes: Schema.Int,
+  user_end_time: Schema.String,
+  user_total_end_time: Schema.String,
+});
+const BeginCommitResponse = Schema.Struct({
+  shixun_undo: Schema.Int,
+  question_undo: Schema.Int,
+  oj_undo: Schema.Int,
+  end_time: Schema.String,
+});
+const CommitPayload = Schema.Struct({
+  categoryId: IdFromString,
+  commit_method: Schema.Int,
+}).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
+const CommitResponseData = Schema.Struct({
+  commit_time: Schema.String,
+  user_exercise_time: Schema.String,
+});
+const CommitResponse = Schema.Struct({
+  status: Schema.Int,
+  message: Schema.String,
+  data: Schema.optionalKey(CommitResponseData),
 });
 
 export const Exam = HttpApiGroup.make("Exam")
@@ -168,6 +194,39 @@ export const Exam = HttpApiGroup.make("Exam")
       },
       query: ExamQuery,
       success: ExerciseStartResponse,
+    }),
+  )
+  .add(
+    HttpApiEndpoint.get("time", "/api/exercises/:examId/exercise_time.json", {
+      params: {
+        examId: IdFromString,
+      },
+      query: ExamQuery,
+      success: ExerciseTimeResponse,
+    }),
+  )
+  .add(
+    HttpApiEndpoint.get("beginCommit", "/api/exercises/:examId/begin_commit.json", {
+      params: {
+        examId: IdFromString,
+      },
+      query: {
+        id: IdFromString,
+        zzud: NonEmptyString,
+      },
+      success: BeginCommitResponse,
+    }),
+  )
+  .add(
+    HttpApiEndpoint.post("commit", "/api/exercises/:examId/commit_exercise.json", {
+      params: {
+        examId: IdFromString,
+      },
+      query: {
+        zzud: NonEmptyString,
+      },
+      payload: CommitPayload,
+      success: CommitResponse,
     }),
   )
   .add(
