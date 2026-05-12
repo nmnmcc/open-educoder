@@ -12,6 +12,8 @@
 
 所有 `Command.make(...)` 定义的 command 都必须提供单字母 alias；具有不可逆副作用的 command alias 必须是大写单字母。
 
+编辑嵌套数据结构时，如果可能且方便，优先采用 Effect Optic；简单直接的局部更新可以保持直接写法。
+
 ## Service 开发规范
 
 本项目是本地 CLI，不使用 server workspace、数据库层或 Drizzle。服务规范以 `src/services/*` 的实际边界为准。

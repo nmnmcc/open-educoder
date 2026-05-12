@@ -123,11 +123,10 @@ export class ProfileFeature extends Context.Service<ProfileFeature, ProfileFeatu
           });
         }
 
-        const state = ctx.config;
         const $$profile = $profile.optionalKey(input.name);
         const url = new URL(ctx.url);
 
-        yield* config.write(
+        yield* config.update((state) =>
           $$profile.modify((profile) => ({
             cookies: Cookies.merge(profile?.cookies ?? Cookies.empty, response.cookies),
             url,
@@ -145,7 +144,7 @@ export class ProfileFeature extends Context.Service<ProfileFeature, ProfileFeatu
       });
 
       const remove: ProfileFeatureShape["remove"] = Effect.fn("features.profile.remove")(function* (input) {
-        const state = ctx.config;
+        const state = yield* config.read;
         const $$profile = $profile.optionalKey(input.name);
         const profile = $$profile.get(state);
 
@@ -159,7 +158,7 @@ export class ProfileFeature extends Context.Service<ProfileFeature, ProfileFeatu
           url: profile.url,
           profile: input.name,
           config: state,
-        }).pipe(Effect.provideService(HttpClient.HttpClient, httpClient));
+        }).pipe(Effect.provideService(AppConfig, config), Effect.provideService(HttpClient.HttpClient, httpClient));
         const user = yield* profileEducoder.User.getInfo();
         const response = yield* profileEducoder.Account.logout({
           query: {
@@ -174,7 +173,7 @@ export class ProfileFeature extends Context.Service<ProfileFeature, ProfileFeatu
           });
         }
 
-        yield* config.write($$profile.replace(undefined, state));
+        yield* config.update((state) => $$profile.replace(undefined, state));
 
         return {
           raw: {

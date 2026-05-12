@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { Context, Effect, Equal, FileSystem, JsonSchema, Layer, PlatformError, Schema } from "effect";
+import { Context, Effect, Equal, FileSystem, JsonSchema, Layer, PlatformError, Schema, Semaphore } from "effect";
 
 import { MigrateError, migrate } from "./migrate.js";
 import { latest } from "./schema/index.js";
@@ -21,6 +21,7 @@ export type AppConfigError = PlatformError.PlatformError | Schema.SchemaError | 
 export type AppConfigShape = {
   readonly read: Effect.Effect<AppConfigState, AppConfigError>;
   readonly write: (next: AppConfigState) => Effect.Effect<void, AppConfigError>;
+  readonly update: (f: (state: AppConfigState) => AppConfigState) => Effect.Effect<AppConfigState, AppConfigError>;
 };
 
 const readJson = (fs: FileSystem.FileSystem, location: string): Effect.Effect<{}, PlatformError.PlatformError> =>
@@ -54,6 +55,7 @@ export class AppConfig extends Context.Service<AppConfig, AppConfigShape>()("ope
       const schemaLocation = path.join(directory, SCHEMA);
       const codec = Schema.toCodecJson(latest.schema);
       const fileCodec = Schema.toCodecJson(AppConfigFileSchema);
+      const storeLock = yield* Semaphore.make(1);
 
       if (!(yield* fs.exists(directory))) {
         yield* fs.makeDirectory(directory, { recursive: true });
@@ -73,12 +75,29 @@ export class AppConfig extends Context.Service<AppConfig, AppConfigShape>()("ope
         yield* writeJson(fs, location, encoded);
       }
 
+      const readState = readJson(fs, location).pipe(Effect.flatMap(Schema.decodeUnknownEffect(codec)));
+      const writeState = (next: AppConfigState) =>
+        Schema.encodeUnknownEffect(fileCodec)({ ...next, $schema: SCHEMA }).pipe(
+          Effect.flatMap((value) => writeJson(fs, location, value)),
+        );
+      const updateState = (f: (state: AppConfigState) => AppConfigState) =>
+        storeLock.withPermit(
+          Effect.gen(function* () {
+            const state = yield* readState;
+            const next = f(state);
+
+            if (!Equal.equals(next, state)) {
+              yield* writeState(next);
+            }
+
+            return next;
+          }),
+        );
+
       return {
-        read: readJson(fs, location).pipe(Effect.flatMap(Schema.decodeUnknownEffect(codec))),
-        write: (next) =>
-          Schema.encodeUnknownEffect(fileCodec)({ ...next, $schema: SCHEMA }).pipe(
-            Effect.flatMap((value) => writeJson(fs, location, value)),
-          ),
+        read: storeLock.withPermit(readState),
+        write: (next) => storeLock.withPermit(writeState(next)),
+        update: updateState,
       };
     }),
 }) {

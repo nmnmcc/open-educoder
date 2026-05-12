@@ -22,6 +22,7 @@ import { FeatureLayer } from "./services/features/index.js";
 
 const OpenEducoder = Command.make("open-educoder").pipe(
   Command.withDescription("Run authenticated Educoder workflows from a local CLI."),
+  Command.withAlias("o"),
   Command.withSharedFlags({
     url: Flag.string("url").pipe(
       Flag.withDescription("Educoder base URL to call."),
