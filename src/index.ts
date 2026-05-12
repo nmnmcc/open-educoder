@@ -5,7 +5,7 @@ import path from "node:path";
 import { NodeSdk } from "@effect/opentelemetry";
 import { NodeHttpClient, NodeRuntime, NodeServices } from "@effect/platform-node";
 import { BatchSpanProcessor, ConsoleSpanExporter } from "@opentelemetry/sdk-trace-base";
-import { Effect, Layer } from "effect";
+import { Effect, Layer, identity } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 import { ProxyAgent } from "proxy-agent";
 
@@ -44,9 +44,10 @@ const OpenEducoder = Command.make("open-educoder").pipe(
     url: Flag.string("url").pipe(Flag.withDefault("https://data.educoder.net")),
     profile: Flag.string("profile").pipe(Flag.withDefault("default")),
     config: Flag.path("config").pipe(Flag.withDefault(path.join(homedir(), ".config", meta.name))),
+    otel: Flag.boolean("otel").pipe(Flag.withDefault(false)),
   }),
   Command.withSubcommands([Profile, Course, Homework, Exam, Tui]),
-  Command.provide(({ url, profile, config }) =>
+  Command.provide(({ url, profile, config, otel }) =>
     Layer.unwrap(
       Effect.gen(function* () {
         const config = yield* AppConfig.use(({ read }) => read);
@@ -63,16 +64,22 @@ const OpenEducoder = Command.make("open-educoder").pipe(
           ),
         );
       }),
-    ).pipe(Layer.provideMerge(AppConfig.layer(config))),
+    ).pipe(
+      Layer.provideMerge(AppConfig.layer(config)),
+      otel
+        ? Layer.provideMerge(
+            NodeSdk.layer(() => ({
+              spanProcessor: new BatchSpanProcessor(new ConsoleSpanExporter()),
+            })),
+          )
+        : identity,
+    ),
   ),
 );
 
 const program = Command.run(OpenEducoder, { version: meta.version });
 
 const NodeLayer = Layer.mergeAll(
-  NodeSdk.layer(() => ({
-    spanProcessor: new BatchSpanProcessor(new ConsoleSpanExporter()),
-  })),
   NodeServices.layer,
   NodeHttpClient.layerNodeHttpNoAgent.pipe(
     Layer.provideMerge(Layer.effect(NodeHttpClient.HttpAgent, NodeHttpClient.makeAgent(new ProxyAgent()))),
