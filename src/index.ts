@@ -1,24 +1,28 @@
 #!/usr/bin/env node
 import meta from "../package.json" with { type: "json" };
 import { NodeHttpClient, NodeRuntime, NodeServices } from "@effect/platform-node";
-import { Context, Effect, Layer } from "effect";
+import { Effect, Layer } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { ProxyAgent } from "proxy-agent";
-import { EducoderApi } from "./services/educoder-api/index.js";
-import { FeatureLayer } from "./services/features/index.js";
-import { homedir } from "node:os";
-import path from "node:path";
 import { Course } from "./commands/course.js";
 import { Exam } from "./commands/exam.js";
 import { Homework } from "./commands/homework/index.js";
 import { Profile } from "./commands/profile.js";
 import { AppConfig } from "./services/config/index.js";
+import { EducoderApi } from "./services/educoder-api/index.js";
 import { AppContext } from "./services/context/index.js";
+import path from "node:path";
+import { homedir } from "node:os";
+import { ProxyAgent } from "proxy-agent";
+import { FeatureLayer } from "./services/features/index.js";
+import { Tui } from "./commands/tui.js";
 
 const OpenEducoder = Command.make("open-educoder").pipe(
   Command.withDescription("Local CLI for authenticated Educoder workflows."),
   Command.withExamples([
-    { command: "open-educoder profile list", description: "List saved login profiles" },
+    {
+      command: "open-educoder profile list",
+      description: "List saved login profiles",
+    },
     {
       command: "open-educoder course info MOAPGNLO",
       description: "Inspect a course by course ID",
@@ -37,40 +41,35 @@ const OpenEducoder = Command.make("open-educoder").pipe(
     profile: Flag.string("profile").pipe(Flag.withDefault("default")),
     config: Flag.path("config").pipe(Flag.withDefault(path.join(homedir(), ".config", meta.name))),
   }),
-  Command.withSubcommands([Profile, Course, Homework, Exam]),
-  Command.provide(({ url, profile, config }) => {
-    const appLayer = Layer.effectContext(
-      AppConfig.use((appConfig) =>
-        Effect.gen(function* () {
-          const state = yield* appConfig.read;
-          const educoder = yield* EducoderApi.make({ url, profile, config: state });
-          const user = yield* Effect.cached(educoder.User.getInfo());
+  Command.withSubcommands([Profile, Course, Homework, Exam, Tui]),
+  Command.provide(({ url, profile, config }) =>
+    Layer.unwrap(
+      Effect.gen(function* () {
+        const config = yield* AppConfig.use(({ read }) => read);
 
-          return Context.make(EducoderApi, educoder).pipe(
-            Context.add(AppContext, {
-              url,
-              profile,
-              config: state,
-              user,
-            }),
-          );
-        }),
-      ),
-    ).pipe(Layer.provideMerge(AppConfig.layer(config)));
+        const educoder = yield* EducoderApi.make({ url, profile, config });
+        const user = yield* Effect.cached(educoder.User.getInfo());
 
-    return FeatureLayer.pipe(Layer.provideMerge(appLayer));
-  }),
+        return FeatureLayer.pipe(
+          Layer.provideMerge(
+            Layer.mergeAll(
+              Layer.succeed(EducoderApi, educoder),
+              Layer.succeed(AppContext, { url, profile, config, user }),
+            ),
+          ),
+        );
+      }),
+    ).pipe(Layer.provideMerge(AppConfig.layer(config))),
+  ),
 );
 
-const layer = Layer.mergeAll(
+const program = Command.run(OpenEducoder, { version: meta.version });
+
+const NodeLayer = Layer.mergeAll(
   NodeServices.layer,
   NodeHttpClient.layerNodeHttpNoAgent.pipe(
     Layer.provideMerge(Layer.effect(NodeHttpClient.HttpAgent, NodeHttpClient.makeAgent(new ProxyAgent()))),
   ),
 );
 
-const program = Effect.gen(function* () {
-  return yield* Command.run(OpenEducoder, { version: meta.version }).pipe(Effect.provide(layer));
-});
-
-NodeRuntime.runMain(program);
+program.pipe(Effect.provide(NodeLayer), NodeRuntime.runMain);

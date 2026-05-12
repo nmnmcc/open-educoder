@@ -1,7 +1,9 @@
 import { defineConfig } from "tsdown/config";
 
 export default defineConfig({
-  entry: "src/index.ts",
+  entry: {
+    index: "src/index.ts",
+  },
   format: "esm",
   platform: "node",
   target: "node24",
@@ -13,5 +15,7 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   clean: true,
-  hash: false,
+  hash: true,
+  shims: true,
+  treeshake: true,
 });

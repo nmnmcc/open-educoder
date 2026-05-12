@@ -4,7 +4,8 @@
   "description": "Local CLI for authenticated Educoder workflows.",
   "type": "module",
   "bin": {
-    "open-educoder": "./dist/index.js"
+    "open-educoder": "./dist/index.js",
+    "open-educoder-tui": "./dist/tui/index.js"
   },
   "files": [
     "dist",
@@ -32,6 +33,8 @@
     "cli": "tsx src/index.ts",
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
+    "tui": "tsx src/tui/index.ts",
+    "dev:tui": "tsx watch src/tui/index.ts",
     "check": "yarn tsc"
   },
   "engines": {
@@ -40,12 +43,15 @@
   "dependencies": {
     "@effect/platform-node": "^4.0.0-beta.65",
     "effect": "^4.0.0-beta.65",
+    "ink": "^7.0.2",
     "ioredis": "^5.10.1",
-    "proxy-agent": "^8.0.1"
+    "proxy-agent": "^8.0.1",
+    "react": "^19.2.6"
   },
   "devDependencies": {
     "@effect/language-service": "^0.85.1",
     "@types/node": "^25.6.2",
+    "@types/react": "^19",
     "prettier": "^3.8.3",
     "tsdown": "^0.22.0",
     "tsx": "^4.21.0",
