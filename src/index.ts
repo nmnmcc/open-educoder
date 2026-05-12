@@ -5,7 +5,7 @@ import path from "node:path";
 import { NodeSdk } from "@effect/opentelemetry";
 import { NodeHttpClient, NodeRuntime, NodeServices } from "@effect/platform-node";
 import { BatchSpanProcessor, ConsoleSpanExporter } from "@opentelemetry/sdk-trace-base";
-import { Effect, Layer, identity } from "effect";
+import { Effect, Layer, Option, identity } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 import { ProxyAgent } from "proxy-agent";
 
@@ -20,13 +20,15 @@ import { AppContext } from "./services/context/index.js";
 import { EducoderApi } from "./services/educoder-api/index.js";
 import { FeatureLayer } from "./services/features/index.js";
 
+const DefaultEducoderUrl = "https://data.educoder.net" as const;
+
 const OpenEducoder = Command.make("open-educoder").pipe(
   Command.withDescription("Run authenticated Educoder workflows from a local CLI."),
   Command.withAlias("o"),
   Command.withSharedFlags({
     url: Flag.string("url").pipe(
-      Flag.withDescription("Educoder base URL to call."),
-      Flag.withDefault("https://data.educoder.net"),
+      Flag.withDescription("Educoder base URL to call. Defaults to the selected profile URL, then data.educoder.net."),
+      Flag.optional,
     ),
     profile: Flag.string("profile").pipe(
       Flag.withDescription("Saved login profile to use for authenticated requests."),
@@ -46,15 +48,19 @@ const OpenEducoder = Command.make("open-educoder").pipe(
     Layer.unwrap(
       Effect.gen(function* () {
         const config = yield* AppConfig.use(({ read }) => read);
+        const resolvedUrl = Option.match(url, {
+          onNone: () => config.profile[profile]?.url.href ?? DefaultEducoderUrl,
+          onSome: identity,
+        });
 
-        const educoder = yield* EducoderApi.make({ url, profile, config });
+        const educoder = yield* EducoderApi.make({ url: resolvedUrl, profile, config });
         const user = yield* Effect.cached(educoder.User.getInfo());
 
         return FeatureLayer.pipe(
           Layer.provideMerge(
             Layer.mergeAll(
               Layer.succeed(EducoderApi, educoder),
-              Layer.succeed(AppContext, { url, profile, config, user }),
+              Layer.succeed(AppContext, { url: resolvedUrl, profile, config, user }),
             ),
           ),
         );

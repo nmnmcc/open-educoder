@@ -76,18 +76,18 @@ open-educoder assignments list COURSE_ID --type all
 All commands inherit these options:
 
 ```bash
---url https://data.educoder.net
+--url URL
 --profile default
 --config ~/.config/open-educoder
 --otel false
 ```
 
-| Option      | Purpose                                   |
-| ----------- | ----------------------------------------- |
-| `--url`     | Educoder base URL to call.                |
-| `--profile` | Saved login profile to use.               |
-| `--config`  | Local config directory.                   |
-| `--otel`    | Print OpenTelemetry spans to the console. |
+| Option      | Purpose                                                          |
+| ----------- | ---------------------------------------------------------------- |
+| `--url`     | Educoder base URL to call. Defaults to the selected profile URL. |
+| `--profile` | Saved login profile to use.                                      |
+| `--config`  | Local config directory.                                          |
+| `--otel`    | Print OpenTelemetry spans to the console.                        |
 
 ## Command Reference
 
