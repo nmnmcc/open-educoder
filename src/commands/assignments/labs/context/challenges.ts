@@ -2,7 +2,7 @@ import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
 import { LabAssignmentFeature } from "../../../../services/features/assignments/lab.js";
-import { CourseId, AssignmentIdArgument } from "../../flags.js";
+import { AssignmentIdArgument, CourseId } from "../../flags.js";
 import { renderChallenges } from "../../render.js";
 import { printJson } from "../../shared.js";
 
@@ -11,7 +11,7 @@ export const Challenges = Command.make(
   {
     courseId: CourseId,
     homeworkId: AssignmentIdArgument,
-    json: Flag.boolean("json"),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw challenge list as JSON.")),
   },
   Effect.fn("assignments.labs.challenges")(function* (input) {
     const labAssignmentFeature = yield* LabAssignmentFeature;
@@ -27,7 +27,7 @@ export const Challenges = Command.make(
     yield* Console.log(renderChallenges(result.view));
   }),
 ).pipe(
-  Command.withDescription("List lab challenges with challenge-index and challenge-id labels."),
+  Command.withDescription("List challenge indexes and challenge IDs for one lab assignment."),
   Command.withExamples([
     {
       command: "open-educoder assignments labs challenges 109348 3487324",

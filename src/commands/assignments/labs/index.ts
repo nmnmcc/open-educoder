@@ -4,7 +4,7 @@ import { LabSubcommands } from "./subcommands.js";
 
 export const Labs = Command.make("labs").pipe(
   Command.withDescription(
-    "Lab assignment workspace operations: tasks, repository files, evaluation, and environment actions.",
+    "Work with lab assignments: challenges, task context, repository files, evaluation, and runtime.",
   ),
   Command.withExamples([
     {

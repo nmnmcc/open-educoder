@@ -2,17 +2,20 @@ import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
 import { CommonAssignmentFeature } from "../../../services/features/assignments/common.js";
-import { CourseId, AssignmentIdArgument, PositiveInteger } from "../flags.js";
+import { AssignmentIdArgument, CourseId, PositiveInteger } from "../flags.js";
 import { renderGeneric } from "../render.js";
 import { optionToUndefined, printJson } from "../shared.js";
 
-const CategoryId = Flag.string("category-id").pipe(Flag.optional);
+const CategoryId = Flag.string("category-id").pipe(
+  Flag.withDescription("Optional assignment category ID when Educoder requires one."),
+  Flag.optional,
+);
 
 export const Info = Command.make(
   "info",
   {
     homeworkId: AssignmentIdArgument,
-    json: Flag.boolean("json"),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw assignment detail response as JSON.")),
   },
   Effect.fn("assignments.common.info")(function* (input) {
     const commonAssignmentFeature = yield* CommonAssignmentFeature;
@@ -25,7 +28,7 @@ export const Info = Command.make(
     yield* Console.log(renderGeneric("普通作业详情 / Common Assignment Info", result.view));
   }),
 ).pipe(
-  Command.withDescription("Show one common assignment's metadata, instructions, and attachments."),
+  Command.withDescription("Show one common assignment's instructions, attachments, and metadata."),
   Command.withExamples([
     {
       command: "open-educoder assignments common info 3487339",
@@ -45,7 +48,7 @@ export const Work = Command.make(
     courseId: CourseId,
     homeworkId: AssignmentIdArgument,
     categoryId: CategoryId,
-    json: Flag.boolean("json"),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw work status response as JSON.")),
   },
   Effect.fn("assignments.common.work")(function* (input) {
     const commonAssignmentFeature = yield* CommonAssignmentFeature;
@@ -62,7 +65,7 @@ export const Work = Command.make(
     yield* Console.log(renderGeneric("作品状态 / Work Status", result.view));
   }),
 ).pipe(
-  Command.withDescription("Show your work summary, score, and submit state for a common assignment."),
+  Command.withDescription("Show your submission/work status, score, and related state for one assignment."),
   Command.withExamples([
     {
       command: "open-educoder assignments common work 109348 3487339",
@@ -81,8 +84,8 @@ export const Draft = Command.make(
   {
     courseId: CourseId,
     homeworkId: AssignmentIdArgument,
-    type: Flag.integer("type").pipe(Flag.withDefault(3)),
-    json: Flag.boolean("json"),
+    type: Flag.integer("type").pipe(Flag.withDescription("Educoder draft type code."), Flag.withDefault(3)),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw draft response as JSON.")),
   },
   Effect.fn("assignments.common.draft")(function* (input) {
     const commonAssignmentFeature = yield* CommonAssignmentFeature;
@@ -99,7 +102,7 @@ export const Draft = Command.make(
     yield* Console.log(renderGeneric("草稿上下文 / Draft Context", result.view));
   }),
 ).pipe(
-  Command.withDescription("Open draft context for a common assignment."),
+  Command.withDescription("Show the current draft context for a common assignment."),
   Command.withExamples([
     {
       command: "open-educoder assignments common draft 109348 3487339",
@@ -114,10 +117,13 @@ export const Members = Command.make(
   {
     courseId: CourseId,
     homeworkId: AssignmentIdArgument,
-    page: PositiveInteger("page").pipe(Flag.withDefault(1)),
-    limit: PositiveInteger("limit").pipe(Flag.withDefault(20)),
-    search: Flag.string("search").pipe(Flag.withDefault("")),
-    json: Flag.boolean("json"),
+    page: PositiveInteger("page").pipe(Flag.withDescription("Page number to fetch."), Flag.withDefault(1)),
+    limit: PositiveInteger("limit").pipe(Flag.withDescription("Members per page."), Flag.withDefault(20)),
+    search: Flag.string("search").pipe(
+      Flag.withDescription("Student number, name, or keyword to search."),
+      Flag.withDefault(""),
+    ),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw members response as JSON.")),
   },
   Effect.fn("assignments.common.members")(function* (input) {
     const commonAssignmentFeature = yield* CommonAssignmentFeature;
@@ -136,7 +142,7 @@ export const Members = Command.make(
     yield* Console.log(renderGeneric("成员列表 / Members", result.view));
   }),
 ).pipe(
-  Command.withDescription("Search members and view their common-assignment submission status."),
+  Command.withDescription("Search course members and show their submission status for one assignment."),
   Command.withExamples([
     {
       command: "open-educoder assignments common members 109348 3487339 --search keyword",
@@ -152,8 +158,11 @@ export const Comments = Command.make(
     courseId: CourseId,
     homeworkId: AssignmentIdArgument,
     categoryId: CategoryId,
-    pageSize: PositiveInteger("page-size").pipe(Flag.withDefault(10)),
-    json: Flag.boolean("json"),
+    pageSize: PositiveInteger("page-size").pipe(
+      Flag.withDescription("Number of comments to fetch."),
+      Flag.withDefault(10),
+    ),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw comments response as JSON.")),
   },
   Effect.fn("assignments.common.comments")(function* (input) {
     const commonAssignmentFeature = yield* CommonAssignmentFeature;
@@ -171,7 +180,7 @@ export const Comments = Command.make(
     yield* Console.log(renderGeneric("评论 / Comments", result.view));
   }),
 ).pipe(
-  Command.withDescription("Open discussion comments for a common assignment."),
+  Command.withDescription("Show discussion comments for one common assignment."),
   Command.withExamples([
     {
       command: "open-educoder assignments common comments 109348 3487339",
@@ -187,7 +196,7 @@ export const Settings = Command.make(
     courseId: CourseId,
     homeworkId: AssignmentIdArgument,
     categoryId: CategoryId,
-    json: Flag.boolean("json"),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw settings response as JSON.")),
   },
   Effect.fn("assignments.common.settings")(function* (input) {
     const commonAssignmentFeature = yield* CommonAssignmentFeature;
@@ -204,7 +213,7 @@ export const Settings = Command.make(
     yield* Console.log(renderGeneric("作业设置 / Assignment Settings", result.view));
   }),
 ).pipe(
-  Command.withDescription("Show assignment rules such as deadline, scoring, visibility, and constraints."),
+  Command.withDescription("Show rules such as deadline, scoring, visibility, and submission constraints."),
   Command.withExamples([
     {
       command: "open-educoder assignments common settings 109348 3487339",
@@ -218,10 +227,10 @@ export const RedoLogs = Command.make(
   "redo-logs",
   {
     homeworkId: AssignmentIdArgument,
-    type: Flag.integer("type").pipe(Flag.withDefault(2)),
-    page: PositiveInteger("page").pipe(Flag.withDefault(1)),
-    limit: PositiveInteger("limit").pipe(Flag.withDefault(10)),
-    json: Flag.boolean("json"),
+    type: Flag.integer("type").pipe(Flag.withDescription("Educoder redo-log type code."), Flag.withDefault(2)),
+    page: PositiveInteger("page").pipe(Flag.withDescription("Page number to fetch."), Flag.withDefault(1)),
+    limit: PositiveInteger("limit").pipe(Flag.withDescription("Redo log entries per page."), Flag.withDefault(10)),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw redo-log response as JSON.")),
   },
   Effect.fn("assignments.common.redoLogs")(function* (input) {
     const commonAssignmentFeature = yield* CommonAssignmentFeature;
@@ -239,7 +248,7 @@ export const RedoLogs = Command.make(
     yield* Console.log(renderGeneric("重做记录 / Redo Logs", result.view));
   }),
 ).pipe(
-  Command.withDescription("Show redo history for one common assignment."),
+  Command.withDescription("Show redo attempts and redo history for one common assignment."),
   Command.withExamples([
     {
       command: "open-educoder assignments common redo-logs 3487339 --type 2",

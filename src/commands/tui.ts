@@ -10,7 +10,7 @@ export const Tui = Command.make(
     return yield* run();
   }),
 ).pipe(
-  Command.withDescription("Start the interactive terminal UI for quick task inspection."),
+  Command.withDescription("Open the interactive terminal UI for browsing courses, assignments, and exams."),
   Command.withExamples([
     {
       command: "open-educoder tui",

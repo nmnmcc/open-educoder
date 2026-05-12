@@ -3,11 +3,11 @@ import { Command, Flag } from "effect/unstable/cli";
 
 import { LabAssignmentFeature } from "../../../../services/features/assignments/lab.js";
 import {
+  AssignmentIdArgument,
   Content,
   ContentFile,
   CourseId,
   EnvironmentId,
-  AssignmentIdArgument,
   RepositoryPath,
   RequiredChallengeId,
   RequiredChallengeIndex,
@@ -26,10 +26,10 @@ export const Save = Command.make(
     challengeId: RequiredChallengeId,
     content: Content,
     file: ContentFile,
-    evaluate: Flag.boolean("evaluate"),
+    evaluate: Flag.boolean("evaluate").pipe(Flag.withDescription("Start evaluation after saving the file.")),
     envId: EnvironmentId,
     tabType: TabType,
-    json: Flag.boolean("json"),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw save response as JSON.")),
   },
   Effect.fn("assignments.labs.save")(function* (input) {
     yield* requireChallengeSelector({
@@ -60,7 +60,7 @@ export const Save = Command.make(
     yield* Console.log(renderGeneric("保存结果 / Save Result", result.view));
   }),
 ).pipe(
-  Command.withDescription("Upload content to a lab repository file (inline or from file)."),
+  Command.withDescription("Save inline or local file content to a lab repository path."),
   Command.withExamples([
     {
       command: "open-educoder assignments labs save 109348 3487324 case1/code.sh --file ./code.sh",

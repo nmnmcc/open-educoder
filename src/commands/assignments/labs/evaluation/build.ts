@@ -3,12 +3,12 @@ import { Command, Flag } from "effect/unstable/cli";
 
 import { LabAssignmentFeature } from "../../../../services/features/assignments/lab.js";
 import {
+  AssignmentIdArgument,
   ChallengeId,
   ChallengeIndex,
   CommitId,
   CourseId,
   EnvironmentId,
-  AssignmentIdArgument,
   SecKey,
   TabType,
 } from "../../flags.js";
@@ -24,11 +24,17 @@ export const Build = Command.make(
     challengeId: ChallengeId,
     secKey: SecKey,
     commitId: CommitId,
-    contentModified: Flag.integer("content-modified").pipe(Flag.withDefault(0)),
-    resubmit: Flag.string("resubmit").pipe(Flag.withDefault("")),
+    contentModified: Flag.integer("content-modified").pipe(
+      Flag.withDescription("Educoder content_modified code for build requests."),
+      Flag.withDefault(0),
+    ),
+    resubmit: Flag.string("resubmit").pipe(
+      Flag.withDescription("Optional Educoder resubmit token."),
+      Flag.withDefault(""),
+    ),
     envId: EnvironmentId,
     tabType: TabType,
-    json: Flag.boolean("json"),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw build response as JSON.")),
   },
   Effect.fn("assignments.labs.build")(function* (input) {
     const labAssignmentFeature = yield* LabAssignmentFeature;
@@ -52,7 +58,7 @@ export const Build = Command.make(
     yield* Console.log(renderGeneric("构建结果 / Build Result", result.view));
   }),
 ).pipe(
-  Command.withDescription("Trigger a build/run action for an already saved repository snapshot."),
+  Command.withDescription("Trigger build/evaluation for an already saved repository commit."),
   Command.withExamples([
     {
       command:

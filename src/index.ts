@@ -21,12 +21,24 @@ import { EducoderApi } from "./services/educoder-api/index.js";
 import { FeatureLayer } from "./services/features/index.js";
 
 const OpenEducoder = Command.make("open-educoder").pipe(
-  Command.withDescription("Open Educoder as a fast local CLI."),
+  Command.withDescription("Run authenticated Educoder workflows from a local CLI."),
   Command.withSharedFlags({
-    url: Flag.string("url").pipe(Flag.withDefault("https://data.educoder.net")),
-    profile: Flag.string("profile").pipe(Flag.withDefault("default")),
-    config: Flag.path("config").pipe(Flag.withDefault(path.join(homedir(), ".config", meta.name))),
-    otel: Flag.boolean("otel").pipe(Flag.withDefault(false)),
+    url: Flag.string("url").pipe(
+      Flag.withDescription("Educoder base URL to call."),
+      Flag.withDefault("https://data.educoder.net"),
+    ),
+    profile: Flag.string("profile").pipe(
+      Flag.withDescription("Saved login profile to use for authenticated requests."),
+      Flag.withDefault("default"),
+    ),
+    config: Flag.path("config").pipe(
+      Flag.withDescription("Path to the local open-educoder config directory."),
+      Flag.withDefault(path.join(homedir(), ".config", meta.name)),
+    ),
+    otel: Flag.boolean("otel").pipe(
+      Flag.withDescription("Print OpenTelemetry spans to the console."),
+      Flag.withDefault(false),
+    ),
   }),
   Command.withSubcommands([Profiles, Courses, Assignments, Exams, Tui]),
   Command.provide(({ url, profile, config, otel }) =>

@@ -4,11 +4,11 @@ import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process";
 
 import { LabAssignmentFeature } from "../../../../services/features/assignments/lab.js";
 import {
+  AssignmentIdArgument,
   ChallengeId,
   ChallengeIndex,
   CourseId,
   EnvironmentId,
-  AssignmentIdArgument,
   TerminalTabType,
 } from "../../flags.js";
 import { optionToUndefined, printJson } from "../../shared.js";
@@ -40,7 +40,9 @@ export const Ssh = Command.make(
     challengeId: ChallengeId,
     envId: EnvironmentId,
     tabType: TerminalTabType,
-    json: Flag.boolean("json"),
+    json: Flag.boolean("json").pipe(
+      Flag.withDescription("Print SSH connection arguments as JSON instead of running ssh."),
+    ),
   },
   Effect.fn("assignments.labs.ssh")(function* (input) {
     const labAssignmentFeature = yield* LabAssignmentFeature;
@@ -63,7 +65,7 @@ export const Ssh = Command.make(
     }
   }),
 ).pipe(
-  Command.withDescription("Connect to a lab runtime through SSH when available."),
+  Command.withDescription("Resolve SSH connection details for a lab runtime and connect with local ssh."),
   Command.withExamples([
     {
       command: "open-educoder assignments labs ssh 109348 3487324 --env-id 1128633",

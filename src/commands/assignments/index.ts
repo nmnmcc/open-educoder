@@ -1,11 +1,11 @@
 import { Command } from "effect/unstable/cli";
 
 import { Common } from "./common/index.js";
-import { List } from "./list.js";
 import { Labs } from "./labs/index.js";
+import { List } from "./list.js";
 
 export const Assignments = Command.make("assignments").pipe(
-  Command.withDescription("Work with assignments by category: common assignments or lab assignments."),
+  Command.withDescription("Find assignment IDs and work with common or lab assignments."),
   Command.withExamples([
     {
       command: "open-educoder assignments list 109348 --type all",

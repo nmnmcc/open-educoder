@@ -2,7 +2,7 @@ import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
 import { LabAssignmentFeature } from "../../../../services/features/assignments/lab.js";
-import { ChallengeId, ChallengeIndex, CourseId, EnvironmentId, AssignmentIdArgument } from "../../flags.js";
+import { AssignmentIdArgument, ChallengeId, ChallengeIndex, CourseId, EnvironmentId } from "../../flags.js";
 import { renderGeneric } from "../../render.js";
 import { optionToUndefined, printJson } from "../../shared.js";
 
@@ -14,7 +14,7 @@ export const Pull = Command.make(
     challengeIndex: ChallengeIndex,
     challengeId: ChallengeId,
     envId: EnvironmentId,
-    json: Flag.boolean("json"),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw pull response as JSON.")),
   },
   Effect.fn("assignments.labs.pull")(function* (input) {
     const labAssignmentFeature = yield* LabAssignmentFeature;
@@ -33,7 +33,7 @@ export const Pull = Command.make(
     yield* Console.log(renderGeneric("拉取结果 / Pull Result", result.view));
   }),
 ).pipe(
-  Command.withDescription("Pull repository files from a selected lab environment to local runtime."),
+  Command.withDescription("Pull repository files from the selected lab runtime environment."),
   Command.withExamples([
     {
       command: "open-educoder assignments labs pull 109348 3487324 --env-id 1128633",

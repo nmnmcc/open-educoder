@@ -2,7 +2,7 @@ import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
 import { LabAssignmentFeature } from "../../../../services/features/assignments/lab.js";
-import { ChallengeId, ChallengeIndex, CourseId, EnvironmentId, AssignmentIdArgument, TabType } from "../../flags.js";
+import { AssignmentIdArgument, ChallengeId, ChallengeIndex, CourseId, EnvironmentId, TabType } from "../../flags.js";
 import { renderGeneric } from "../../render.js";
 import { optionToUndefined, printJson } from "../../shared.js";
 
@@ -15,7 +15,7 @@ export const Logs = Command.make(
     challengeId: ChallengeId,
     envId: EnvironmentId,
     tabType: TabType,
-    json: Flag.boolean("json"),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw log response as JSON.")),
   },
   Effect.fn("assignments.labs.logs")(function* (input) {
     const labAssignmentFeature = yield* LabAssignmentFeature;
@@ -35,7 +35,7 @@ export const Logs = Command.make(
     yield* Console.log(renderGeneric("日志 / Logs", result.view));
   }),
 ).pipe(
-  Command.withDescription("Fetch terminal or build logs for a lab environment."),
+  Command.withDescription("Fetch terminal or build logs from a lab runtime environment."),
   Command.withExamples([
     {
       command: "open-educoder assignments labs logs 109348 3487324 --env-id 1128633",

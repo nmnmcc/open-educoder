@@ -4,8 +4,19 @@ import { Argument, Command, Flag } from "effect/unstable/cli";
 import { ExamFeature } from "../services/features/exam.js";
 import { inspectOptions } from "../utils/inspect-options.js";
 
-const OptionalLogin = Flag.string("login").pipe(Flag.optional);
-const WithChoiceContent = Flag.boolean("with-choice-content").pipe(Flag.withAlias("c"));
+const CourseId = Argument.string("course-id").pipe(
+  Argument.withDescription("Course ID shown by `courses list`, such as MOAPGNLO."),
+);
+const ExamId = Argument.integer("exam-id").pipe(Argument.withDescription("Exam ID shown by `exams list`."));
+const QuestionId = Argument.integer("question-id").pipe(Argument.withDescription("Question ID shown by `exams show`."));
+const OptionalLogin = Flag.string("login").pipe(
+  Flag.withDescription("Educoder login slug to use instead of the current user."),
+  Flag.optional,
+);
+const WithChoiceContent = Flag.boolean("with-choice-content").pipe(
+  Flag.withDescription("Include full choice text when showing questions."),
+  Flag.withAlias("c"),
+);
 const PositiveInteger = (name: string) =>
   Flag.integer(name).pipe(
     Flag.filter(
@@ -21,12 +32,12 @@ const optionalValue = <A>(value: Option.Option<A>): A | undefined => (Option.isS
 const List = Command.make(
   "list",
   {
-    courseId: Argument.string("course-id"),
-    page: PositiveInteger("page").pipe(Flag.withDefault(1)),
-    limit: PositiveInteger("limit").pipe(Flag.withDefault(20)),
-    type: Flag.string("type").pipe(Flag.withDefault("")),
+    courseId: CourseId,
+    page: PositiveInteger("page").pipe(Flag.withDescription("Page number to fetch."), Flag.withDefault(1)),
+    limit: PositiveInteger("limit").pipe(Flag.withDescription("Exams per page."), Flag.withDefault(20)),
+    type: Flag.string("type").pipe(Flag.withDescription("Optional Educoder exam type filter."), Flag.withDefault("")),
     login: OptionalLogin,
-    json: Flag.boolean("json"),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw exam list as JSON.")),
   },
   Effect.fn("exam.list")(function* (input) {
     const examFeature = yield* ExamFeature;
@@ -49,7 +60,7 @@ const List = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("List exam items for a course so you can pick one by exam ID."),
+  Command.withDescription("List exams in a course and show the exam IDs needed by other exam commands."),
   Command.withExamples([
     { command: "open-educoder exams list MOAPGNLO", description: "List exams by course ID" },
     {
@@ -63,8 +74,8 @@ const List = Command.make(
 const Info = Command.make(
   "info",
   {
-    courseId: Argument.string("course-id"),
-    examId: Argument.integer("exam-id"),
+    courseId: CourseId,
+    examId: ExamId,
     login: OptionalLogin,
   },
   Effect.fn("exam.info")(function* (input) {
@@ -78,7 +89,7 @@ const Info = Command.make(
     yield* printJson(result.raw);
   }),
 ).pipe(
-  Command.withDescription("Fetch your exam-session state before starting or resuming."),
+  Command.withDescription("Show your current exam session state before starting or resuming."),
   Command.withExamples([
     { command: "open-educoder exams info MOAPGNLO 198085", description: "Inspect exam user info" },
     {
@@ -92,8 +103,8 @@ const Info = Command.make(
 const Start = Command.make(
   "start",
   {
-    courseId: Argument.string("course-id"),
-    examId: Argument.integer("exam-id"),
+    courseId: CourseId,
+    examId: ExamId,
     login: OptionalLogin,
   },
   Effect.fn("exam.start")(function* (input) {
@@ -107,7 +118,7 @@ const Start = Command.make(
     yield* printJson(result.raw);
   }),
 ).pipe(
-  Command.withDescription("Start a new exam attempt or resume an existing one."),
+  Command.withDescription("Start an exam attempt or resume the existing attempt."),
   Command.withExamples([
     { command: "open-educoder exams start MOAPGNLO 198085", description: "Start or resume an exam" },
     {
@@ -121,10 +132,10 @@ const Start = Command.make(
 const Show = Command.make(
   "show",
   {
-    courseId: Argument.string("course-id"),
-    examId: Argument.integer("exam-id"),
+    courseId: CourseId,
+    examId: ExamId,
     login: OptionalLogin,
-    json: Flag.boolean("json"),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print questions and answer state as JSON.")),
     withChoiceContent: WithChoiceContent,
   },
   Effect.fn("exam.show")(function* (input) {
@@ -163,7 +174,7 @@ const Show = Command.make(
     );
   }),
 ).pipe(
-  Command.withDescription("Render questions in a compact format ready for answering or reviewing."),
+  Command.withDescription("Show question IDs, question types, scores, choices, and current selections."),
   Command.withExamples([
     {
       command: "open-educoder exams show MOAPGNLO 198085",
@@ -180,11 +191,14 @@ const Show = Command.make(
 const Submit = Command.make(
   "submit",
   {
-    courseId: Argument.string("course-id"),
-    examId: Argument.integer("exam-id"),
+    courseId: CourseId,
+    examId: ExamId,
     login: OptionalLogin,
-    commitMethod: PositiveInteger("commit-method").pipe(Flag.withDefault(1)),
-    json: Flag.boolean("json"),
+    commitMethod: PositiveInteger("commit-method").pipe(
+      Flag.withDescription("Educoder submit method code."),
+      Flag.withDefault(1),
+    ),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw submit response as JSON.")),
   },
   Effect.fn("exam.submit")(function* (input) {
     const examFeature = yield* ExamFeature;
@@ -202,7 +216,7 @@ const Submit = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Submit the current exam attempt with current answers."),
+  Command.withDescription("Submit the current exam attempt with the saved answers."),
   Command.withExamples([
     {
       command: "open-educoder exams submit MOAPGNLO 198085",
@@ -219,8 +233,8 @@ const Submit = Command.make(
 const Single = Command.make(
   "single",
   {
-    questionId: Argument.integer("question-id"),
-    choiceId: Argument.integer("choice-id"),
+    questionId: QuestionId,
+    choiceId: Argument.integer("choice-id").pipe(Argument.withDescription("Choice ID shown by `exams show`.")),
     login: OptionalLogin,
   },
   Effect.fn("exam.answer.single")(function* (input) {
@@ -235,7 +249,7 @@ const Single = Command.make(
     yield* printJson(result.raw);
   }),
 ).pipe(
-  Command.withDescription("Save one single-choice answer by question ID and selected choice."),
+  Command.withDescription("Save one single-choice answer using a question ID and one choice ID."),
   Command.withExamples([
     {
       command: "open-educoder exams answer single 12263457 35397429",
@@ -248,8 +262,10 @@ const Single = Command.make(
 const Multiple = Command.make(
   "multiple",
   {
-    questionId: Argument.integer("question-id"),
-    choiceIds: Argument.string("choice-ids"),
+    questionId: QuestionId,
+    choiceIds: Argument.string("choice-ids").pipe(
+      Argument.withDescription("Comma-separated choice IDs shown by `exams show`."),
+    ),
     login: OptionalLogin,
   },
   Effect.fn("exam.answer.multiple")(function* (input) {
@@ -266,7 +282,7 @@ const Multiple = Command.make(
     yield* printJson(result.raw);
   }),
 ).pipe(
-  Command.withDescription("Save one multiple-choice answer by question ID and comma-separated choice IDs."),
+  Command.withDescription("Save one multiple-choice answer using comma-separated choice IDs."),
   Command.withExamples([
     {
       command: "open-educoder exams answer multiple 12263483 35397470,35397469",
@@ -279,8 +295,8 @@ const Multiple = Command.make(
 const Text = Command.make(
   "text",
   {
-    questionId: Argument.integer("question-id"),
-    text: Argument.string("text"),
+    questionId: QuestionId,
+    text: Argument.string("text").pipe(Argument.withDescription("Answer text to save for the question.")),
     login: OptionalLogin,
   },
   Effect.fn("exam.answer.text")(function* (input) {
@@ -295,7 +311,7 @@ const Text = Command.make(
     yield* printJson(result.raw);
   }),
 ).pipe(
-  Command.withDescription("Save a free-text answer for one question."),
+  Command.withDescription("Save one free-text answer for a question."),
   Command.withExamples([
     {
       command: 'open-educoder exams answer text 12263490 "12"',
@@ -306,7 +322,7 @@ const Text = Command.make(
 );
 
 const Answer = Command.make("answer").pipe(
-  Command.withDescription("Save answers for one exam question in single / multiple / text mode."),
+  Command.withDescription("Save one exam answer; choose single, multiple, or text by question type."),
   Command.withExamples([
     { command: "open-educoder exams answer single 12263457 35397429", description: "Save a single-choice answer" },
     {
@@ -320,7 +336,7 @@ const Answer = Command.make("answer").pipe(
 );
 
 export const Exams = Command.make("exams").pipe(
-  Command.withDescription("List, open, answer, and submit exams for your current profile."),
+  Command.withDescription("List exams, start attempts, show questions, save answers, and submit."),
   Command.withExamples([
     { command: "open-educoder exams list MOAPGNLO", description: "List exams for a course" },
     {

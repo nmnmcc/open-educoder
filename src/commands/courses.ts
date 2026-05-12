@@ -16,20 +16,34 @@ const PositiveInteger = (name: string) =>
       (value) => `${name} must be greater than or equal to 1, got ${value}`,
     ),
   );
-const CourseId = Argument.string("course-id");
+const CourseId = Argument.string("course-id").pipe(
+  Argument.withDescription("Course ID shown by `courses list`, such as MOAPGNLO."),
+);
 
 const printJson = (value: unknown) => Console.log(JSON.stringify(value, null, 2));
 
 const List = Command.make(
   "list",
   {
-    status: Flag.choice("status", CourseStatusChoices).pipe(Flag.withDefault("processing")),
-    page: PositiveInteger("page").pipe(Flag.withDefault(1)),
-    perPage: PositiveInteger("per-page").pipe(Flag.withDefault(15)),
-    sortBy: Flag.choice("sort-by", CourseSortByChoices).pipe(Flag.withDefault("updated_at")),
-    sortDirection: Flag.choice("sort-direction", SortDirectionChoices).pipe(Flag.withDefault("desc")),
-    category: Flag.string("category").pipe(Flag.withDefault("")),
-    json: Flag.boolean("json"),
+    status: Flag.choice("status", CourseStatusChoices).pipe(
+      Flag.withDescription("Course status filter: processing, end, or all."),
+      Flag.withDefault("processing"),
+    ),
+    page: PositiveInteger("page").pipe(Flag.withDescription("Page number to fetch."), Flag.withDefault(1)),
+    perPage: PositiveInteger("per-page").pipe(Flag.withDescription("Courses per page."), Flag.withDefault(15)),
+    sortBy: Flag.choice("sort-by", CourseSortByChoices).pipe(
+      Flag.withDescription("Field used to sort courses."),
+      Flag.withDefault("updated_at"),
+    ),
+    sortDirection: Flag.choice("sort-direction", SortDirectionChoices).pipe(
+      Flag.withDescription("Sort direction."),
+      Flag.withDefault("desc"),
+    ),
+    category: Flag.string("category").pipe(
+      Flag.withDescription("Optional Educoder course category filter."),
+      Flag.withDefault(""),
+    ),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw course list as JSON.")),
   },
   Effect.fn("course.list")(function* (input) {
     const courseFeature = yield* CourseFeature;
@@ -53,7 +67,7 @@ const List = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("List courses available to the current logged-in account."),
+  Command.withDescription("List courses visible to the selected login profile."),
   Command.withExamples([
     { command: "open-educoder courses list", description: "List ongoing courses sorted by latest update" },
     { command: "open-educoder courses list --status all --json", description: "List all courses in JSON format" },
@@ -69,7 +83,7 @@ const Info = Command.make(
   "info",
   {
     courseId: CourseId,
-    json: Flag.boolean("json"),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw course metadata as JSON.")),
   },
   Effect.fn("course.info")(function* (input) {
     const courseFeature = yield* CourseFeature;
@@ -82,7 +96,7 @@ const Info = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("View course overview fields such as title, teachers, counts, and visibility."),
+  Command.withDescription("Show one course's title, teachers, counts, and visibility."),
   Command.withExamples([
     {
       command: "open-educoder courses info MOAPGNLO",
@@ -97,7 +111,7 @@ const Modules = Command.make(
   "modules",
   {
     courseId: CourseId,
-    json: Flag.boolean("json"),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw module list as JSON.")),
   },
   Effect.fn("course.modules")(function* (input) {
     const courseFeature = yield* CourseFeature;
@@ -114,7 +128,7 @@ const Modules = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("View course modules and category structure used for assignment grouping."),
+  Command.withDescription("Show course modules and category IDs used to filter assignments."),
   Command.withExamples([
     { command: "open-educoder courses modules MOAPGNLO", description: "List modules for a course" },
     { command: "open-educoder courses modules MOAPGNLO --json", description: "Print raw module data as JSON" },
@@ -123,7 +137,7 @@ const Modules = Command.make(
 );
 
 export const Courses = Command.make("courses").pipe(
-  Command.withDescription("Browse available courses and jump to course-specific workflows."),
+  Command.withDescription("Find course IDs, inspect course info, and list assignment categories."),
   Command.withExamples([
     { command: "open-educoder courses list --status all", description: "List all courses for the current user" },
     {

@@ -3,7 +3,7 @@ import { Command, Flag } from "effect/unstable/cli";
 
 import { CommonAssignmentFeature } from "../../services/features/assignments/common.js";
 import { LabAssignmentFeature } from "../../services/features/assignments/lab.js";
-import { CourseId, AssignmentSortByChoices, PositiveInteger, SortDirectionChoices } from "./flags.js";
+import { AssignmentSortByChoices, CourseId, PositiveInteger, SortDirectionChoices } from "./flags.js";
 import { renderCommonAssignments, renderLabAssignments } from "./render.js";
 import { optionToUndefined, printJson } from "./shared.js";
 
@@ -13,16 +13,31 @@ export const List = Command.make(
   "list",
   {
     courseId: CourseId,
-    type: Flag.choice("type", AssignmentListTypeChoices).pipe(Flag.withDefault("all")),
-    category: PositiveInteger("category").pipe(Flag.optional),
-    status: Flag.integer("status").pipe(Flag.withDefault(0)),
-    page: PositiveInteger("page").pipe(Flag.withDefault(1)),
-    limit: PositiveInteger("limit").pipe(Flag.withDefault(20)),
-    order: Flag.integer("order").pipe(Flag.optional),
-    search: Flag.string("search").pipe(Flag.optional),
-    sortBy: Flag.choice("sort-by", AssignmentSortByChoices).pipe(Flag.optional),
-    sortDirection: Flag.choice("sort-direction", SortDirectionChoices).pipe(Flag.optional),
-    json: Flag.boolean("json"),
+    type: Flag.choice("type", AssignmentListTypeChoices).pipe(
+      Flag.withDescription("Assignment type to list: common, lab, or all."),
+      Flag.withDefault("all"),
+    ),
+    category: PositiveInteger("category").pipe(
+      Flag.withDescription("Course module category ID from `courses modules`."),
+      Flag.optional,
+    ),
+    status: Flag.integer("status").pipe(Flag.withDescription("Educoder assignment status code."), Flag.withDefault(0)),
+    page: PositiveInteger("page").pipe(Flag.withDescription("Page number to fetch."), Flag.withDefault(1)),
+    limit: PositiveInteger("limit").pipe(Flag.withDescription("Assignments per page."), Flag.withDefault(20)),
+    order: Flag.integer("order").pipe(
+      Flag.withDescription("Educoder ordering code to pass through to the list API."),
+      Flag.optional,
+    ),
+    search: Flag.string("search").pipe(Flag.withDescription("Keyword to search in assignment names."), Flag.optional),
+    sortBy: Flag.choice("sort-by", AssignmentSortByChoices).pipe(
+      Flag.withDescription("Field used to sort assignments."),
+      Flag.optional,
+    ),
+    sortDirection: Flag.choice("sort-direction", SortDirectionChoices).pipe(
+      Flag.withDescription("Sort direction."),
+      Flag.optional,
+    ),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print raw common/lab responses as JSON.")),
   },
   Effect.fn("assignments.list")(function* (input) {
     const commonFeature = yield* CommonAssignmentFeature;
@@ -56,7 +71,7 @@ export const List = Command.make(
     yield* Console.log(sections.length >= 1 ? sections.join("\n\n") : "没有作业 / No assignments found.");
   }),
 ).pipe(
-  Command.withDescription("List common and lab assignments with explicit bilingual ID labels."),
+  Command.withDescription("List assignments in a course and print copyable next commands with IDs."),
   Command.withExamples([
     {
       command: "open-educoder assignments list 109348 --type all",

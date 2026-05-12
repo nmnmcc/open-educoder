@@ -4,7 +4,9 @@ import { Comments, Draft, Info, Members, RedoLogs, Settings, Work } from "./comm
 import { List } from "./list.js";
 
 export const Common = Command.make("common").pipe(
-  Command.withDescription("Common assignment actions: list tasks, view details, work status, and settings."),
+  Command.withDescription(
+    "List common assignments and inspect details, work state, comments, settings, and redo logs.",
+  ),
   Command.withExamples([
     {
       command: "open-educoder assignments common list 109348 --sort-by position --sort-direction desc",

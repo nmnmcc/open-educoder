@@ -7,7 +7,7 @@ import { inspectOptions } from "../utils/inspect-options.js";
 const List = Command.make(
   "list",
   {
-    json: Flag.boolean("json"),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print saved profiles as JSON.")),
   },
   Effect.fn("profile.list")(function* (input) {
     const profileFeature = yield* ProfileFeature;
@@ -24,7 +24,7 @@ const List = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Show all saved profiles and indicate which profile is active."),
+  Command.withDescription("List saved login profiles and mark the active profile."),
   Command.withExamples([
     { command: "open-educoder profiles list", description: "List saved profiles" },
     {
@@ -38,9 +38,18 @@ const List = Command.make(
 const Add = Command.make(
   "add",
   {
-    username: Flag.string("username").pipe(Flag.withAlias("u")),
-    password: Flag.string("password").pipe(Flag.withAlias("p")),
-    name: Argument.string("name").pipe(Argument.withDefault(DefaultProfileName)),
+    username: Flag.string("username").pipe(
+      Flag.withDescription("Educoder username or login account."),
+      Flag.withAlias("u"),
+    ),
+    password: Flag.string("password").pipe(
+      Flag.withDescription("Educoder password for the account."),
+      Flag.withAlias("p"),
+    ),
+    name: Argument.string("name").pipe(
+      Argument.withDescription("Local profile name to save."),
+      Argument.withDefault(DefaultProfileName),
+    ),
   },
   Effect.fn("profile.add")(function* (input) {
     const profileFeature = yield* ProfileFeature;
@@ -53,7 +62,7 @@ const Add = Command.make(
     yield* Console.log(result.view.message);
   }),
 ).pipe(
-  Command.withDescription("Save a profile by logging in and storing returned cookies locally."),
+  Command.withDescription("Log in and save the returned session as a local profile."),
   Command.withExamples([
     {
       command: 'open-educoder profiles add --username "$EDUCODER_USERNAME" --password "$EDUCODER_PASSWORD"',
@@ -70,7 +79,7 @@ const Add = Command.make(
 const Remove = Command.make(
   "remove",
   {
-    name: Argument.string("name"),
+    name: Argument.string("name").pipe(Argument.withDescription("Saved profile name to remove.")),
   },
   Effect.fn("profile.remove")(function* (input) {
     const profileFeature = yield* ProfileFeature;
@@ -79,7 +88,7 @@ const Remove = Command.make(
     yield* Console.log(result.view.message);
   }),
 ).pipe(
-  Command.withDescription("Delete a saved profile and clear its stored login session."),
+  Command.withDescription("Remove a saved profile and its stored session cookies."),
   Command.withExamples([
     { command: "open-educoder profiles remove default", description: "Delete the default profile" },
     { command: "open-educoder profiles remove lab", description: "Delete a named profile" },
@@ -88,7 +97,7 @@ const Remove = Command.make(
 );
 
 export const Profiles = Command.make("profiles").pipe(
-  Command.withDescription("Manage Educoder login profiles stored on this machine."),
+  Command.withDescription("Add, list, and remove local Educoder login profiles."),
   Command.withExamples([
     { command: "open-educoder profiles list", description: "List saved profiles" },
     {

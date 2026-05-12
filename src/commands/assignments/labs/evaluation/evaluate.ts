@@ -3,11 +3,11 @@ import { Command, Flag } from "effect/unstable/cli";
 
 import { LabAssignmentFeature } from "../../../../services/features/assignments/lab.js";
 import {
+  AssignmentIdArgument,
   Content,
   ContentFile,
   CourseId,
   EnvironmentId,
-  AssignmentIdArgument,
   PositiveInteger,
   RepositoryPath,
   RequiredChallengeId,
@@ -37,10 +37,16 @@ export const Evaluate = Command.make(
     file: ContentFile,
     envId: EnvironmentId,
     tabType: TabType,
-    poll: Flag.boolean("poll"),
-    pollInterval: PositiveInteger("poll-interval").pipe(Flag.withDefault(2)),
-    pollLimit: PositiveInteger("poll-limit").pipe(Flag.withDefault(20)),
-    json: Flag.boolean("json"),
+    poll: Flag.boolean("poll").pipe(Flag.withDescription("Keep checking status until a result or poll limit.")),
+    pollInterval: PositiveInteger("poll-interval").pipe(
+      Flag.withDescription("Seconds between status checks when --poll is used."),
+      Flag.withDefault(2),
+    ),
+    pollLimit: PositiveInteger("poll-limit").pipe(
+      Flag.withDescription("Maximum status checks when --poll is used."),
+      Flag.withDefault(20),
+    ),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw evaluation response as JSON.")),
   },
   Effect.fn("assignments.labs.evaluate")(function* (input) {
     yield* requireChallengeSelector({
@@ -84,7 +90,9 @@ export const Evaluate = Command.make(
     yield* Console.log(renderGeneric("评测提交 / Evaluation Submission", result.view));
   }),
 ).pipe(
-  Command.withDescription("Submit a file for evaluation and optionally poll until a result is available."),
+  Command.withDescription(
+    "Save optional file content, submit it for lab evaluation, and optionally poll for the result.",
+  ),
   Command.withExamples([
     {
       command: "open-educoder assignments labs evaluate 109348 3487324 case1/code.sh --file ./code.sh",

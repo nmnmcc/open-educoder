@@ -2,7 +2,7 @@ import { Console, Effect, Option } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
 import { LabAssignmentFeature } from "../../../../services/features/assignments/lab.js";
-import { ChallengeId, ChallengeIndex, CourseId, AssignmentIdArgument } from "../../flags.js";
+import { AssignmentIdArgument, ChallengeId, ChallengeIndex, CourseId } from "../../flags.js";
 import { renderLabTask } from "../../render.js";
 import { optionToUndefined, printJson } from "../../shared.js";
 
@@ -19,7 +19,7 @@ const TaskConfig = {
   homeworkId: AssignmentIdArgument,
   challengeIndex: ChallengeIndex,
   challengeId: ChallengeId,
-  json: Flag.boolean("json"),
+  json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw resolved task response as JSON.")),
 };
 
 const runTask = Effect.fn("assignments.labs.task")(function* (input: TaskCommandInput) {
@@ -39,7 +39,7 @@ const runTask = Effect.fn("assignments.labs.task")(function* (input: TaskCommand
 });
 
 export const Task = Command.make("task", TaskConfig, runTask).pipe(
-  Command.withDescription("Resolve and show lab task context without manually finding task-id."),
+  Command.withDescription("Resolve the active lab task and show task ID, challenge, repository, and runtime context."),
   Command.withExamples([
     {
       command: "open-educoder assignments labs task 109348 3487324",

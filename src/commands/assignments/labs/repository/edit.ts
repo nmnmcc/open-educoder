@@ -8,11 +8,11 @@ import { Command, Flag } from "effect/unstable/cli";
 
 import { LabAssignmentFeature } from "../../../../services/features/assignments/lab.js";
 import {
+  AssignmentIdArgument,
   ChallengeId,
   ChallengeIndex,
   CourseId,
   EnvironmentId,
-  AssignmentIdArgument,
   RepositoryPath,
   TabType,
 } from "../../flags.js";
@@ -138,11 +138,14 @@ export const Edit = Command.make(
     path: RepositoryPath,
     challengeIndex: ChallengeIndex,
     challengeId: ChallengeId,
-    exerciseId: Flag.string("exercise-id").pipe(Flag.withDefault("")),
-    evaluate: Flag.boolean("evaluate"),
+    exerciseId: Flag.string("exercise-id").pipe(
+      Flag.withDescription("Optional Educoder exercise identifier; usually leave empty."),
+      Flag.withDefault(""),
+    ),
+    evaluate: Flag.boolean("evaluate").pipe(Flag.withDescription("Start evaluation after saving edited content.")),
     envId: EnvironmentId,
     tabType: TabType,
-    json: Flag.boolean("json"),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print edit and save results as JSON.")),
   },
   Effect.fn("assignments.labs.edit")(function* (input) {
     const labAssignmentFeature = yield* LabAssignmentFeature;
@@ -233,7 +236,7 @@ export const Edit = Command.make(
     );
   }),
 ).pipe(
-  Command.withDescription("Open a repository file in $VISUAL/$EDITOR, then save back any edits."),
+  Command.withDescription("Open a lab repository file in $VISUAL or $EDITOR, then save changed content back."),
   Command.withExamples([
     {
       command: "open-educoder assignments labs edit 109348 3487324 case1/code.sh",

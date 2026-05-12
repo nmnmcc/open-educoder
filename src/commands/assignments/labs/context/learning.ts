@@ -12,9 +12,9 @@ export const Learning = Command.make(
     homeworkId: AssignmentIdArgument,
     challengeIndex: ChallengeIndex,
     challengeId: ChallengeId,
-    markdown: Flag.boolean("markdown"),
-    text: Flag.boolean("text"),
-    json: Flag.boolean("json"),
+    markdown: Flag.boolean("markdown").pipe(Flag.withDescription("Print the original Markdown content.")),
+    text: Flag.boolean("text").pipe(Flag.withDescription("Print plain text instead of ANSI-rendered content.")),
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print rendered learning content as JSON.")),
   },
   Effect.fn("assignments.labs.learning")(function* (input) {
     const labAssignmentFeature = yield* LabAssignmentFeature;
@@ -34,7 +34,7 @@ export const Learning = Command.make(
     );
   }),
 ).pipe(
-  Command.withDescription("Show a lab challenge's learning content from the task description panel."),
+  Command.withDescription("Show the learning/task description content for one lab challenge."),
   Command.withExamples([
     {
       command: "open-educoder assignments labs learning 109348 3487324 --challenge-index 5",
