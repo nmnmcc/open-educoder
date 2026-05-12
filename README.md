@@ -8,7 +8,7 @@ This tool is for accounts and courses you can already access normally. It keeps 
 - Find course IDs and course category IDs.
 - List common and lab assignments with copyable next commands.
 - Inspect common assignment details, work status, drafts, members, comments, settings, and redo logs.
-- Work with lab challenges, learning content, repository files, evaluation, build/status checks, runtime logs, and SSH.
+- Work with lab challenges, learning content, repository files, evaluation/status checks, runtime logs, and SSH.
 - List exams, start attempts, show questions, save answers, and submit.
 - Open an interactive terminal UI.
 
@@ -40,9 +40,9 @@ Most commands take IDs that are returned by earlier commands:
 | lab assignment ID                  | `open-educoder assignments list COURSE_ID --type lab` or `open-educoder assignments labs list COURSE_ID`      |
 | `challenge-index` / `challenge-id` | `open-educoder assignments labs challenges COURSE_ID ASSIGNMENT_ID`                                           |
 | repository `path`                  | `open-educoder assignments labs repository COURSE_ID ASSIGNMENT_ID`                                           |
-| `env-id`                           | lab task, save, build, log, or runtime responses when Educoder exposes one                                    |
-| `sec-key`                          | lab evaluation/build responses                                                                                |
-| `commit-id`                        | lab save/commit responses                                                                                     |
+| `env-id`                           | lab task, save, evaluation, log, or runtime responses when Educoder exposes one                               |
+| `sec-key`                          | lab evaluation responses                                                                                      |
+| `commit-id`                        | lab save, commit, or snapshot evaluation responses                                                            |
 | `exam-id`                          | `open-educoder exams list COURSE_ID`                                                                          |
 | `question-id` and `choice-id`      | `open-educoder exams show COURSE_ID EXAM_ID --with-choice-content`                                            |
 
@@ -171,25 +171,25 @@ VISUAL='code --wait' open-educoder assignments labs edit COURSE_ID ASSIGNMENT_ID
 
 ### Lab Evaluation
 
-| Command                                                                                                                         | Purpose                                                  |
-| ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `open-educoder assignments labs evaluate COURSE_ID ASSIGNMENT_ID case1/code.sh --file ./code.sh --challenge-index INDEX`        | Save optional file content and submit it for evaluation. |
-| `open-educoder assignments labs evaluate COURSE_ID ASSIGNMENT_ID case1/code.sh --file ./code.sh --poll --challenge-index INDEX` | Submit and poll until a result or poll limit.            |
-| `open-educoder assignments labs build COURSE_ID ASSIGNMENT_ID --sec-key SEC_KEY --commit-id COMMIT_ID`                          | Trigger build/evaluation for a saved repository commit.  |
-| `open-educoder assignments labs status COURSE_ID ASSIGNMENT_ID --sec-key SEC_KEY`                                               | Check current evaluation/build status.                   |
+| Command                                                                                                        | Purpose                                         |
+| -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `open-educoder assignments labs evaluate COURSE_ID ASSIGNMENT_ID case1/code.sh --challenge-index INDEX`        | Evaluate current remote content.                |
+| `open-educoder assignments labs evaluate COURSE_ID ASSIGNMENT_ID --sec-key SEC_KEY --commit-id COMMIT_ID`      | Evaluate a saved repository snapshot.           |
+| `open-educoder assignments labs evaluate COURSE_ID ASSIGNMENT_ID case1/code.sh --poll --challenge-index INDEX` | Evaluate and poll until a result or poll limit. |
+| `open-educoder assignments labs status COURSE_ID ASSIGNMENT_ID --sec-key SEC_KEY`                              | Check current evaluation status.                |
 
-Useful evaluation flags: `--content`, `--file`, `--env-id`, `--tab-type`, `--poll`, `--poll-interval`, `--poll-limit`, `--json`.
+`evaluate` only runs code already saved in Educoder. Use `save` or `edit` before `evaluate` when local code changed.
 
 ### Lab Runtime Environment
 
-| Command                                                                         | Purpose                                                      |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `open-educoder assignments labs logs COURSE_ID ASSIGNMENT_ID --env-id ENV_ID`   | Fetch terminal or build logs from a runtime environment.     |
-| `open-educoder assignments labs commit COURSE_ID ASSIGNMENT_ID --env-id ENV_ID` | Create a repository commit from current runtime files.       |
-| `open-educoder assignments labs pull COURSE_ID ASSIGNMENT_ID --env-id ENV_ID`   | Pull repository files from a runtime environment.            |
-| `open-educoder assignments labs remaining-time COURSE_ID ASSIGNMENT_ID`         | Show remaining runtime/container time.                       |
-| `open-educoder assignments labs ssh COURSE_ID ASSIGNMENT_ID --env-id ENV_ID`    | Resolve SSH connection details and connect with local `ssh`. |
-| `open-educoder assignments labs ssh COURSE_ID ASSIGNMENT_ID --json`             | Print SSH arguments instead of running `ssh`.                |
+| Command                                                                         | Purpose                                                       |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `open-educoder assignments labs logs COURSE_ID ASSIGNMENT_ID --env-id ENV_ID`   | Fetch terminal or evaluation logs from a runtime environment. |
+| `open-educoder assignments labs commit COURSE_ID ASSIGNMENT_ID --env-id ENV_ID` | Create a repository commit from current runtime files.        |
+| `open-educoder assignments labs pull COURSE_ID ASSIGNMENT_ID --env-id ENV_ID`   | Pull repository files from a runtime environment.             |
+| `open-educoder assignments labs remaining-time COURSE_ID ASSIGNMENT_ID`         | Show remaining runtime/container time.                        |
+| `open-educoder assignments labs ssh COURSE_ID ASSIGNMENT_ID --env-id ENV_ID`    | Resolve SSH connection details and connect with local `ssh`.  |
+| `open-educoder assignments labs ssh COURSE_ID ASSIGNMENT_ID --json`             | Print SSH arguments instead of running `ssh`.                 |
 
 ### Exams
 
@@ -222,7 +222,7 @@ profiles: command p, list l, add a, remove R
 courses: command c, list l, info i, modules m
 assignments: command a, list l, common c, labs b
 assignments common: list l, info i, work w, draft n, members u, comments q, settings g, redo-logs d
-assignments labs: list l, challenges k, task t, learning g, repository f, content c, passed a, edit D, save S, reset R, prune V, evaluate E, build B, status s, logs o, commit C, pull P, remaining-time m, ssh r
+assignments labs: list l, challenges k, task t, learning g, repository f, content c, passed a, edit D, save S, reset R, prune V, evaluate E, status s, logs o, commit C, pull P, remaining-time m, ssh r
 exams: command e, list l, info i, start S, show H, submit U, answer A, single S, multiple M, text T
 tui: command t
 ```

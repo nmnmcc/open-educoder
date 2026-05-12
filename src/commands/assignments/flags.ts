@@ -74,7 +74,7 @@ export const EnvironmentId = PositiveInteger("env-id").pipe(
   Flag.optional,
 );
 export const TabType = PositiveInteger("tab-type").pipe(
-  Flag.withDescription("Educoder runtime tab type for build, log, and save actions."),
+  Flag.withDescription("Educoder runtime tab type for evaluation, log, and save actions."),
   Flag.withDefault(1),
 );
 export const TerminalTabType = PositiveInteger("tab-type").pipe(
@@ -82,7 +82,7 @@ export const TerminalTabType = PositiveInteger("tab-type").pipe(
   Flag.withDefault(4),
 );
 export const SecKey = NonEmptyStringFlag("sec-key").pipe(
-  Flag.withDescription("Evaluation sec-key returned by Educoder evaluation or build responses."),
+  Flag.withDescription("Evaluation sec-key returned by Educoder evaluation responses."),
 );
 export const CommitId = NonEmptyStringFlag("commit-id").pipe(
   Flag.withDescription("Repository commit ID returned after saving or committing files."),

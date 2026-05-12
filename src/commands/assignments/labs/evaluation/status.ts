@@ -45,7 +45,7 @@ export const Status = Command.make(
     yield* printStatusResponse(result.raw, input.json);
   }),
 ).pipe(
-  Command.withDescription("Check the current evaluation/build status for a lab task run."),
+  Command.withDescription("Check the current evaluation status for a lab task run."),
   Command.withExamples([
     {
       command: "open-educoder assignments labs status 109348 3487324 --sec-key ypzno7qmxwjt",

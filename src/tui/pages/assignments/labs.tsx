@@ -165,12 +165,11 @@ export const LabDetailPage = Effect.gen(function* () {
       { id: "task", label: "Task info", description: "Challenge, environments and test sets" },
       { id: "repository", label: "Repository", description: "Browse repository files and directories" },
       { id: "remaining", label: "Remaining time", description: "Runtime/container time left" },
-      { id: "logs", label: "Logs", description: "Fetch terminal or build logs" },
+      { id: "logs", label: "Logs", description: "Fetch terminal or evaluation logs" },
       { id: "passed", label: "Passed code", description: "Fetch latest accepted code for one file" },
       { id: "edit", label: "Edit file", description: "Open file in $VISUAL/$EDITOR and save back" },
       { id: "save", label: "Save file", description: "Upload local file content to a repository path" },
-      { id: "evaluate", label: "Evaluate file", description: "Upload, build and optionally poll result" },
-      { id: "build", label: "Build", description: "Build an already saved snapshot by sec key and commit id" },
+      { id: "evaluate", label: "Evaluate file", description: "Evaluate saved remote repository content" },
       { id: "status", label: "Evaluation status", description: "Check result by sec key" },
       { id: "commit", label: "Commit files", description: "Commit current environment changes" },
       { id: "pull", label: "Pull files", description: "Pull repository files into runtime" },
@@ -361,14 +360,17 @@ export const LabDetailPage = Effect.gen(function* () {
 
       if (id === "evaluate") {
         const path = await promptRepositoryPath();
-        const content = path === null ? null : await readLocalContent();
 
-        if (path !== null && content !== null) {
+        if (path !== null) {
           const pollLimit = nonNegativeNumber(
             (await ui.prompt("Poll attempts", "0 disables polling, default 20", "20")) ?? "20",
             20,
           );
-          const confirmed = await ui.danger("Evaluate repository file", `Upload and evaluate ${path}.`, path);
+          const confirmed = await ui.danger(
+            "Evaluate repository file",
+            `Evaluate saved remote content at ${path}.`,
+            path,
+          );
 
           if (confirmed) {
             await ui.runAction(
@@ -377,7 +379,6 @@ export const LabDetailPage = Effect.gen(function* () {
                 courseId: route.courseId,
                 homeworkId: route.homeworkId,
                 path,
-                content,
                 tabType: 1,
                 poll: pollLimit > 0,
                 pollInterval: 2,
@@ -387,32 +388,6 @@ export const LabDetailPage = Effect.gen(function* () {
                     ui.setBusy("Evaluate repository file", `[${attempt}/${limit}] ${renderResult(response)}`),
                   );
                 },
-              }),
-            );
-          }
-        }
-
-        return;
-      }
-
-      if (id === "build") {
-        const secKey = await askRequired(ui, "Build", "sec-key");
-        const commitId = secKey === null ? null : await askRequired(ui, "Build", "commit-id");
-
-        if (secKey !== null && commitId !== null) {
-          const confirmed = await ui.danger("Build repository snapshot", `Build commit ${commitId}.`, commitId);
-
-          if (confirmed) {
-            await ui.runAction(
-              "Build repository snapshot",
-              labAssignment.buildRepositoryFile({
-                courseId: route.courseId,
-                homeworkId: route.homeworkId,
-                secKey,
-                commitId,
-                contentModified: 0,
-                resubmit: "",
-                tabType: 1,
               }),
             );
           }

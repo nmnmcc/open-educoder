@@ -8,7 +8,6 @@ import { Logs } from "./environment/logs.js";
 import { Pull } from "./environment/pull.js";
 import { RemainingTime } from "./environment/remaining-time.js";
 import { Ssh } from "./environment/ssh.js";
-import { Build } from "./evaluation/build.js";
 import { Choose } from "./evaluation/choose.js";
 import { Evaluate } from "./evaluation/evaluate.js";
 import { Status } from "./evaluation/status.js";
@@ -31,7 +30,7 @@ export const LabSubcommands = [
   },
   {
     group: "Evaluation",
-    commands: [Evaluate, Build, Choose, Status],
+    commands: [Evaluate, Choose, Status],
   },
   {
     group: "Environment",

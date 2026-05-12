@@ -24,9 +24,8 @@ export const Labs = Command.make("labs").pipe(
       description: "Show one challenge's learning content",
     },
     {
-      command:
-        "open-educoder assignments labs evaluate 109348 3487324 case1/code.sh --file ./code.sh --poll --challenge-index 1",
-      description: "Save a file and wait for evaluation result",
+      command: "open-educoder assignments labs evaluate 109348 3487324 case1/code.sh --poll --challenge-index 1",
+      description: "Evaluate saved remote code and wait for the result",
     },
     {
       command: "open-educoder assignments labs repository 109348 3487324 --path case1",
