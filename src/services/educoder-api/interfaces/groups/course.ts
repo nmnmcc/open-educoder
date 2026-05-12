@@ -4,9 +4,6 @@ import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
 const NonEmptyString = Schema.String.pipe(Schema.check(Schema.isMinLength(1)));
 const IdFromString = Schema.NumberFromString.pipe(Schema.check(Schema.isInt()));
 const NullableString = Schema.NullishOr(Schema.String);
-const NullableNumber = Schema.NullishOr(Schema.Number);
-const NullableBoolean = Schema.NullishOr(Schema.Boolean);
-const EmptyArray = Schema.Array(Schema.Never);
 const TaskOperationItem = Schema.Union([Schema.String, Schema.Boolean]);
 const CourseRequestParams = {
   courseId: NonEmptyString,
@@ -17,26 +14,31 @@ const CourseRequestQuery = {
 };
 /*
 Sample: GET /api/courses/MOAPGNLO/left_banner.json
-{
-  "root_id": 1809404,
-  "name": "<module name>",
-  "category_id": 1213301,
-  "category_name": "<category name>",
-  "position": 1,
-  "category_type": "shixun_homework",
-  "second_category_url": "/classrooms/MOAPGNLO/shixun_homework/1213301",
-  "third_category": []
-}
+[
+  {
+    "root_id": 1809404,
+    "name": "<module name>",
+    "category_id": 1213301,
+    "category_name": "<category name>",
+    "position": 1,
+    "category_type": "shixun_homework",
+    "second_category_url": "/classrooms/MOAPGNLO/shixun_homework/1213301",
+    "third_category": []
+  },
+  {
+    "root_id": 1809412,
+    "name": "<category name>"
+  }
+]
 */
 const Category = Schema.Struct({
   root_id: Schema.optionalKey(Schema.Int),
   name: Schema.optionalKey(Schema.String),
-  category_id: Schema.NullOr(Schema.Int),
-  category_name: Schema.String,
+  category_id: Schema.optionalKey(Schema.NullOr(Schema.Int)),
+  category_name: Schema.optionalKey(Schema.String),
   position: Schema.optionalKey(Schema.Int),
   category_type: Schema.optionalKey(Schema.String),
   second_category_url: Schema.optionalKey(Schema.String),
-  third_category: Schema.optionalKey(EmptyArray),
 });
 /*
 Sample: GET /api/courses/MOAPGNLO/homework_commons.json
@@ -74,50 +76,26 @@ Sample: GET /api/courses/MOAPGNLO/homework_commons.json
 }
 */
 const Homework = Schema.Struct({
-  is_archive: Schema.optionalKey(Schema.Boolean),
-  related_poll: Schema.optionalKey(Schema.Boolean),
-  is_shixun: Schema.Boolean,
   homework_id: Schema.Int,
-  can_view_details: Schema.optionalKey(Schema.Boolean),
   name: Schema.String,
-  private_icon: Schema.optionalKey(Schema.Boolean),
   status: Schema.Array(Schema.String),
   status_time: Schema.String,
   time_status: Schema.Int,
   allow_late: Schema.Boolean,
   author: Schema.String,
-  author_img: Schema.optionalKey(Schema.String),
-  author_login: Schema.optionalKey(Schema.String),
   created_at: Schema.String,
-  unified_setting: Schema.Boolean,
   upper_category_name: Schema.optionalKey(NullableString),
-  position: Schema.optionalKey(Schema.Int),
-  publish_immediately: Schema.optionalKey(Schema.Boolean),
-  end_immediately: Schema.optionalKey(Schema.Boolean),
-  open_evaluate: Schema.optionalKey(NullableBoolean),
   lab_status: Schema.optionalKey(Schema.String),
   work_id: Schema.optionalKey(Schema.Int),
   work_status: Schema.optionalKey(Schema.Array(Schema.String)),
   un_commit_work: Schema.optionalKey(Schema.Boolean),
   shixun_identifier: Schema.optionalKey(Schema.String),
-  shixun_status: Schema.optionalKey(Schema.Int),
-  shixun_name: Schema.optionalKey(Schema.String),
-  schools: Schema.optionalKey(EmptyArray),
-  opening_time: Schema.optionalKey(NullableString),
-  is_enter_shixun: Schema.optionalKey(Schema.Boolean),
-  shixun_enter_status: Schema.optionalKey(Schema.Int),
-  shixun_marks: Schema.optionalKey(EmptyArray),
-  redo: Schema.optionalKey(Schema.Boolean),
   task_operation: Schema.optionalKey(Schema.Array(TaskOperationItem)),
   shixun_finished_status: Schema.optionalKey(Schema.Int),
-  student_passed_time: Schema.optionalKey(Schema.String),
-  is_jupyter: Schema.optionalKey(Schema.Boolean),
-  is_jupyter_lab: Schema.optionalKey(Schema.Boolean),
   myshixun_identifier: Schema.optionalKey(NullableString),
   publish_time: Schema.String,
   end_time: Schema.String,
   late_time: Schema.String,
-  end_time_s: Schema.String,
   challenge_count: Schema.optionalKey(Schema.Int),
   checked_challenge_count: Schema.optionalKey(Schema.Int),
   finished_challenge_count: Schema.optionalKey(Schema.Int),
@@ -149,26 +127,13 @@ Sample: GET /api/courses/MOAPGNLO/homework_commons.json
 }
 */
 const HomeworkCommonsResponse = Schema.Struct({
-  course_identity: Schema.Int,
-  homework_type: Schema.Int,
-  course_public: Schema.Boolean,
-  is_end: Schema.Boolean,
-  main_category_id: Schema.Int,
   main_category_name: Schema.String,
   category_id: Schema.NullishOr(Schema.Int),
   category_name: NullableString,
   homeworks: Schema.Array(Homework),
-  all_count: Schema.Int,
   published_count: Schema.Int,
   unpublished_count: Schema.Int,
-  task_count: Schema.Int,
   query_total_count: Schema.Int,
-  archive_count: Schema.Int,
-  challenge_count: Schema.Int,
-  finished_challenge_count: Schema.Int,
-  finished_task_count: Schema.Int,
-  min_finished_game: NullableNumber,
-  shixun_total_count: Schema.Int,
 });
 /*
 Sample: GET /api/v2/courses/MOAPGNLO/exercises.json
@@ -252,22 +217,6 @@ const ExerciseSummary = Schema.Struct({
   open_appraise: Schema.Boolean,
 });
 
-/*
-Sample: GET /api/courses/MOAPGNLO/left_banner.json
-{
-  "id": 1938853,
-  "name": "<module name>",
-  "type": "teaching_plan",
-  "position": 13
-}
-*/
-const HiddenModule = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String,
-  type: Schema.String,
-  position: Schema.Int,
-});
-
 export const Course = HttpApiGroup.make("Course")
   .add(
     HttpApiEndpoint.get("list", "/api/users/:username/courses.json", {
@@ -285,7 +234,40 @@ export const Course = HttpApiGroup.make("Course")
         zzud: NonEmptyString,
       },
       /*
-      Sample unavailable: no captured /api/users/:username/courses.json response.
+      Sample: GET /api/users/pl2kfhv6g/courses.json
+      {
+        "count": 2,
+        "courses": [
+          {
+            "id": 109348,
+            "name": "<course name>",
+            "members_count": 1127,
+            "homework_commons_count": 8,
+            "attachments_count": 0,
+            "visits": 42732,
+            "school": "<school>",
+            "teacher_users": ["<teacher>"],
+            "created_at": "2026-02-27",
+            "is_end": false,
+            "subject_id": null,
+            "subject_identifier": null,
+            "first_category_url": "/classrooms/MOAPGNLO/shixun_homework",
+            "first_category": { "module_type": "shixun_homework", "id": 1809404 },
+            "is_public": 0,
+            "can_visited": true,
+            "teacher": {
+              "id": 2137897,
+              "real_name": "<teacher>",
+              "avatar_url": "avatars/User/2137897?t=1736177014",
+              "school_name": "<school>"
+            },
+            "forbid_visit_info": {
+              "forbid_student_visit": null,
+              "username": ""
+            }
+          }
+        ]
+      }
       */
       success: Schema.Struct({
         count: Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(0))),
@@ -298,27 +280,10 @@ export const Course = HttpApiGroup.make("Course")
             attachments_count: Schema.Int,
             visits: Schema.Int,
             school: Schema.String,
-            teacher_users: Schema.Array(Schema.String),
             created_at: Schema.String,
             is_end: Schema.Boolean,
-            subject_id: Schema.NullishOr(Schema.String),
-            subject_identifier: Schema.NullishOr(Schema.String),
-            first_category_url: Schema.String,
-            first_category: Schema.Struct({
-              module_type: Schema.String,
-              id: Schema.Int,
-            }),
-            is_public: Schema.BooleanFromBit,
-            can_visited: Schema.Boolean,
             teacher: Schema.Struct({
-              id: Schema.Int,
               real_name: Schema.String,
-              avatar_url: Schema.String,
-              school_name: Schema.String,
-            }),
-            forbid_visit_info: Schema.Struct({
-              forbid_student_visit: Schema.Boolean,
-              username: Schema.String,
             }),
           }),
         ),
@@ -382,24 +347,11 @@ export const Course = HttpApiGroup.make("Course")
       }
       */
       success: Schema.Struct({
-        copy_completed: Schema.Boolean,
-        is_natural_language_data: Schema.Boolean,
         name: Schema.String,
         teacher_name: Schema.String,
         allow_view_message: Schema.Boolean,
-        allow_apply_teacher: Schema.Boolean,
-        copy_teacher_name: Schema.String,
-        teacher_login: Schema.String,
-        teacher_img: Schema.String,
         teacher_school: Schema.String,
         is_public: Schema.Boolean,
-        student_join_approve: Schema.Boolean,
-        student_join_pro: Schema.Boolean,
-        show_unstart_exercise: Schema.Boolean,
-        forbid_end_exercise: Schema.Boolean,
-        switch_to_student: Schema.Boolean,
-        switch_to_teacher: Schema.Boolean,
-        switch_to_assistant: Schema.Boolean,
         teacher_users: Schema.Array(Schema.String),
         group_name: Schema.String,
         teacher_count: Schema.Int,
@@ -407,28 +359,11 @@ export const Course = HttpApiGroup.make("Course")
         course_group_count: Schema.Int,
         credit: Schema.Number,
         course_id: Schema.Int,
-        sub_discipline_id: NullableNumber,
-        discipline_id: NullableNumber,
         class_period: Schema.Int,
         course_end: Schema.Boolean,
-        start_date: NullableString,
-        deadline: NullableString,
-        code_halt: Schema.Boolean,
         show_invite_code: Schema.Boolean,
         invite_code: Schema.String,
-        invite_code_halt: Schema.Int,
         visits: Schema.Int,
-        course_identity: Schema.Int,
-        excellent: Schema.Boolean,
-        subject_identifier: Schema.String,
-        third_party_name: NullableString,
-        third_party_tip: Schema.Boolean,
-        third_part_login_url: Schema.String,
-        need_third_part_logined: Schema.Boolean,
-        mooc_user_id: NullableNumber,
-        mooc_course_id: NullableNumber,
-        featured: Schema.Boolean,
-        is_import_student: Schema.Boolean,
       }),
     }),
   )
@@ -468,15 +403,12 @@ export const Course = HttpApiGroup.make("Course")
           Schema.Struct({
             id: Schema.Int,
             name: Schema.String,
-            init_name: Schema.String,
             type: Schema.String,
             position: Schema.Int,
-            main_id: Schema.Int,
             category_url: NullableString,
             second_category: Schema.optionalKey(Schema.Array(Category)),
           }),
         ),
-        hidden_modules: Schema.Array(HiddenModule),
       }),
     }),
   )

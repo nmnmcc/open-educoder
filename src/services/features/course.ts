@@ -210,9 +210,9 @@ export class CourseFeature extends Context.Service<CourseFeature, CourseFeatureS
                   url: module.category_url ?? null,
                   categories: Object.fromEntries(
                     (module.second_category ?? []).map((category) => [
-                      category.category_id ?? category.category_name,
+                      String(category.category_id ?? category.category_name ?? category.root_id ?? category.name ?? ""),
                       {
-                        name: category.category_name,
+                        name: category.category_name ?? category.name ?? "",
                         position: category.position ?? null,
                         type: category.category_type ?? null,
                         url: category.second_category_url ?? null,

@@ -2,7 +2,6 @@ import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/unstable/httpapi";
 
 const NonEmptyString = Schema.String.pipe(Schema.check(Schema.isMinLength(1)));
-const EmptyArray = Schema.Array(Schema.Never);
 const NullableString = Schema.NullOr(Schema.String);
 const NullableNumber = Schema.NullOr(Schema.Number);
 const NullableBoolean = Schema.NullOr(Schema.Boolean);
@@ -128,36 +127,12 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
 }
 */
 const TaskGame = Schema.Struct({
-  id: Schema.Int,
-  identifier: Schema.String,
-  myshixun_id: Schema.Int,
-  challenge_id: Schema.Int,
-  user_id: Schema.Int,
-  status: Schema.Int,
-  final_score: Schema.Number,
-  cost_time: Schema.Number,
-  created_at: Schema.String,
-  updated_at: Schema.String,
-  open_time: Schema.String,
-  end_time: NullableString,
-  star: Schema.Int,
-  answer_open: Schema.Int,
-  answer_deduction: Schema.Number,
-  evaluate_count: Schema.Int,
-  exericse_evaluate_count: Schema.Int,
-  accuracy: NullableNumber,
-  code_change_count: NullableNumber,
-  extend_score: NullableNumber,
-  modify_time: NullableString,
-  picture_path: NullableString,
-  resubmit_identifier: NullableString,
-  retry_status: Schema.Int,
-  score_radio: Schema.Number,
-  target_query_index: NullableNumber,
-  test_sets_view: Schema.Boolean,
-  homework_common_answer_open: Schema.Boolean,
-  homework_common_comment_open: Schema.Boolean,
-  exercise_finished_at: NullableString,
+  id: Schema.optionalKey(Schema.Int),
+  identifier: Schema.optionalKey(Schema.String),
+  myshixun_id: Schema.optionalKey(Schema.Int),
+  status: Schema.optionalKey(Schema.Int),
+  final_score: Schema.optionalKey(Schema.Number),
+  cost_time: Schema.optionalKey(Schema.Number),
 });
 
 /*
@@ -173,27 +148,13 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
 }
 */
 const TaskChallenge = Schema.Struct({
-  id: Schema.Int,
-  position: Schema.Int,
-  subject: Schema.String,
-  score: Schema.Number,
-  path: Schema.String,
-  difficulty: Schema.Int,
-  exec_time: Schema.Int,
-  shixun_id: Schema.Int,
-  st: Schema.Int,
-  task_pass: Schema.String,
-  praises_count: Schema.Int,
-  disable_copy: Schema.Boolean,
-  hide_answer: Schema.Boolean,
-  homework_challenge_index: Schema.Int,
-  ignore_space: Schema.Int,
-  modify_time: NullableString,
-  open_rank: Schema.String,
-  show_type: Schema.Int,
-  thiry_party: Schema.Boolean,
-  web_route: NullableString,
-  with_code_file: Schema.Boolean,
+  id: Schema.optionalKey(Schema.Int),
+  position: Schema.optionalKey(Schema.Int),
+  subject: Schema.optionalKey(Schema.String),
+  score: Schema.optionalKey(Schema.Number),
+  path: Schema.optionalKey(Schema.String),
+  difficulty: Schema.optionalKey(Schema.Int),
+  exec_time: Schema.optionalKey(Schema.Int),
 });
 
 /*
@@ -208,109 +169,10 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
 }
 */
 const TaskShixun = Schema.Struct({
-  id: Schema.Int,
-  identifier: Schema.String,
-  name: Schema.String,
-  language: Schema.String,
-  status: Schema.Int,
-  repo_name: Schema.String,
-  git_url: Schema.String,
-  created_at: Schema.String,
-  updated_at: Schema.String,
-  modify_time: Schema.String,
-  publish_time: Schema.String,
-  reset_time: Schema.String,
-  mark_content: Schema.String,
-  evaluate_method: Schema.String,
-  standard_answer: Schema.String,
-  number: Schema.String,
-  name_pinyin: Schema.String,
-  user_id: Schema.Int,
-  challenges_count: Schema.Int,
-  users_count: Schema.Int,
-  myshixuns_count: Schema.Int,
-  visits: Schema.Int,
-  averge_star: Schema.Number,
-  exec_time: Schema.Int,
-  open_answer_and_test: Schema.Int,
-  public: Schema.Int,
-  trainee: Schema.Int,
-  use_scope: Schema.Int,
-  webssh: Schema.Int,
-  sticky: Schema.Int,
-  fork_from: Schema.Int,
-  split_from: Schema.Int,
-  original_shixun_id: Schema.Int,
-  laboratory_id: Schema.Int,
-  mirror_script_id: Schema.Int,
-  evaluate_scirpt_env_id: Schema.Int,
-  initiative_study_num: Schema.Int,
-  spoc_study_num: Schema.Int,
-  pod_life: Schema.Int,
-  survival_time: Schema.Int,
-  prebuild_click_count: Schema.Int,
-  mark_status: Schema.Int,
-  hide_code: Schema.Int,
-  active_copy: Schema.Boolean,
-  allow_file_upload: Schema.Boolean,
-  authentication: Schema.Boolean,
-  can_copy: Schema.Boolean,
-  close_internet: Schema.Boolean,
-  code_edit_permission: Schema.Boolean,
-  copy_for_exercise: Schema.Boolean,
-  copy_for_exercise_save: Schema.Boolean,
-  display_git_address: Schema.Boolean,
-  exit_delete_pod_switch: Schema.Boolean,
-  forbid_copy: Schema.Boolean,
-  hidden: Schema.Boolean,
-  homepage_show: Schema.Boolean,
-  is_commit_file_rule: Schema.Boolean,
-  is_disable_discuss: Schema.Boolean,
-  is_important_shixun: Schema.Boolean,
-  is_jupyter: Schema.Boolean,
-  is_jupyter_lab: Schema.Boolean,
-  is_jupyter_lab_private_cloud: Schema.Boolean,
-  is_wechat_support: Schema.Boolean,
-  jupyter_evaluate: Schema.Boolean,
-  jupyter_show_description: Schema.Boolean,
-  multi_webssh: Schema.Boolean,
-  need_authorize: Schema.Boolean,
-  open_code_debugger: Schema.Boolean,
-  open_local_evaluate: Schema.Boolean,
-  open_self_run: Schema.Boolean,
-  outsourced: Schema.Boolean,
-  port_mapping: Schema.Boolean,
-  show_code_dir: Schema.Boolean,
-  sigle_training: Schema.Boolean,
-  sync_git_remote_code: Schema.Boolean,
-  task_pass: Schema.Boolean,
-  test_set_permission: Schema.Boolean,
-  to_be_built: Schema.Boolean,
-  use_jupyter_result: Schema.Boolean,
-  vip: Schema.Boolean,
-  closer_id: NullableNumber,
-  delete_user_id: NullableNumber,
-  end_time: NullableString,
-  excute_time: NullableString,
-  gpid: NullableNumber,
-  image_text: NullableString,
-  jupyter_lab_appoint_directory: NullableString,
-  jupyter_lab_appoint_file_type: NullableString,
-  jupyter_lab_custom_file_type: NullableString,
-  jupyter_lab_private_cloud_id: NullableNumber,
-  jupyter_lab_private_instance_id: NullableNumber,
-  major_id: NullableNumber,
-  mark_time: NullableString,
-  mark_user_id: NullableNumber,
-  opening_time: NullableString,
-  public_datetime: NullableString,
-  public_user_id: NullableNumber,
-  publish_datetime: NullableString,
-  publish_user_id: NullableNumber,
-  startup_file: NullableString,
-  version_identifier: NullableString,
-  webssh_cloud_type: NullableNumber,
-  windows_connection_mode: NullableString,
+  id: Schema.optionalKey(Schema.Int),
+  identifier: Schema.optionalKey(Schema.String),
+  name: Schema.optionalKey(Schema.String),
+  language: Schema.optionalKey(Schema.String),
 });
 
 /*
@@ -324,24 +186,10 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
 }
 */
 const TaskMyshixun = Schema.Struct({
-  id: Schema.Int,
-  identifier: Schema.String,
-  commit_id: Schema.String,
-  status: Schema.Int,
-  repo_name: Schema.String,
-  shixun_id: Schema.Int,
-  user_id: Schema.Int,
-  created_at: Schema.String,
-  updated_at: Schema.String,
-  modify_time: Schema.String,
-  onclick_time: Schema.String,
-  reset_time: Schema.String,
-  hidden: Schema.Boolean,
-  is_public: Schema.Boolean,
-  system_tip: Schema.Boolean,
-  git_url: NullableString,
-  gpid: NullableNumber,
-  reset_repository_user_id: NullableNumber,
+  id: Schema.optionalKey(Schema.Int),
+  identifier: Schema.optionalKey(Schema.String),
+  commit_id: Schema.optionalKey(Schema.String),
+  status: Schema.optionalKey(Schema.Int),
 });
 
 /*
@@ -354,17 +202,9 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
 }
 */
 const TaskUser = Schema.Struct({
-  user_id: Schema.Int,
-  login: Schema.String,
-  name: Schema.String,
-  school: Schema.String,
-  image_url: Schema.String,
-  user_url: Schema.String,
-  authentication: Schema.Boolean,
-  disable_discuss_status: Schema.Int,
-  grade: Schema.Int,
-  identity: Schema.Int,
-  user_course_identity: Schema.Int,
+  user_id: Schema.optionalKey(Schema.Int),
+  login: Schema.optionalKey(Schema.String),
+  name: Schema.optionalKey(Schema.String),
 });
 
 /*
@@ -378,17 +218,11 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
 }
 */
 const ShixunEnvironment = Schema.Struct({
-  shixun_environment_id: Schema.Int,
-  name: Schema.String,
-  tab_type: Schema.Int,
-  resource_type: Schema.Int,
-  tpi_type: Schema.Int,
-  cloud_type: Schema.Int,
-  program_language: Schema.String,
-  index_tab: Schema.String,
-  allow_use_code_debugger: Schema.Boolean,
-  command_settings: EmptyArray,
-  command_string: EmptyArray,
+  shixun_environment_id: Schema.optionalKey(Schema.Int),
+  name: Schema.optionalKey(Schema.String),
+  tab_type: Schema.optionalKey(Schema.Int),
+  resource_type: Schema.optionalKey(Schema.Int),
+  tpi_type: Schema.optionalKey(Schema.Int),
 });
 
 /*
@@ -402,63 +236,22 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
 }
 */
 const TaskTestSet = Schema.Struct({
-  id: NullableNumber,
-  input: Schema.String,
-  output: Schema.String,
-  actual_output: NullableString,
-  result: NullableBoolean,
-  is_public: Schema.Boolean,
-  matchRule: Schema.String,
-  compile_success: NullableNumber,
-  ts_mem: NullableNumber,
-  ts_time: NullableNumber,
-  actual_output_visible: Schema.Boolean,
-  input_file_url: NullableString,
-  input_visible: Schema.Boolean,
-  is_file: Schema.Boolean,
-  is_invisible: Schema.Boolean,
-  output_file_url: NullableString,
-  show_lock: Schema.Boolean,
-  tags: NullableString,
-  type: Schema.Int,
+  output: Schema.optionalKey(Schema.String),
+  actual_output: Schema.optionalKey(NullableString),
+  result: Schema.optionalKey(NullableBoolean),
+  is_public: Schema.optionalKey(Schema.Boolean),
+  matchRule: Schema.optionalKey(Schema.String),
+  compile_success: Schema.optionalKey(NullableNumber),
+  ts_mem: Schema.optionalKey(NullableNumber),
+  ts_time: Schema.optionalKey(NullableNumber),
 });
 
 /*
 Sample: GET /api/tasks/sflmr2fxi4wn.json
-{
-  "ai_exam_question": false,
-  "ai_syntax_check": false,
-  "ai_code_diagnosis": false,
-  "ai_code_evaluation_promote": "<text>"
-}
+{ "shixun_environment_id": 1128633 }
 */
-const HomeworkExtension = Schema.Struct({
-  ai_exam_question: Schema.Boolean,
-  ai_syntax_check: Schema.Boolean,
-  ai_code_diagnosis: Schema.Boolean,
-  ai_guidance: Schema.Boolean,
-  ai_guide: Schema.Boolean,
-  ai_q_and_a: Schema.Boolean,
-  ai_code_evaluation_promote: Schema.String,
-  ai_code_evaluation: Schema.Boolean,
-  ai_code_optimization: Schema.Boolean,
-  ai_code_comment: Schema.Boolean,
-});
-
-/*
-Sample: GET /api/tasks/sflmr2fxi4wn.json
-{
-  "name": "<environment>",
-  "description": "<description>",
-  "shixun_environment_id": 1128633,
-  "close_internet": false
-}
-*/
-const MirrorDescription = Schema.Struct({
-  name: Schema.String,
-  description: Schema.String,
-  shixun_environment_id: Schema.Int,
-  close_internet: Schema.Boolean,
+const CodeEditor = Schema.Struct({
+  shixun_environment_id: Schema.optionalKey(Schema.Int),
 });
 
 /*
@@ -476,78 +269,18 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
 }
 */
 const TaskInfoResponse = Schema.Struct({
-  st: Schema.Int,
-  discusses_count: Schema.Int,
-  game_count: Schema.Int,
-  record_consume_time: NullableNumber,
-  prev_game: NullableString,
-  next_game: NullableString,
-  praise_count: Schema.Int,
-  user_praise: Schema.Boolean,
-  time_limit: Schema.Int,
-  tomcat_url: Schema.String,
-  is_teacher: Schema.Boolean,
-  myshixun_manager: Schema.Boolean,
   game: TaskGame,
   challenge: TaskChallenge,
-  shixun: TaskShixun,
   myshixun: TaskMyshixun,
-  user: TaskUser,
-  rank_name: NullableString,
-  is_last_game: Schema.Boolean,
-  shixun_choice_public_result: Schema.Boolean,
-  status: Schema.String,
-  homework_common_id: Schema.Int,
-  homework_common_name: Schema.String,
-  homework_common_is_end: Schema.Boolean,
-  homework_extension: HomeworkExtension,
-  shixun_environments: Schema.Array(ShixunEnvironment),
-  test_sets: Schema.Array(TaskTestSet),
-  test_sets_count: NullableNumber,
-  sets_error_count: NullableNumber,
-  shixun_status: Schema.Int,
-  local_evaluate_languages: Schema.Array(Schema.String),
-  mirror_description: Schema.Array(Schema.String),
-  mirror_description_multi: Schema.Array(MirrorDescription),
-  mirror_name: Schema.Array(Schema.String),
-  last_compile_output: NullableString,
-  sec_key: NullableString,
-  wss_url: Schema.String,
-  subject_id: NullableNumber,
-  subject_name: NullableString,
-  to_user_id: Schema.Int,
-  user_course_identity: Schema.Int,
-  code_editor: MirrorDescription,
-  testCasesExp: NullableString,
-  testCasesType: Schema.Int,
-  picture: Schema.Int,
-  show_style: Schema.Int,
-  open_answer_and_test: Schema.Int,
-  open_local_evaluate: Schema.Boolean,
-  open_self_run: Schema.Boolean,
-  openai_tpi: Schema.Boolean,
-  hideLeftPanel: Schema.Boolean,
-  hide_width_rate: Schema.Number,
-  action_analysis: Schema.Boolean,
-  allowed_unlock: Schema.Boolean,
-  challenge_optional: Schema.Boolean,
-  chatgpt: Schema.Boolean,
-  exit_delete_pod_switch: Schema.Boolean,
-  has_answer: Schema.Boolean,
-  in_review: Schema.Boolean,
-  is_charge_window: Schema.Boolean,
-  is_open_submit_test_result: Schema.Boolean,
-  is_sub_pass: Schema.Boolean,
-  is_submit_test_result: Schema.Boolean,
-  manager_permission: Schema.Boolean,
-  related_poll: Schema.Boolean,
-  show_start_permanent: Schema.Boolean,
-  skip_level: Schema.Boolean,
-  start_permanent: Schema.Boolean,
-  tpm_cases_modified: Schema.Boolean,
-  tpm_modified: Schema.Boolean,
-  view_answer_tip: Schema.Boolean,
-  work_end_forbid_evaluate: Schema.Boolean,
+  shixun: Schema.optionalKey(TaskShixun),
+  user: Schema.optionalKey(TaskUser),
+  homework_common_id: Schema.optionalKey(Schema.Int),
+  homework_common_name: Schema.optionalKey(Schema.String),
+  homework_common_is_end: Schema.optionalKey(Schema.Boolean),
+  shixun_environments: Schema.optionalKey(Schema.Array(ShixunEnvironment)),
+  test_sets: Schema.optionalKey(Schema.Array(TaskTestSet)),
+  shixun_status: Schema.optionalKey(Schema.Int),
+  code_editor: Schema.optionalKey(CodeEditor),
 });
 
 /*
@@ -561,11 +294,33 @@ Sample: POST /api/tasks/sflmr2fxi4wn/log_output
 }
 */
 const LogOutputResponse = Schema.Struct({
-  status: Schema.Int,
-  message: Schema.String,
-  data: Schema.Struct({
-    wss_url: Schema.String,
-  }),
+  status: Schema.optionalKey(Schema.Int),
+  message: Schema.optionalKey(Schema.String),
+  data: Schema.optionalKey(
+    Schema.Struct({
+      wss_url: Schema.optionalKey(Schema.String),
+    }),
+  ),
+});
+
+/*
+Sample: POST /api/tasks/sflmr2fxi4wn/game_build.json
+{
+  "code": 0,
+  "msg": "<message>",
+  "success": true
+}
+*/
+const GameBuildNestedResponse = Schema.Struct({
+  code: Schema.optionalKey(Schema.Int),
+  msg: Schema.optionalKey(Schema.String),
+  success: Schema.optionalKey(Schema.Boolean),
+  data: Schema.optionalKey(
+    Schema.Struct({
+      port: Schema.optionalKey(Schema.Int),
+      wssUrl: Schema.optionalKey(Schema.String),
+    }),
+  ),
 });
 
 /*
@@ -580,28 +335,14 @@ Sample: POST /api/tasks/sflmr2fxi4wn/game_build.json
 }
 */
 const GameBuildResponse = Schema.Struct({
-  status: Schema.Int,
-  resubmit: NullableString,
-  position: Schema.Int,
-  port: Schema.Int,
-  had_done: Schema.Int,
-  tpi_id: Schema.String,
-  code: NullableString,
-  res: Schema.Struct({
-    code: Schema.Int,
-    msg: Schema.String,
-    success: Schema.Boolean,
-    data: Schema.Struct({
-      ableToCreate: Schema.Int,
-      code: Schema.Int,
-      costTime: Schema.Int,
-      msg: Schema.String,
-      port: Schema.Int,
-      queueCode: Schema.Int,
-      waitNum: Schema.Int,
-      wssUrl: Schema.String,
-    }),
-  }),
+  status: Schema.optionalKey(Schema.Int),
+  resubmit: Schema.optionalKey(NullableString),
+  position: Schema.optionalKey(Schema.Int),
+  port: Schema.optionalKey(Schema.Int),
+  had_done: Schema.optionalKey(Schema.Int),
+  tpi_id: Schema.optionalKey(Schema.String),
+  code: Schema.optionalKey(NullableString),
+  res: Schema.optionalKey(GameBuildNestedResponse),
 });
 
 /*
@@ -629,31 +370,16 @@ Sample: GET /api/tasks/sflmr2fxi4wn/game_status.json
 }
 */
 const GameStatusResultResponse = Schema.Struct({
-  grade: Schema.Number,
-  gold: Schema.Int,
-  experience: Schema.Int,
   status: Schema.Int,
-  had_done: Schema.Int,
-  position: Schema.Int,
-  port: Schema.String,
-  record_consume_time: Schema.Number,
-  mirror_name: Schema.Array(Schema.String),
-  picture: Schema.Int,
-  web_route: NullableString,
-  star: Schema.Int,
-  next_game: Schema.String,
-  prev_game: NullableString,
-  proxy_port: Schema.Int,
-  test_sets: Schema.Array(TaskTestSet),
-  allowed_unlock: Schema.Boolean,
-  last_compile_output: Schema.String,
-  sec_key: Schema.String,
-  test_sets_count: Schema.Int,
-  sets_error_count: Schema.Int,
-  answer_open: Schema.Int,
-  game_original_status: Schema.Int,
-  game_report_id: NullableNumber,
-  knowledge_recommend: Schema.Boolean,
+  grade: Schema.optionalKey(Schema.Number),
+  gold: Schema.optionalKey(Schema.Int),
+  experience: Schema.optionalKey(Schema.Int),
+  position: Schema.optionalKey(Schema.Int),
+  test_sets: Schema.optionalKey(Schema.Array(TaskTestSet)),
+  last_compile_output: Schema.optionalKey(Schema.String),
+  sec_key: Schema.optionalKey(Schema.String),
+  test_sets_count: Schema.optionalKey(Schema.Int),
+  sets_error_count: Schema.optionalKey(Schema.Int),
 });
 
 /*
