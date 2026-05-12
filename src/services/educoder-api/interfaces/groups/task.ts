@@ -246,6 +246,84 @@ const TaskTestSet = Schema.Struct({
 });
 
 /*
+Sample: POST /api/tasks/a4pem8lvfqgx/choose_build.json
+{ "answer": [["<blank answer>"], "true", "C"] }
+*/
+const ChoiceAnswer = Schema.Union([Schema.String, Schema.Array(Schema.String)]);
+
+/*
+Sample: GET /api/tasks/a4pem8lvfqgx.json
+{ "option_name": "<option text>", "position": 0 }
+*/
+const ChallengeQuestionOption = Schema.Struct({
+  option_name: Schema.String,
+  position: Schema.Int,
+});
+
+/*
+Sample: GET /api/tasks/a4pem8lvfqgx.json
+{
+  "challenge_id": 965834,
+  "subject": "<question text>",
+  "position": 7,
+  "category": 1,
+  "question_type": 0,
+  "question_name": "单选题/多选题",
+  "challenge_choose_id": 239016,
+  "challenge_question": [{ "option_name": "<option text>", "position": 0 }]
+}
+*/
+const TaskChoice = Schema.Struct({
+  challenge_id: Schema.Int,
+  subject: Schema.String,
+  position: Schema.Int,
+  category: Schema.NullishOr(Schema.Int),
+  question_type: Schema.Int,
+  question_name: Schema.String,
+  challenge_choose_id: Schema.Int,
+  multi_count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  challenge_question: Schema.optionalKey(Schema.NullishOr(Schema.Array(ChallengeQuestionOption))),
+});
+
+/*
+Sample: POST /api/tasks/a4pem8lvfqgx/choose_build.json
+{
+  "result": null,
+  "actual_output": ["<blank answer>"],
+  "standard_answer": null,
+  "question_type": 3,
+  "question_name": "填空题",
+  "position": 1
+}
+*/
+const ChoiceTestCase = Schema.Struct({
+  result: NullableBoolean,
+  actual_output: Schema.NullishOr(ChoiceAnswer),
+  standard_answer: Schema.NullishOr(ChoiceAnswer),
+  question_type: Schema.Int,
+  question_name: Schema.String,
+  position: Schema.Int,
+});
+
+/*
+Sample: GET /api/tasks/a4pem8lvfqgx.json
+{
+  "had_submmit": false,
+  "challenge_chooses_count": 16,
+  "choose_correct_num": null,
+  "test_sets": ["<ChoiceTestCase>"],
+  "had_all_submmit": false
+}
+*/
+const ChooseTestCases = Schema.Struct({
+  had_submmit: Schema.Boolean,
+  challenge_chooses_count: Schema.Int,
+  choose_correct_num: Schema.NullishOr(Schema.Int),
+  test_sets: Schema.Array(ChoiceTestCase),
+  had_all_submmit: Schema.Boolean,
+});
+
+/*
 Sample: GET /api/tasks/sflmr2fxi4wn.json
 { "shixun_environment_id": 1128633 }
 */
@@ -281,6 +359,9 @@ const TaskInfoResponse = Schema.Struct({
   test_sets: Schema.optionalKey(Schema.NullishOr(Schema.Array(TaskTestSet))),
   shixun_status: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   code_editor: Schema.optionalKey(Schema.NullishOr(CodeEditor)),
+  has_answer: Schema.optionalKey(NullableBoolean),
+  choose_test_cases: Schema.optionalKey(Schema.NullishOr(ChooseTestCases)),
+  chooses: Schema.optionalKey(Schema.NullishOr(Schema.Array(TaskChoice))),
 });
 
 /*
@@ -347,6 +428,54 @@ const GameBuildResponse = Schema.Struct({
   tpi_id: Schema.optionalKey(NullableString),
   code: Schema.optionalKey(NullableString),
   res: Schema.optionalKey(Schema.NullishOr(GameBuildNestedResponse)),
+});
+
+/*
+Sample: POST /api/tasks/a4pem8lvfqgx/choose_build.json
+{
+  "answer": [["<blank answer>"], "true", "C"],
+  "challenge_id": 965834,
+  "subject_id": "",
+  "question_id": null,
+  "competition_entry_id": null,
+  "homework_common_id": "421759"
+}
+*/
+const ChooseBuildPayload = Schema.Struct({
+  answer: Schema.Array(ChoiceAnswer),
+  challenge_id: Schema.Int,
+  subject_id: Schema.String,
+  question_id: Schema.NullishOr(Schema.String),
+  competition_entry_id: Schema.NullishOr(Schema.String),
+  homework_common_id: StringValue,
+}).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
+
+/*
+Sample: POST /api/tasks/a4pem8lvfqgx/choose_build.json
+{
+  "grade": 160,
+  "gold": 0,
+  "experience": 0,
+  "challenge_chooses_count": 16,
+  "choose_correct_num": null,
+  "test_sets": ["<ChoiceTestCase>"],
+  "prev_game": null,
+  "next_game": null,
+  "knowledge_recommend": false,
+  "had_all_submmit": true
+}
+*/
+const ChooseBuildResponse = Schema.Struct({
+  grade: Schema.Number,
+  gold: Schema.Int,
+  experience: Schema.Int,
+  challenge_chooses_count: Schema.Int,
+  choose_correct_num: Schema.NullishOr(Schema.Int),
+  test_sets: Schema.Array(ChoiceTestCase),
+  prev_game: NullableString,
+  next_game: NullableString,
+  knowledge_recommend: Schema.Boolean,
+  had_all_submmit: Schema.Boolean,
 });
 
 /*
@@ -433,6 +562,16 @@ export const Task = HttpApiGroup.make("Task")
       },
       payload: GameBuildPayload,
       success: GameBuildResponse,
+    }),
+  )
+  .add(
+    HttpApiEndpoint.post("chooseBuild", "/api/tasks/:taskId/choose_build.json", {
+      params: TaskRequestParams,
+      query: {
+        zzud: StringValue,
+      },
+      payload: ChooseBuildPayload,
+      success: ChooseBuildResponse,
     }),
   )
   .add(

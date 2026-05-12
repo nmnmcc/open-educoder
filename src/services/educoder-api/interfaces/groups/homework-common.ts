@@ -144,16 +144,16 @@ Sample: GET /api/homework_commons/3487324/shixun_challenge_data.json
 */
 const ShixunChallengeSetting = Schema.Struct({
   challenge_id: Schema.Int,
-  task_operation: Schema.NullishOr(TaskOperation),
-  challenge_name: Schema.String,
-  challenge_score: Schema.Number,
-  status: Schema.String,
-  difficulty: Schema.String,
-  knowledge_points: Schema.String,
-  evaluate_count: Schema.Int,
-  time_consuming: Schema.String,
-  passed_status: Schema.Int,
-  game_score: Schema.String,
+  task_operation: Schema.optionalKey(Schema.NullishOr(TaskOperation)),
+  challenge_name: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  challenge_score: Schema.optionalKey(Schema.NullishOr(Schema.Number)),
+  status: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  difficulty: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  knowledge_points: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  evaluate_count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  time_consuming: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  passed_status: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  game_score: Schema.optionalKey(Schema.NullishOr(Schema.String)),
 });
 
 /*

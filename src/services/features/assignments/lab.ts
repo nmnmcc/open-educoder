@@ -47,7 +47,7 @@ type LabTaskSelector = {
 type SelectedChallenge = {
   readonly index: number;
   readonly challengeId: number;
-  readonly name: string;
+  readonly name: string | null;
 };
 
 type LabTaskInput = LabTaskSelector & {
@@ -91,6 +91,14 @@ type BuildLabRepositoryFileInput = LabTaskSelector & {
   readonly resubmit: string;
   readonly envId?: number | undefined;
   readonly tabType: number;
+};
+
+type SubmitLabChoiceAnswersInput = LabTaskSelector & {
+  readonly courseId: string;
+  readonly answers: ReadonlyArray<string>;
+  readonly subjectId?: string | undefined;
+  readonly questionId?: string | undefined;
+  readonly competitionEntryId?: string | undefined;
 };
 
 type LabEvaluationStatusInput = LabTaskSelector & {
@@ -150,6 +158,8 @@ type LogOutputRaw = EducoderApiResponse<"Task", "logOutput">;
 type SimpleTaskRaw = EducoderApiResponse<"Task", "commitFiles">;
 type RemainingTimeRaw = EducoderApiResponse<"Myshixun", "getRemainingTime">;
 type StartSshRaw = EducoderApiResponse<"Myshixun", "start">;
+type ChooseBuildRaw = EducoderApiResponse<"Task", "chooseBuild">;
+type ObjectiveAnswer = string | ReadonlyArray<string>;
 
 type ListLabAssignmentsView = {
   readonly total: number;
@@ -226,15 +236,15 @@ type LabChallengeListView = {
   readonly challenges: ReadonlyArray<{
     readonly index: number;
     readonly challengeId: number;
-    readonly name: string;
-    readonly score: number;
-    readonly status: string;
-    readonly difficulty: string;
-    readonly passedStatus: number;
-    readonly gameScore: string;
-    readonly evaluateCount: number;
-    readonly timeConsuming: string;
-    readonly knowledgePoints: string;
+    readonly name: string | null;
+    readonly score: number | null;
+    readonly status: string | null;
+    readonly difficulty: string | null;
+    readonly passedStatus: number | null;
+    readonly gameScore: string | null;
+    readonly evaluateCount: number | null;
+    readonly timeConsuming: string | null;
+    readonly knowledgePoints: string | null;
     readonly operation: ReturnType<typeof formatOperation>;
   }>;
 };
@@ -282,6 +292,8 @@ type PruneLabRepositoryView = {
 type BuildLabRepositoryFileView = {
   readonly build: GameBuildRaw;
 };
+type LabChoicesView = ReturnType<typeof formatChoicesResponse>;
+type SubmitLabChoiceAnswersView = ReturnType<typeof formatChooseBuildResponse>;
 type LabEvaluationStatusView = ReturnType<typeof formatStatusResponse>;
 type EvaluateLabRepositoryFileRaw = {
   readonly save: UpdateFileRaw;
@@ -330,6 +342,8 @@ export type LabAssignmentFeatureShape = {
     PruneLabRepositoryView
   >;
   readonly buildRepositoryFile: FeatureWorkflow<BuildLabRepositoryFileInput, GameBuildRaw, BuildLabRepositoryFileView>;
+  readonly getChoices: FeatureWorkflow<LabTaskInput, TaskInfoRaw, LabChoicesView>;
+  readonly submitChoices: FeatureWorkflow<SubmitLabChoiceAnswersInput, ChooseBuildRaw, SubmitLabChoiceAnswersView>;
   readonly getEvaluationStatus: FeatureWorkflow<LabEvaluationStatusInput, GameStatusRaw, LabEvaluationStatusView>;
   readonly evaluateRepositoryFile: FeatureWorkflow<
     EvaluateLabRepositoryFileInput,
@@ -461,7 +475,7 @@ export class LabAssignmentFeature extends Context.Service<LabAssignmentFeature, 
           return {
             index,
             challengeId: challenge.challenge_id,
-            name: challenge.challenge_name,
+            name: challenge.challenge_name ?? null,
           };
         }
 
@@ -478,7 +492,7 @@ export class LabAssignmentFeature extends Context.Service<LabAssignmentFeature, 
         return {
           index: challenges.indexOf(challenge) + 1,
           challengeId: challenge.challenge_id,
-          name: challenge.challenge_name,
+          name: challenge.challenge_name ?? null,
         };
       });
 
@@ -1034,6 +1048,53 @@ export class LabAssignmentFeature extends Context.Service<LabAssignmentFeature, 
         };
       });
 
+      const getChoices: LabAssignmentFeatureShape["getChoices"] = Effect.fn("features.assignments.labs.choices")(
+        function* (input) {
+          const resolved = yield* resolveTask(input);
+
+          return {
+            raw: resolved.raw.task,
+            view: formatChoicesResponse(resolved.view, resolved.raw.task),
+          };
+        },
+      );
+
+      const submitChoices: LabAssignmentFeatureShape["submitChoices"] = Effect.fn("features.assignments.labs.choose")(
+        function* (input) {
+          const login = yield* resolveLogin();
+          const resolved = yield* resolveTask(input);
+          const task = resolved.raw.task;
+          const answers = yield* normalizeChoiceAnswers({ task, answers: input.answers });
+          const challengeId = task.challenge.id ?? resolved.view.challengeId;
+
+          if (challengeId === null) {
+            return yield* failInput("Cannot infer challenge id for this objective-question task.");
+          }
+
+          const raw = yield* educoder.Task.chooseBuild({
+            params: {
+              taskId: resolved.view.taskId,
+            },
+            query: {
+              zzud: login,
+            },
+            payload: {
+              answer: answers,
+              challenge_id: challengeId,
+              subject_id: input.subjectId ?? "",
+              question_id: input.questionId ?? null,
+              competition_entry_id: input.competitionEntryId ?? null,
+              homework_common_id: input.homeworkId,
+            },
+          });
+
+          return {
+            raw,
+            view: formatChooseBuildResponse(resolved.view, task, raw),
+          };
+        },
+      );
+
       const getEvaluationStatus: LabAssignmentFeatureShape["getEvaluationStatus"] = Effect.fn(
         "features.assignments.labs.status",
       )(function* (input) {
@@ -1316,6 +1377,8 @@ export class LabAssignmentFeature extends Context.Service<LabAssignmentFeature, 
         resetRepository,
         pruneRepository,
         buildRepositoryFile,
+        getChoices,
+        submitChoices,
         getEvaluationStatus,
         evaluateRepositoryFile,
         getLogs,
@@ -1377,6 +1440,167 @@ const renderLearningContent = Effect.fn("features.assignments.labs.renderLearnin
   return formatLearningContent(markdown);
 });
 
+const getTaskChoices = (task: TaskInfoRaw) => [...(task.chooses ?? [])].sort((a, b) => a.position - b.position);
+
+const optionLabel = (position: number) =>
+  Number.isInteger(position) && position >= 0 && position < 26 ? String.fromCharCode(65 + position) : String(position);
+
+const formatChoiceAnswer = (value: ObjectiveAnswer | null | undefined) => value ?? null;
+
+const formatChoiceOptions = (choice: ReturnType<typeof getTaskChoices>[number]) =>
+  Object.fromEntries(
+    (choice.challenge_question ?? []).map((option) => [
+      optionLabel(option.position),
+      {
+        position: option.position,
+        text: option.option_name,
+      },
+    ]),
+  );
+
+const formatChoicesResponse = (resolved: ResolveLabTaskView, raw: TaskInfoRaw) => {
+  const choices = getTaskChoices(raw);
+  const testSets = raw.choose_test_cases?.test_sets ?? [];
+
+  return {
+    resolved,
+    summary: {
+      hasAnswer: raw.has_answer ?? null,
+      submitted: raw.choose_test_cases?.had_submmit ?? null,
+      allSubmitted: raw.choose_test_cases?.had_all_submmit ?? null,
+      count: raw.choose_test_cases?.challenge_chooses_count ?? choices.length,
+      correct: raw.choose_test_cases?.choose_correct_num ?? null,
+    },
+    questions: Object.fromEntries(
+      choices.map((choice) => {
+        const testSet = testSets.find((item) => item.position === choice.position);
+
+        return [
+          choice.position,
+          {
+            id: choice.challenge_choose_id,
+            challengeId: choice.challenge_id,
+            subject: choice.subject,
+            category: choice.category ?? null,
+            type: {
+              code: choice.question_type,
+              name: choice.question_name,
+            },
+            multiCount: choice.multi_count ?? null,
+            answer: formatChoiceAnswer(testSet?.actual_output),
+            standardAnswer: formatChoiceAnswer(testSet?.standard_answer),
+            result: testSet?.result ?? null,
+            options: formatChoiceOptions(choice),
+          },
+        ];
+      }),
+    ),
+  };
+};
+
+const formatChooseBuildResponse = (resolved: ResolveLabTaskView, task: TaskInfoRaw, raw: ChooseBuildRaw) => {
+  const choices = new Map(getTaskChoices(task).map((choice) => [choice.position, choice]));
+
+  return {
+    resolved,
+    summary: {
+      grade: raw.grade,
+      gold: raw.gold,
+      experience: raw.experience,
+      count: raw.challenge_chooses_count,
+      correct: raw.choose_correct_num ?? null,
+      allSubmitted: raw.had_all_submmit,
+      knowledgeRecommend: raw.knowledge_recommend,
+      prevTaskId: raw.prev_game,
+      nextTaskId: raw.next_game,
+    },
+    results: Object.fromEntries(
+      raw.test_sets.map((testSet) => {
+        const choice = choices.get(testSet.position);
+
+        return [
+          testSet.position,
+          {
+            subject: choice?.subject ?? null,
+            type: {
+              code: testSet.question_type,
+              name: testSet.question_name,
+            },
+            result: testSet.result ?? null,
+            actual: formatChoiceAnswer(testSet.actual_output),
+            standard: formatChoiceAnswer(testSet.standard_answer),
+          },
+        ];
+      }),
+    ),
+  };
+};
+
+const parseChoiceAnswerInput = (value: string): ObjectiveAnswer => {
+  const trimmed = value.trim();
+
+  if (!trimmed.startsWith("[")) {
+    return value;
+  }
+
+  const parsed: unknown = JSON.parse(trimmed);
+
+  if (Array.isArray(parsed) && parsed.every((item) => typeof item === "string")) {
+    return parsed;
+  }
+
+  throw new Error("answer JSON arrays must contain only strings");
+};
+
+const normalizeChoiceAnswers = Effect.fn("features.assignments.labs.normalizeChoiceAnswers")(function* (input: {
+  readonly task: TaskInfoRaw;
+  readonly answers: ReadonlyArray<string>;
+}) {
+  const choices = getTaskChoices(input.task);
+
+  if (choices.length < 1) {
+    return yield* failInput("This lab task does not include objective questions.");
+  }
+
+  if (input.answers.length !== choices.length) {
+    return yield* failInput(`Expected ${choices.length} answers, got ${input.answers.length}.`);
+  }
+
+  const normalized: Array<ObjectiveAnswer> = [];
+
+  for (let index = 0; index < choices.length; index += 1) {
+    const choice = choices[index]!;
+    const rawAnswer = input.answers[index]!;
+    let parsed: ObjectiveAnswer;
+
+    try {
+      parsed = parseChoiceAnswerInput(rawAnswer);
+    } catch (error) {
+      return yield* failInput(`Invalid answer for question ${choice.position}: ${String(error)}`);
+    }
+
+    if (choice.question_type === 3) {
+      if (typeof parsed !== "string") {
+        normalized.push(parsed);
+        continue;
+      }
+
+      const count = choice.multi_count ?? 1;
+
+      if (count > 1) {
+        return yield* failInput(`Question ${choice.position} expects ${count} blank answers as a JSON array.`);
+      }
+
+      normalized.push([parsed]);
+      continue;
+    }
+
+    normalized.push(parsed);
+  }
+
+  return normalized;
+});
+
 const formatChallengeList = (
   input: ListLabChallengesInput,
   homework: HomeworkInfoRaw,
@@ -1398,15 +1622,15 @@ const formatChallengeList = (
   challenges: raw.data.challenge_settings.map((challenge, index) => ({
     index: index + 1,
     challengeId: challenge.challenge_id,
-    name: challenge.challenge_name,
-    score: challenge.challenge_score,
-    status: challenge.status,
-    difficulty: challenge.difficulty,
-    passedStatus: challenge.passed_status,
-    gameScore: challenge.game_score,
-    evaluateCount: challenge.evaluate_count,
-    timeConsuming: challenge.time_consuming,
-    knowledgePoints: challenge.knowledge_points,
+    name: challenge.challenge_name ?? null,
+    score: challenge.challenge_score ?? null,
+    status: challenge.status ?? null,
+    difficulty: challenge.difficulty ?? null,
+    passedStatus: challenge.passed_status ?? null,
+    gameScore: challenge.game_score ?? null,
+    evaluateCount: challenge.evaluate_count ?? null,
+    timeConsuming: challenge.time_consuming ?? null,
+    knowledgePoints: challenge.knowledge_points ?? null,
     operation: formatOperation(challenge.task_operation),
   })),
 });

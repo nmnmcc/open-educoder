@@ -1,5 +1,6 @@
 import { List } from "./catalog/list.js";
 import { Challenges } from "./context/challenges.js";
+import { Choices } from "./context/choices.js";
 import { Learning } from "./context/learning.js";
 import { Task } from "./context/task.js";
 import { Commit } from "./environment/commit.js";
@@ -8,6 +9,7 @@ import { Pull } from "./environment/pull.js";
 import { RemainingTime } from "./environment/remaining-time.js";
 import { Ssh } from "./environment/ssh.js";
 import { Build } from "./evaluation/build.js";
+import { Choose } from "./evaluation/choose.js";
 import { Evaluate } from "./evaluation/evaluate.js";
 import { Status } from "./evaluation/status.js";
 import { Content } from "./repository/content.js";
@@ -21,7 +23,7 @@ import { Save } from "./repository/save.js";
 export const LabSubcommands = [
   {
     group: "Discovery",
-    commands: [List, Challenges, Task, Learning],
+    commands: [List, Challenges, Choices, Task, Learning],
   },
   {
     group: "Repository",
@@ -29,7 +31,7 @@ export const LabSubcommands = [
   },
   {
     group: "Evaluation",
-    commands: [Evaluate, Build, Status],
+    commands: [Evaluate, Build, Choose, Status],
   },
   {
     group: "Environment",

@@ -25,6 +25,14 @@ const command = (value: string) => `    ${value}`;
 
 const stringify = (value: unknown) => JSON.stringify(value, null, 2);
 
+const answerText = (value: unknown) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => text(item)).join(" | ");
+  }
+
+  return text(value);
+};
+
 const orderedEntries = (view: unknown) => {
   const root = record(view);
   const assignments = record(root["assignments"]);
@@ -161,6 +169,75 @@ export const renderLabTask = (view: unknown) => {
   ];
 
   return lines.join("\n");
+};
+
+export const renderChoiceQuestions = (view: unknown) => {
+  const root = record(view);
+  const resolved = record(root["resolved"]);
+  const summary = record(root["summary"]);
+  const questions = record(root["questions"]);
+  const lines = [
+    "客观题 / Objective Questions",
+    field("课程ID / course-id", resolved["courseId"]),
+    field("作业ID / assignment-id", resolved["homeworkId"]),
+    field("任务ID / task-id", resolved["taskId"]),
+    field("关卡序号 / challenge-index", resolved["challengeIndex"]),
+    field("题目数 / count", summary["count"]),
+    field("已提交 / submitted", summary["submitted"]),
+    field("全部提交 / all-submitted", summary["allSubmitted"]),
+    "",
+  ];
+
+  for (const [position, questionValue] of Object.entries(questions)) {
+    const question = record(questionValue);
+    const type = record(question["type"]);
+    const options = record(question["options"]);
+
+    lines.push(
+      `[${position}] ${text(type["name"])} ${text(question["subject"])}`,
+      field("当前答案 / answer", answerText(question["answer"])),
+      field("结果 / result", question["result"]),
+    );
+
+    for (const [label, optionValue] of Object.entries(options)) {
+      const option = record(optionValue);
+
+      lines.push(`    ${label}. ${text(option["text"])}`);
+    }
+
+    lines.push("");
+  }
+
+  return lines.join("\n").trimEnd();
+};
+
+export const renderChoiceSubmit = (view: unknown) => {
+  const root = record(view);
+  const summary = record(root["summary"]);
+  const results = record(root["results"]);
+  const lines = [
+    "客观题提交结果 / Objective Answer Result",
+    field("成绩 / grade", summary["grade"]),
+    field("正确数 / correct", summary["correct"]),
+    field("题目数 / count", summary["count"]),
+    field("全部提交 / all-submitted", summary["allSubmitted"]),
+    "",
+  ];
+
+  for (const [position, resultValue] of Object.entries(results)) {
+    const result = record(resultValue);
+    const type = record(result["type"]);
+
+    lines.push(
+      `[${position}] ${text(type["name"])} ${text(result["subject"])}`,
+      field("提交答案 / actual", answerText(result["actual"])),
+      field("标准答案 / standard", answerText(result["standard"])),
+      field("结果 / result", result["result"]),
+      "",
+    );
+  }
+
+  return lines.join("\n").trimEnd();
 };
 
 export const renderRepository = (view: unknown) => {

@@ -12,6 +12,10 @@ export const Labs = Command.make("labs").pipe(
       description: "List challenge indexes and IDs",
     },
     {
+      command: "open-educoder assignments labs choices 109348 421759",
+      description: "Show objective questions and options",
+    },
+    {
       command: "open-educoder assignments labs task 109348 3487324 --challenge-index 1",
       description: "Resolve and show a task without manually finding task-id",
     },
