@@ -2,11 +2,13 @@ import { spawn } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import nodePath from "node:path";
+
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
+
 import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
 import { EnvironmentId, HomeworkId, RepositoryPath, TabType, TaskId } from "../../flags.js";
-import { failInput, HomeworkInputError, inspectOptions, optionToUndefined, printJson } from "../../shared.js";
+import { HomeworkInputError, failInput, inspectOptions, optionToUndefined, printJson } from "../../shared.js";
 
 type EditedContent = {
   readonly editor: string;

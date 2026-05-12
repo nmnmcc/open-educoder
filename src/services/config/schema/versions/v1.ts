@@ -1,5 +1,6 @@
 import { Schema } from "effect";
 import { Cookies } from "effect/unstable/http";
+
 import { defineVersion } from "../version.js";
 
 export const Profile = Schema.Struct({

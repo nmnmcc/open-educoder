@@ -1,9 +1,10 @@
 import { Console, Effect } from "effect";
 import { Argument, Command, Flag } from "effect/unstable/cli";
+
 import {
+  CourseFeature,
   CourseSortByChoices,
   CourseStatusChoices,
-  CourseFeature,
   SortDirectionChoices,
 } from "../services/features/course.js";
 import { inspectOptions } from "../utils/inspect-options.js";

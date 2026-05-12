@@ -1,20 +1,24 @@
 #!/usr/bin/env node
-import meta from "../package.json" with { type: "json" };
+import { homedir } from "node:os";
+import path from "node:path";
+
+import { NodeSdk } from "@effect/opentelemetry";
 import { NodeHttpClient, NodeRuntime, NodeServices } from "@effect/platform-node";
+import { BatchSpanProcessor, ConsoleSpanExporter } from "@opentelemetry/sdk-trace-base";
 import { Effect, Layer } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
+import { ProxyAgent } from "proxy-agent";
+
+import meta from "../package.json" with { type: "json" };
 import { Course } from "./commands/course.js";
 import { Exam } from "./commands/exam.js";
 import { Homework } from "./commands/homework/index.js";
 import { Profile } from "./commands/profile.js";
-import { AppConfig } from "./services/config/index.js";
-import { EducoderApi } from "./services/educoder-api/index.js";
-import { AppContext } from "./services/context/index.js";
-import path from "node:path";
-import { homedir } from "node:os";
-import { ProxyAgent } from "proxy-agent";
-import { FeatureLayer } from "./services/features/index.js";
 import { Tui } from "./commands/tui.js";
+import { AppConfig } from "./services/config/index.js";
+import { AppContext } from "./services/context/index.js";
+import { EducoderApi } from "./services/educoder-api/index.js";
+import { FeatureLayer } from "./services/features/index.js";
 
 const OpenEducoder = Command.make("open-educoder").pipe(
   Command.withDescription("Local CLI for authenticated Educoder workflows."),
@@ -66,10 +70,13 @@ const OpenEducoder = Command.make("open-educoder").pipe(
 const program = Command.run(OpenEducoder, { version: meta.version });
 
 const NodeLayer = Layer.mergeAll(
+  NodeSdk.layer(() => ({
+    spanProcessor: new BatchSpanProcessor(new ConsoleSpanExporter()),
+  })),
   NodeServices.layer,
   NodeHttpClient.layerNodeHttpNoAgent.pipe(
     Layer.provideMerge(Layer.effect(NodeHttpClient.HttpAgent, NodeHttpClient.makeAgent(new ProxyAgent()))),
   ),
 );
 
-program.pipe(Effect.provide(NodeLayer), NodeRuntime.runMain);
+program.pipe(Effect.withSpan("open-educoder"), Effect.provide(NodeLayer), NodeRuntime.runMain);

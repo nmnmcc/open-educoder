@@ -1,4 +1,5 @@
 import { Command } from "effect/unstable/cli";
+
 import { ShixunSubcommands } from "./subcommands.js";
 
 export const Shixun = Command.make("shixun").pipe(
@@ -13,7 +14,8 @@ export const Shixun = Command.make("shixun").pipe(
       description: "Read a task repository file",
     },
     {
-      command: "open-educoder homework shixun evaluate sflmr2fxi4wn case1/code.sh --homework-id 3487324 --file ./code.sh --poll",
+      command:
+        "open-educoder homework shixun evaluate sflmr2fxi4wn case1/code.sh --homework-id 3487324 --file ./code.sh --poll",
       description: "Save a file and poll the evaluation status",
     },
     {

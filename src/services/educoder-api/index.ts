@@ -1,6 +1,7 @@
 import { Context, Effect, Layer, Ref } from "effect";
 import { Cookies, HttpClient, HttpClientRequest } from "effect/unstable/http";
 import { HttpApiClient } from "effect/unstable/httpapi";
+
 import type { AppConfigState } from "../config/index.js";
 import { makeEducoderHeaders } from "./headers.js";
 import { Interfaces } from "./interfaces/index.js";

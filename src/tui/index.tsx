@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import { render } from "ink";
+
 import App from "./pages/App.js";
 
 export const run = Effect.fn("tui.run")(function* () {

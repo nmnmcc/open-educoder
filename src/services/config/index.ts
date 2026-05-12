@@ -1,6 +1,8 @@
-import { Context, Effect, Equal, FileSystem, JsonSchema, Layer, PlatformError, Schema } from "effect";
 import path from "node:path";
-import { migrate, MigrateError } from "./migrate.js";
+
+import { Context, Effect, Equal, FileSystem, JsonSchema, Layer, PlatformError, Schema } from "effect";
+
+import { MigrateError, migrate } from "./migrate.js";
 import { latest } from "./schema/index.js";
 
 const CONFIG = "config.json";

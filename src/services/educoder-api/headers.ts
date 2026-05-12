@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+
 import { Cookies } from "effect/unstable/http";
 
 const EduAccessKey = "e9dd5b4322f9f7d83d009de9bfa100c3" as const;

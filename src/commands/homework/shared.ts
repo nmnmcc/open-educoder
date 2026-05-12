@@ -1,5 +1,7 @@
 import { readFile } from "node:fs/promises";
+
 import { Console, Effect, Option } from "effect";
+
 import {
   HomeworkInputError,
   asRecord,

@@ -1,6 +1,7 @@
 import { Context } from "effect";
 import type { Effect, Schema } from "effect";
 import type { HttpClientError } from "effect/unstable/http";
+
 import type { AppConfigState } from "../config/index.js";
 import type { User } from "../educoder-api/interfaces/groups/user.js";
 

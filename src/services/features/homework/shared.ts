@@ -1,5 +1,8 @@
 import { Data, Effect, Option } from "effect";
+
 import {
+  type CurrentUser,
+  type JsonRecord,
   asArray,
   asRecord,
   booleanField,
@@ -8,8 +11,6 @@ import {
   formatOperation,
   numberField,
   stringField,
-  type CurrentUser,
-  type JsonRecord,
 } from "../shared.js";
 
 export {

@@ -1,5 +1,6 @@
 import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
+
 import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
 import {
   Content,
@@ -12,13 +13,13 @@ import {
   TaskId,
 } from "../../flags.js";
 import {
+  asRecord,
   inspectOptions,
   optionToUndefined,
   printJson,
   printStatusResponse,
   readContent,
   stringField,
-  asRecord,
 } from "../../shared.js";
 
 export const Evaluate = Command.make(
