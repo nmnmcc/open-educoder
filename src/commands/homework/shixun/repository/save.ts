@@ -41,16 +41,16 @@ export const Save = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Save local content into an Educoder shixun repository file."),
+  Command.withDescription("Upload content to a shixun repository file (inline or from file)."),
   Command.withExamples([
     {
       command: "open-educoder homework shixun save sflmr2fxi4wn case1/code.sh --homework-id 3487324 --file ./code.sh",
-      description: "Upload a local file to a task path",
+      description: "Upload local file content to a repository path",
     },
     {
       command:
         'open-educoder homework shixun save sflmr2fxi4wn case1/code.sh --homework-id 3487324 --content "touch file1"',
-      description: "Save inline content without reading a local file",
+      description: "Upload inline content directly",
     },
   ]),
   Command.withAlias("S"),

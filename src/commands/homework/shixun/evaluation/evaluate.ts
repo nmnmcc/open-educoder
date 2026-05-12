@@ -73,17 +73,17 @@ export const Evaluate = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Save a shixun homework file, trigger evaluation, and optionally poll until completion."),
+  Command.withDescription("Submit a file for evaluation and optionally poll until a result is available."),
   Command.withExamples([
     {
       command:
         "open-educoder homework shixun evaluate sflmr2fxi4wn case1/code.sh --homework-id 3487324 --file ./code.sh",
-      description: "Save and evaluate a task path",
+      description: "Save and evaluate one repository file",
     },
     {
       command:
         "open-educoder homework shixun evaluate sflmr2fxi4wn case1/code.sh --homework-id 3487324 --file ./code.sh --poll --poll-interval 2 --poll-limit 20",
-      description: "Save, evaluate, and poll until a result is available",
+      description: "Save, evaluate, and poll until completion",
     },
   ]),
   Command.withAlias("E"),

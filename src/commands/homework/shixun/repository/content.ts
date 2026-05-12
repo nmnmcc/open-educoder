@@ -31,15 +31,15 @@ export const Content = Command.make(
     yield* Console.log(input.raw ? result.raw.content.content : result.view.decodedContent);
   }),
 ).pipe(
-  Command.withDescription("Fetch a repository file from a shixun task and decode its base64 content."),
+  Command.withDescription("Read a repository file and decode base64 content for display."),
   Command.withExamples([
     {
       command: "open-educoder homework shixun content sflmr2fxi4wn case1/code.sh --homework-id 3487324",
-      description: "Read and decode a task file",
+      description: "Read a task file as text",
     },
     {
       command: "open-educoder homework shixun content sflmr2fxi4wn case1/code.sh --homework-id 3487324 --raw",
-      description: "Print the raw base64 payload",
+      description: "Print raw base64 payload without decoding",
     },
   ]),
   Command.withAlias("c"),

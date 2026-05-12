@@ -24,15 +24,15 @@ export const Info = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Show detail metadata, instructions, and attachments for a common homework."),
+  Command.withDescription("Show one common assignment's metadata, instructions, and attachments."),
   Command.withExamples([
     {
       command: "open-educoder homework common info 3487339",
-      description: "Inspect a common homework by homework ID",
+      description: "Inspect an assignment by homework ID",
     },
     {
       command: "open-educoder homework common info 3487339 --json",
-      description: "Print the raw common homework detail as JSON",
+      description: "Print the raw detail response as JSON",
     },
   ]),
   Command.withAlias("i"),
@@ -61,15 +61,15 @@ export const Works = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Show the current user's work summary and submission counters for a common homework."),
+  Command.withDescription("Show your work summary, score, and submit state for a common assignment."),
   Command.withExamples([
     {
       command: "open-educoder homework common works 109348 3487339",
-      description: "Inspect current work status for a common homework",
+      description: "Inspect your current work status",
     },
     {
       command: "open-educoder homework common works 109348 3487339 --json",
-      description: "Print the raw works list response as JSON",
+      description: "Print the work summary as JSON",
     },
   ]),
   Command.withAlias("w"),
@@ -98,11 +98,11 @@ export const Draft = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Fetch Educoder's new student-work context for a common homework."),
+  Command.withDescription("Open draft context for a common assignment."),
   Command.withExamples([
     {
       command: "open-educoder homework common draft 109348 3487339",
-      description: "Read the common homework draft context",
+      description: "Read your current draft snapshot",
     },
   ]),
   Command.withAlias("n"),
@@ -135,11 +135,11 @@ export const Members = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Search common homework member submission status."),
+  Command.withDescription("Search members and view their common-assignment submission status."),
   Command.withExamples([
     {
       command: "open-educoder homework common members 109348 3487339 --search 0424",
-      description: "Search members by student ID or name",
+      description: "Search by student number or name",
     },
   ]),
   Command.withAlias("u"),
@@ -170,11 +170,11 @@ export const Comments = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Show discussion comments for a common homework."),
+  Command.withDescription("Open discussion comments for a common assignment."),
   Command.withExamples([
     {
       command: "open-educoder homework common comments 109348 3487339",
-      description: "Read common homework comments",
+      description: "Read assignment comments",
     },
   ]),
   Command.withAlias("q"),
@@ -203,11 +203,11 @@ export const Settings = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Show schedule, scoring, submission, and visibility settings for a common homework."),
+  Command.withDescription("Show assignment rules such as deadline, scoring, visibility, and constraints."),
   Command.withExamples([
     {
       command: "open-educoder homework common settings 109348 3487339",
-      description: "Inspect common homework settings",
+      description: "Inspect assignment settings",
     },
   ]),
   Command.withAlias("g"),
@@ -238,11 +238,11 @@ export const RedoLogs = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Show redo logs for a common homework."),
+  Command.withDescription("Show redo history for one common assignment."),
   Command.withExamples([
     {
       command: "open-educoder homework common redo-logs 3487339 --type 2",
-      description: "Read redo logs for the current user's common homework work",
+      description: "Read redo attempts and history",
     },
   ]),
   Command.withAlias("d"),

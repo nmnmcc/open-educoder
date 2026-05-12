@@ -4,23 +4,23 @@ import { Common } from "./common/index.js";
 import { Shixun } from "./shixun/index.js";
 
 export const Homework = Command.make("homework").pipe(
-  Command.withDescription("Inspect and operate Educoder homework workflows by homework type."),
+  Command.withDescription("Work with homework by category: common assignments or shixun tasks."),
   Command.withExamples([
     {
       command: "open-educoder homework common list MOAPGNLO --sort-by position --sort-direction desc",
-      description: "List common homework in a course",
+      description: "List all common assignments for a course",
     },
     {
       command: "open-educoder homework common works 109348 3487339",
-      description: "Inspect common homework work status",
+      description: "Check a common assignment work summary",
     },
     {
       command: "open-educoder homework shixun list MOAPGNLO --category 1213302",
-      description: "List shixun homework in a course category",
+      description: "List shixun tasks in a course category",
     },
     {
       command: "open-educoder homework shixun content sflmr2fxi4wn case1/code.sh --homework-id 3487324",
-      description: "Read a shixun task repository file",
+      description: "Read one file from a shixun task repository",
     },
   ]),
   Command.withAlias("h"),

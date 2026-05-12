@@ -218,16 +218,16 @@ export const Edit = Command.make(
     );
   }),
 ).pipe(
-  Command.withDescription("Edit a shixun homework repository file with $VISUAL or $EDITOR, then save changes."),
+  Command.withDescription("Open a repository file in $VISUAL/$EDITOR, then save back any edits."),
   Command.withExamples([
     {
       command: "open-educoder homework shixun edit sflmr2fxi4wn case1/code.sh --homework-id 3487324",
-      description: "Open a task file in $VISUAL or $EDITOR and save it back after changes",
+      description: "Edit a task file interactively and save the changes",
     },
     {
       command:
         "VISUAL='code --wait' open-educoder homework shixun edit sflmr2fxi4wn case1/code.sh --homework-id 3487324",
-      description: "Use an editor command that waits until the edit is complete",
+      description: "Use an editor command that blocks until saving is complete",
     },
   ]),
   Command.withAlias("D"),

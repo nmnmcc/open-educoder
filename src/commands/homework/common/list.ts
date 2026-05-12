@@ -44,19 +44,19 @@ export const List = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("List common homeworks with the filters Educoder uses in the homework page."),
+  Command.withDescription("List common assignments in a course with optional filters and sorting."),
   Command.withExamples([
     {
       command: "open-educoder homework common list MOAPGNLO --sort-by position --sort-direction desc",
-      description: "List common homeworks by category position",
+      description: "Sort by category position and order descending",
     },
     {
       command: "open-educoder homework common list MOAPGNLO --sort-by updated_at --sort-direction asc --order 7",
-      description: "Sort and filter common homeworks",
+      description: "Apply custom ordering and sorting to the assignment list",
     },
     {
       command: "open-educoder homework common list MOAPGNLO --search 123 --status 0",
-      description: "Search common homeworks",
+      description: "Search assignments by keyword",
     },
   ]),
   Command.withAlias("l"),

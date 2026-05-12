@@ -26,15 +26,15 @@ export const Task = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Fetch task context for a shixun homework game."),
+  Command.withDescription("Get shixun task context and metadata for a specific task."),
   Command.withExamples([
     {
       command: "open-educoder homework shixun task sflmr2fxi4wn --homework-id 3487324",
-      description: "Inspect task details by task and homework ID",
+      description: "Open task details for one task and homework",
     },
     {
       command: "open-educoder homework shixun task sflmr2fxi4wn --homework-id 3487324 --json",
-      description: "Print the raw task response as JSON",
+      description: "Print raw task details as JSON",
     },
   ]),
   Command.withAlias("t"),

@@ -24,10 +24,13 @@ const List = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("List saved profiles and mark the active one."),
+  Command.withDescription("Show all saved profiles and indicate which profile is active."),
   Command.withExamples([
-    { command: "open-educoder profile list", description: "Show profiles as an inspectable table" },
-    { command: "open-educoder profile list --json", description: "Print profiles as JSON" },
+    { command: "open-educoder profile list", description: "List saved profiles" },
+    {
+      command: "open-educoder profile list --json",
+      description: "Print all profiles in machine-readable format",
+    },
   ]),
   Command.withAlias("l"),
 );
@@ -50,15 +53,15 @@ const Add = Command.make(
     yield* Console.log(result.view.message);
   }),
 ).pipe(
-  Command.withDescription("Log in to Educoder and store the returned cookies in a named profile."),
+  Command.withDescription("Save a profile by logging in and storing returned cookies locally."),
   Command.withExamples([
     {
       command: 'open-educoder profile add --username "$EDUCODER_USERNAME" --password "$EDUCODER_PASSWORD"',
-      description: "Add or refresh the default profile",
+      description: "Create or refresh the default profile",
     },
     {
       command: 'open-educoder profile add --username "$EDUCODER_USERNAME" --password "$EDUCODER_PASSWORD" lab',
-      description: "Save credentials under a separate profile name",
+      description: "Save another login under a custom profile name",
     },
   ]),
   Command.withAlias("a"),
@@ -76,23 +79,23 @@ const Remove = Command.make(
     yield* Console.log(result.view.message);
   }),
 ).pipe(
-  Command.withDescription("Log out of Educoder and remove a saved local profile."),
+  Command.withDescription("Delete a saved profile and clear its stored login session."),
   Command.withExamples([
-    { command: "open-educoder profile remove default", description: "Remove the default profile" },
-    { command: "open-educoder profile remove lab", description: "Remove a named profile" },
+    { command: "open-educoder profile remove default", description: "Delete the default profile" },
+    { command: "open-educoder profile remove lab", description: "Delete a named profile" },
   ]),
   Command.withAlias("R"),
 );
 
 export const Profile = Command.make("profile").pipe(
-  Command.withDescription("Manage local Educoder login profiles and session cookies."),
+  Command.withDescription("Manage Educoder login profiles stored on this machine."),
   Command.withExamples([
     { command: "open-educoder profile list", description: "List saved profiles" },
     {
       command: 'open-educoder profile add --username "$EDUCODER_USERNAME" --password "$EDUCODER_PASSWORD" default',
       description: "Log in and save cookies for the default profile",
     },
-    { command: "open-educoder profile remove old-profile", description: "Log out and delete a saved profile" },
+    { command: "open-educoder profile remove old-profile", description: "Delete a saved profile" },
   ]),
   Command.withAlias("p"),
   Command.withSubcommands([List, Add, Remove]),

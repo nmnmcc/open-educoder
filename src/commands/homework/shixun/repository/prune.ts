@@ -26,11 +26,11 @@ export const Prune = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Delete expired repository versions for a shixun homework when Educoder marks them expired."),
+  Command.withDescription("Trigger cleanup of expired repository snapshots for this task."),
   Command.withExamples([
     {
       command: "open-educoder homework shixun prune sflmr2fxi4wn --homework-id 3487324",
-      description: "Run Educoder's expired repository version cleanup",
+      description: "Clean up expired repository snapshots",
     },
   ]),
   Command.withAlias("V"),

@@ -52,15 +52,15 @@ export const Ssh = Command.make(
     }
   }),
 ).pipe(
-  Command.withDescription("Start an SSH session for a shixun homework environment."),
+  Command.withDescription("Connect to a shixun runtime through SSH when available."),
   Command.withExamples([
     {
       command: "open-educoder homework shixun ssh sflmr2fxi4wn --homework-id 3487324 --env-id 1128633",
-      description: "Connect to the specified environment with local ssh",
+      description: "Connect to one environment by env id",
     },
     {
       command: "open-educoder homework shixun ssh sflmr2fxi4wn --homework-id 3487324 --tab-type 4 --json",
-      description: "Print the raw terminal start response as JSON",
+      description: "Print SSH connection arguments as JSON",
     },
   ]),
   Command.withAlias("r"),

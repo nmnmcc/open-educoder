@@ -28,11 +28,11 @@ export const Commit = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Commit repository files for a shixun homework environment."),
+  Command.withDescription("Commit current repository changes for a shixun environment."),
   Command.withExamples([
     {
       command: "open-educoder homework shixun commit sflmr2fxi4wn --homework-id 3487324 --env-id 1128633",
-      description: "Commit files for the specified environment",
+      description: "Create a commit point for the selected environment",
     },
   ]),
   Command.withAlias("C"),

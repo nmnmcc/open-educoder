@@ -28,11 +28,11 @@ export const Pull = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Pull repository files from Educoder for a shixun homework environment."),
+  Command.withDescription("Pull repository files from a selected shixun environment to local runtime."),
   Command.withExamples([
     {
       command: "open-educoder homework shixun pull sflmr2fxi4wn --homework-id 3487324 --env-id 1128633",
-      description: "Pull files for the specified environment",
+      description: "Pull files from the selected environment",
     },
   ]),
   Command.withAlias("P"),

@@ -26,11 +26,11 @@ export const Reset = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Reset the shixun homework repository for the current task."),
+  Command.withDescription("Reset the shixun repository for this task to its initial state."),
   Command.withExamples([
     {
       command: "open-educoder homework shixun reset sflmr2fxi4wn --homework-id 3487324",
-      description: "Reset the repository for a task",
+      description: "Discard local edits and reset task repository",
     },
   ]),
   Command.withAlias("R"),

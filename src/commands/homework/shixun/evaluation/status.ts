@@ -32,15 +32,15 @@ export const Status = Command.make(
     yield* printStatusResponse(result.raw, input.json);
   }),
 ).pipe(
-  Command.withDescription("Read evaluation status for a shixun homework build."),
+  Command.withDescription("Check evaluation status for a shixun task run."),
   Command.withExamples([
     {
       command: "open-educoder homework shixun status sflmr2fxi4wn --homework-id 3487324 --sec-key ypzno7qmxwjt",
-      description: "Check an evaluation status key",
+      description: "Check run status with a sec-key",
     },
     {
       command: "open-educoder homework shixun status sflmr2fxi4wn --homework-id 3487324 --sec-key ypzno7qmxwjt --json",
-      description: "Print the raw status response as JSON",
+      description: "Print evaluation status as JSON",
     },
   ]),
   Command.withAlias("s"),

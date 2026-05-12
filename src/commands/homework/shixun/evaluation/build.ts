@@ -38,12 +38,12 @@ export const Build = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Trigger Educoder game_build for a saved shixun homework file."),
+  Command.withDescription("Trigger a build/run action for an already saved repository snapshot."),
   Command.withExamples([
     {
       command:
         "open-educoder homework shixun build sflmr2fxi4wn --homework-id 3487324 --sec-key ypzno7qmxwjt --commit-id 6a4abf53145fe87c261681074a51a4374fbba65a",
-      description: "Trigger evaluation with a sec_key and commit ID",
+      description: "Trigger evaluation by sec key and commit id",
     },
   ]),
   Command.withAlias("B"),

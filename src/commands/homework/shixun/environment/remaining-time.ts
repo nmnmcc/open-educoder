@@ -26,11 +26,11 @@ export const RemainingTime = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Fetch remaining environment time for a shixun homework."),
+  Command.withDescription("Check remaining container/runtime time for a shixun task."),
   Command.withExamples([
     {
       command: "open-educoder homework shixun remaining-time sflmr2fxi4wn --homework-id 3487324",
-      description: "Read remaining time for the task environment",
+      description: "Check how long the running environment is still available",
     },
   ]),
   Command.withAlias("m"),

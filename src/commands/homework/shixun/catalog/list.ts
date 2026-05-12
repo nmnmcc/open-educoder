@@ -44,20 +44,20 @@ export const List = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("List shixun homeworks with the filters Educoder uses in the homework page."),
+  Command.withDescription("List shixun tasks for a course category with optional filters and search."),
   Command.withExamples([
     {
       command: "open-educoder homework shixun list MOAPGNLO --category 1213302",
-      description: "List shixun homeworks from a category",
+      description: "List shixun tasks in a category",
     },
     {
       command:
         "open-educoder homework shixun list MOAPGNLO --category 1213302 --sort-by name_pinyin --sort-direction desc",
-      description: "Sort the homework list by name",
+      description: "Sort shixun tasks by pinyin name",
     },
     {
       command: "open-educoder homework shixun list MOAPGNLO --category 1213302 --search 123 --status 7",
-      description: "Search within a homework category",
+      description: "Search within the selected category",
     },
   ]),
   Command.withAlias("l"),

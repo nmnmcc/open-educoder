@@ -53,10 +53,10 @@ const List = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("List courses visible to the current Educoder account."),
+  Command.withDescription("List courses available to the current logged-in account."),
   Command.withExamples([
     { command: "open-educoder course list", description: "List ongoing courses sorted by latest update" },
-    { command: "open-educoder course list --status all --json", description: "List all courses as JSON" },
+    { command: "open-educoder course list --status all --json", description: "List all courses in JSON format" },
     {
       command: "open-educoder course list --status end --sort-by created_at --sort-direction asc",
       description: "List ended courses by creation time",
@@ -82,11 +82,11 @@ const Info = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Show top-banner metadata for a course, including teachers, counts, and visibility."),
+  Command.withDescription("View course overview fields such as title, teachers, counts, and visibility."),
   Command.withExamples([
     {
       command: "open-educoder course info MOAPGNLO",
-      description: "Inspect a course by course ID",
+      description: "Open a course summary by course ID",
     },
     { command: "open-educoder course info MOAPGNLO --json", description: "Print the raw course metadata as JSON" },
   ]),
@@ -114,7 +114,7 @@ const Modules = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Show course navigation modules and nested category IDs."),
+  Command.withDescription("View course modules and category structure used for homework grouping."),
   Command.withExamples([
     { command: "open-educoder course modules MOAPGNLO", description: "List modules for a course" },
     { command: "open-educoder course modules MOAPGNLO --json", description: "Print raw module data as JSON" },
@@ -123,16 +123,16 @@ const Modules = Command.make(
 );
 
 export const Course = Command.make("course").pipe(
-  Command.withDescription("Inspect Educoder courses, course metadata, and course navigation modules."),
+  Command.withDescription("Browse available courses and jump to course-specific workflows."),
   Command.withExamples([
     { command: "open-educoder course list --status all", description: "List all courses for the current user" },
     {
       command: "open-educoder course info MOAPGNLO",
-      description: "Inspect a course by course ID",
+      description: "View course metadata by course ID",
     },
     {
       command: "open-educoder course modules MOAPGNLO",
-      description: "Show modules and nested categories for a course",
+      description: "Show modules and categories for a course",
     },
   ]),
   Command.withAlias("c"),

@@ -26,11 +26,11 @@ export const Passed = Command.make(
     yield* Console.log(result.raw.content);
   }),
 ).pipe(
-  Command.withDescription("Fetch the last passed code for a shixun homework file."),
+  Command.withDescription("Fetch the last accepted code version for a shixun file."),
   Command.withExamples([
     {
       command: "open-educoder homework shixun passed sflmr2fxi4wn case1/code.sh",
-      description: "Print passed code for a task file",
+      description: "Show latest passed code for one file",
     },
   ]),
   Command.withAlias("a"),

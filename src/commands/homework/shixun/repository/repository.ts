@@ -28,15 +28,15 @@ export const Repository = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("List files and directories in a shixun homework repository."),
+  Command.withDescription("List files and directories in a shixun repository path."),
   Command.withExamples([
     {
       command: "open-educoder homework shixun repository sflmr2fxi4wn --homework-id 3487324",
-      description: "List repository entries at the root",
+      description: "Browse repository root entries",
     },
     {
       command: "open-educoder homework shixun repository sflmr2fxi4wn --homework-id 3487324 --path case1",
-      description: "List entries under a repository path",
+      description: "Browse a specific repository directory",
     },
   ]),
   Command.withAlias("f"),

@@ -30,11 +30,11 @@ export const Logs = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("Fetch terminal or evaluation log output for a shixun homework environment."),
+  Command.withDescription("Fetch terminal or build logs for a shixun environment."),
   Command.withExamples([
     {
       command: "open-educoder homework shixun logs sflmr2fxi4wn --homework-id 3487324 --env-id 1128633",
-      description: "Fetch logs for the specified environment",
+      description: "Read latest logs for an environment",
     },
   ]),
   Command.withAlias("o"),
