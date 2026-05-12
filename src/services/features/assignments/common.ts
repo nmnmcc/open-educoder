@@ -3,204 +3,192 @@ import { Context, Effect, Layer } from "effect";
 import { AppContext } from "../../context/index.js";
 import { EducoderApi } from "../../educoder-api/index.js";
 import { type EducoderApiResponse, type FeatureWorkflow } from "../shared.js";
-import {
-  type AssignmentSortBy,
-  type AssignmentSortDirection,
-  AssignmentTypeCode,
-  asArray,
-  asRecord,
-  booleanField,
-  formatLabels,
-  numberField,
-  stringField,
-} from "./shared.js";
+import { type AssignmentSortBy, type AssignmentSortDirection, AssignmentTypeCode, formatLabels } from "./shared.js";
 
 const resolveCategoryId = (homeworkId: string, categoryId?: string | undefined) => categoryId ?? homeworkId;
 
-const stringArray = (value: unknown): ReadonlyArray<string> =>
-  asArray(value).filter((item): item is string => typeof item === "string");
+type HomeworkCommonsRaw = EducoderApiResponse<"Course", "homeworkCommons">;
+type CommonHomeworkInfoRaw = EducoderApiResponse<"HomeworkCommon", "info">;
+type CommonHomeworkWorksRaw = EducoderApiResponse<"HomeworkCommon", "worksList">;
+type CommonHomeworkDraftRaw = EducoderApiResponse<"HomeworkCommon", "studentWorkNew">;
+type CommonHomeworkMembersRaw = EducoderApiResponse<"HomeworkCommon", "searchMemberList">;
+type CommonHomeworkCommentsRaw = EducoderApiResponse<"HomeworkCommon", "showComment">;
+type CommonHomeworkSettingsRaw = EducoderApiResponse<"HomeworkCommon", "settings">;
+type CommonHomeworkRedoLogsRaw = EducoderApiResponse<"HomeworkCommon", "redoLogs">;
 
-const labelsField = (record: Record<string, unknown> | null, key: string) => {
-  const labels = stringArray(record?.[key]);
-
-  return labels.length >= 1 ? formatLabels(labels) : null;
+type CommonHomeworkBaseRaw = {
+  readonly course_id: number;
+  readonly course_name: string;
+  readonly is_end: boolean;
+  readonly course_end_date: string | null;
+  readonly category: {
+    readonly category_id: number;
+    readonly category_name: string;
+    readonly main: number;
+  };
+  readonly homework_status: ReadonlyArray<string>;
+  readonly time_status: number;
+  readonly open_evaluate: boolean | null;
+  readonly homework_name: string;
+  readonly homework_id: number;
+  readonly homework_type: string;
 };
 
-const jsonField = (record: Record<string, unknown> | null, key: string) => record?.[key] ?? null;
-
-const arrayCount = (value: unknown) => (Array.isArray(value) ? value.length : null);
-
-const formatBaseAssignment = (value: unknown) => {
-  const root = asRecord(value);
-  const category = asRecord(root?.["category"]);
-
+const formatBaseAssignment = (value: CommonHomeworkBaseRaw) => {
   return {
-    id: numberField(root, "homework_id"),
-    name: stringField(root, "homework_name"),
-    type: stringField(root, "homework_type"),
+    id: value.homework_id,
+    name: value.homework_name,
+    type: value.homework_type,
     course: {
-      id: numberField(root, "course_id"),
-      name: stringField(root, "course_name"),
-      ended: booleanField(root, "is_end"),
-      endDate: stringField(root, "course_end_date"),
+      id: value.course_id,
+      name: value.course_name,
+      ended: value.is_end,
+      endDate: value.course_end_date,
     },
-    category:
-      category === null
-        ? null
-        : {
-            id: numberField(category, "category_id"),
-            name: stringField(category, "category_name"),
-            main: numberField(category, "main"),
-          },
-    status: labelsField(root, "homework_status"),
-    timeStatus: numberField(root, "time_status"),
-    openEvaluate: jsonField(root, "open_evaluate"),
+    category: {
+      id: value.category.category_id,
+      name: value.category.category_name,
+      main: value.category.main,
+    },
+    status: formatLabels(value.homework_status),
+    timeStatus: value.time_status,
+    openEvaluate: value.open_evaluate,
   };
 };
 
-const formatAttachments = (value: unknown) =>
+const formatAttachments = (value: CommonHomeworkInfoRaw["attachments"]) =>
   Object.fromEntries(
-    asArray(value).map((attachment, index) => {
-      const record = asRecord(attachment);
-      const id = numberField(record, "id") ?? index + 1;
+    (value ?? []).map((attachment, index) => {
+      const id = attachment.id ?? index + 1;
 
       return [
         id,
         {
-          title: stringField(record, "title"),
-          size: stringField(record, "filesize"),
-          type: stringField(record, "file_type"),
-          subtype: stringField(record, "file_sub"),
-          pdf: booleanField(record, "is_pdf"),
-          editable: booleanField(record, "is_edit"),
-          url: stringField(record, "download_url") ?? stringField(record, "url"),
+          title: attachment.title ?? null,
+          size: attachment.filesize ?? null,
+          type: attachment.file_type ?? null,
+          subtype: attachment.file_sub ?? null,
+          pdf: attachment.is_pdf ?? null,
+          editable: attachment.is_edit ?? null,
+          url: attachment.download_url ?? attachment.url ?? null,
         },
       ];
     }),
   );
 
-const formatInfoResponse = (value: unknown) => {
-  const root = asRecord(value);
-
+const formatInfoResponse = (value: CommonHomeworkInfoRaw) => {
   return {
     assignment: {
       ...formatBaseAssignment(value),
-      workId: numberField(root, "work_id"),
-      workStatus: labelsField(root, "work_statuses"),
-      canSubmit: booleanField(root, "can_submit"),
-      answerPublic: booleanField(root, "answer_public"),
-      viewAnswer: booleanField(root, "view_answer"),
-      description: stringField(root, "description"),
+      workId: value.work_id ?? null,
+      workStatus: value.work_statuses === undefined ? null : formatLabels(value.work_statuses),
+      canSubmit: value.can_submit ?? null,
+      answerPublic: value.answer_public ?? null,
+      viewAnswer: value.view_answer ?? null,
+      description: value.description ?? null,
       submit: {
-        size: numberField(root, "submit_size"),
-        limit: booleanField(root, "submit_limit"),
-        limitNum: numberField(root, "submit_limit_num"),
-        mustFile: booleanField(root, "must_file"),
+        size: value.submit_size ?? null,
+        limit: value.submit_limit ?? null,
+        limitNum: value.submit_limit_num ?? null,
+        mustFile: value.must_file ?? null,
       },
-      attachments: formatAttachments(root?.["attachments"]),
+      attachments: formatAttachments(value.attachments),
     },
   };
 };
 
-const formatWorksResponse = (value: unknown) => {
-  const root = asRecord(value);
-  const leftTime = asRecord(root?.["left_time"]);
-
+const formatWorksResponse = (value: CommonHomeworkWorksRaw) => {
   return {
     assignment: formatBaseAssignment(value),
     work: {
-      id: numberField(root, "work_id") ?? numberField(root, "id"),
-      status: numberField(root, "work_status"),
-      updateTime: jsonField(root, "update_time"),
+      id: value.work_id ?? value.id ?? null,
+      status: value.work_status ?? null,
+      updateTime: value.update_time ?? null,
       scores: {
-        work: jsonField(root, "work_score"),
-        final: jsonField(root, "final_score"),
-        teacher: jsonField(root, "teacher_score"),
-        student: jsonField(root, "student_score"),
-        assistant: jsonField(root, "teaching_asistant_score"),
-        groupLeader: jsonField(root, "group_leader_score"),
+        work: value.work_score ?? null,
+        final: value.final_score ?? null,
+        teacher: value.teacher_score ?? null,
+        student: value.student_score ?? null,
+        assistant: value.teaching_asistant_score ?? null,
+        groupLeader: value.group_leader_score ?? null,
       },
       submit: {
-        canSubmit: booleanField(root, "can_submit"),
-        submitNum: numberField(root, "submit_num"),
-        submitCount: numberField(root, "submit_count"),
-        redoCount: numberField(root, "redo_count"),
-        size: numberField(root, "submit_size"),
-        commitCount: numberField(root, "commit_count"),
-        uncommitCount: numberField(root, "uncommit_count"),
+        canSubmit: value.can_submit ?? null,
+        submitNum: value.submit_num ?? null,
+        submitCount: value.submit_count ?? null,
+        redoCount: value.redo_count ?? null,
+        size: value.submit_size ?? null,
+        commitCount: value.commit_count ?? null,
+        uncommitCount: value.uncommit_count ?? null,
         leftTime:
-          leftTime === null
+          value.left_time === undefined
             ? null
             : {
-                status: stringField(leftTime, "status"),
-                time: stringField(leftTime, "time"),
+                status: value.left_time.status,
+                time: value.left_time.time,
               },
       },
       user: {
-        login: stringField(root, "user_login"),
-        name: stringField(root, "user_name"),
-        studentId: stringField(root, "student_id"),
-        group: stringField(root, "group_name"),
+        login: value.user_login ?? null,
+        name: value.user_name ?? null,
+        studentId: value.student_id ?? null,
+        group: value.group_name ?? null,
       },
-      taCommentCount: numberField(root, "ta_comment_count"),
-      groupData: jsonField(root, "group_data"),
-      studentWorksCount: arrayCount(root?.["student_works"]),
+      taCommentCount: value.ta_comment_count ?? null,
+      groupData: value.group_data ?? null,
+      studentWorksCount: value.student_works === undefined ? null : value.student_works.length,
     },
   };
 };
 
-const formatMember = (value: unknown) => {
-  const member = asRecord(value);
-
+const formatMember = (member: CommonHomeworkMembersRaw["members"][number]) => {
   return {
-    name: stringField(member, "user_name"),
-    studentId: stringField(member, "student_id"),
-    group: stringField(member, "group_name"),
-    committed: booleanField(member, "commit_status"),
-    team: booleanField(member, "is_team"),
+    name: member.user_name,
+    studentId: member.student_id,
+    group: member.group_name,
+    committed: member.commit_status,
+    team: member.is_team,
   };
 };
 
-const formatSettingsResponse = (value: unknown) => {
-  const root = asRecord(value);
-
+const formatSettingsResponse = (value: CommonHomeworkSettingsRaw) => {
   return {
     assignment: formatBaseAssignment(value),
     schedule: {
-      publishTime: stringField(root, "publish_time"),
-      endTime: stringField(root, "end_time"),
-      lateTime: stringField(root, "late_time"),
-      allowLate: booleanField(root, "allow_late"),
-      latePenalty: jsonField(root, "late_penalty"),
+      publishTime: value.publish_time ?? null,
+      endTime: value.end_time ?? null,
+      lateTime: value.late_time ?? null,
+      allowLate: value.allow_late ?? null,
+      latePenalty: value.late_penalty ?? null,
     },
     submit: {
-      canSubmit: booleanField(root, "can_submit"),
-      canMakeUp: booleanField(root, "can_make_up"),
-      submitNum: numberField(root, "submit_num"),
-      submitSize: numberField(root, "submit_size"),
-      limit: booleanField(root, "submit_limit"),
-      limitNum: numberField(root, "submit_limit_num"),
-      mustFile: booleanField(root, "must_file"),
+      canSubmit: value.can_submit ?? null,
+      canMakeUp: value.can_make_up ?? null,
+      submitNum: value.submit_num ?? null,
+      submitSize: value.submit_size ?? null,
+      limit: value.submit_limit ?? null,
+      limitNum: value.submit_limit_num ?? null,
+      mustFile: value.must_file ?? null,
     },
     score: {
-      total: numberField(root, "total_score"),
-      open: booleanField(root, "score_open"),
-      workPublic: booleanField(root, "work_public"),
-      answerPublic: booleanField(root, "answer_public"),
-      commentPublic: booleanField(root, "comment_public"),
-      details: asArray(root?.["score_details"]),
+      total: value.total_score ?? null,
+      open: value.score_open ?? null,
+      workPublic: value.work_public ?? null,
+      answerPublic: value.answer_public ?? null,
+      commentPublic: value.comment_public ?? null,
+      details: value.score_details ?? [],
     },
     groups: {
-      allUsers: numberField(root, "all_user_size"),
-      settingsCount: arrayCount(root?.["group_settings"]),
-      allowLateSettingsCount: arrayCount(root?.["allow_late_settings"]),
+      allUsers: value.all_user_size ?? null,
+      settingsCount: value.group_settings === undefined ? null : value.group_settings.length,
+      allowLateSettingsCount: value.allow_late_settings === undefined ? null : value.allow_late_settings.length,
     },
     anonymous: {
-      comment: booleanField(root, "anonymous_comment"),
-      appeal: booleanField(root, "anonymous_appeal"),
+      comment: value.anonymous_comment ?? null,
+      appeal: value.anonymous_appeal ?? null,
     },
-    canEdit: booleanField(root, "can_edit"),
-    studentWorks: jsonField(root, "student_works"),
+    canEdit: value.can_edit ?? null,
+    studentWorks: value.student_works ?? null,
   };
 };
 
@@ -253,15 +241,6 @@ type CommonHomeworkRedoLogsInput = {
   readonly page: number;
   readonly limit: number;
 };
-
-type HomeworkCommonsRaw = EducoderApiResponse<"Course", "homeworkCommons">;
-type CommonHomeworkInfoRaw = EducoderApiResponse<"HomeworkCommon", "info">;
-type CommonHomeworkWorksRaw = EducoderApiResponse<"HomeworkCommon", "worksList">;
-type CommonHomeworkDraftRaw = EducoderApiResponse<"HomeworkCommon", "studentWorkNew">;
-type CommonHomeworkMembersRaw = EducoderApiResponse<"HomeworkCommon", "searchMemberList">;
-type CommonHomeworkCommentsRaw = EducoderApiResponse<"HomeworkCommon", "showComment">;
-type CommonHomeworkSettingsRaw = EducoderApiResponse<"HomeworkCommon", "settings">;
-type CommonHomeworkRedoLogsRaw = EducoderApiResponse<"HomeworkCommon", "redoLogs">;
 
 type ListCommonAssignmentsView = {
   readonly total: number;
@@ -373,74 +352,76 @@ export class CommonAssignmentFeature extends Context.Service<CommonAssignmentFea
         return user.login;
       });
 
-      const list: CommonAssignmentFeatureShape["list"] = Effect.fn("features.assignments.common.list")(function* (input) {
-        const login = yield* resolveLogin();
-        const order = input.order ?? input.status;
-        const raw = yield* educoder.Course.homeworkCommons({
-          params: {
-            courseId: input.courseId,
-          },
-          query: {
-            coursesId: input.courseId,
-            id: input.courseId,
-            limit: input.limit,
-            type: AssignmentTypeCode.common,
-            status: input.status,
-            category: input.category,
-            page: input.page,
-            order,
-            search: input.search,
-            sort_by: input.sortBy,
-            sort_direction: input.sortDirection,
-            zzud: login,
-          },
-        });
-
-        return {
-          raw,
-          view: {
-            total: raw.query_total_count,
-            order: raw.homeworks.map((item) => String(item.homework_id)),
-            filters: {
+      const list: CommonAssignmentFeatureShape["list"] = Effect.fn("features.assignments.common.list")(
+        function* (input) {
+          const login = yield* resolveLogin();
+          const order = input.order ?? input.status;
+          const raw = yield* educoder.Course.homeworkCommons({
+            params: {
+              courseId: input.courseId,
+            },
+            query: {
+              coursesId: input.courseId,
+              id: input.courseId,
+              limit: input.limit,
+              type: AssignmentTypeCode.common,
               status: input.status,
+              category: input.category,
+              page: input.page,
               order,
-              search: input.search ?? null,
-              sortBy: input.sortBy ?? null,
-              sortDirection: input.sortDirection ?? null,
+              search: input.search,
+              sort_by: input.sortBy,
+              sort_direction: input.sortDirection,
+              zzud: login,
             },
-            category: {
-              id: raw.category_id ?? null,
-              name: raw.category_name ?? raw.main_category_name,
+          });
+
+          return {
+            raw,
+            view: {
               total: raw.query_total_count,
-              published: raw.published_count,
-              unpublished: raw.unpublished_count,
+              order: raw.homeworks.map((item) => String(item.homework_id)),
+              filters: {
+                status: input.status,
+                order,
+                search: input.search ?? null,
+                sortBy: input.sortBy ?? null,
+                sortDirection: input.sortDirection ?? null,
+              },
+              category: {
+                id: raw.category_id ?? null,
+                name: raw.category_name ?? raw.main_category_name,
+                total: raw.query_total_count,
+                published: raw.published_count,
+                unpublished: raw.unpublished_count,
+              },
+              assignments: Object.fromEntries(
+                raw.homeworks.map((item) => [
+                  item.homework_id,
+                  {
+                    name: item.name,
+                    category: item.upper_category_name ?? raw.category_name ?? null,
+                    status: formatLabels(item.status),
+                    statusTime: item.status_time,
+                    timeStatus: item.time_status,
+                    allowLate: item.allow_late,
+                    author: item.author,
+                    created: item.created_at,
+                    publishTime: item.publish_time,
+                    endTime: item.end_time,
+                    lateTime: item.late_time,
+                    studentWorkId: item.student_work_id,
+                    workId: item.work_id ?? null,
+                    workStatus: item.work_status === undefined ? null : formatLabels(item.work_status),
+                    uncommitted: item.un_commit_work ?? null,
+                    labStatus: item.lab_status ?? null,
+                  },
+                ]),
+              ),
             },
-            assignments: Object.fromEntries(
-              raw.homeworks.map((item) => [
-                item.homework_id,
-                {
-                  name: item.name,
-                  category: item.upper_category_name ?? raw.category_name ?? null,
-                  status: formatLabels(item.status),
-                  statusTime: item.status_time,
-                  timeStatus: item.time_status,
-                  allowLate: item.allow_late,
-                  author: item.author,
-                  created: item.created_at,
-                  publishTime: item.publish_time,
-                  endTime: item.end_time,
-                  lateTime: item.late_time,
-                  studentWorkId: item.student_work_id,
-                  workId: item.work_id ?? null,
-                  workStatus: item.work_status === undefined ? null : formatLabels(item.work_status),
-                  uncommitted: item.un_commit_work ?? null,
-                  labStatus: item.lab_status ?? null,
-                },
-              ]),
-            ),
-          },
-        };
-      });
+          };
+        },
+      );
 
       const getInfo: CommonAssignmentFeatureShape["getInfo"] = Effect.fn("features.assignments.common.info")(
         function* (input) {
@@ -509,121 +490,114 @@ export class CommonAssignmentFeature extends Context.Service<CommonAssignmentFea
         },
       );
 
-      const searchMembers: CommonAssignmentFeatureShape["searchMembers"] = Effect.fn("features.assignments.common.members")(
-        function* (input) {
-          const login = yield* resolveLogin();
-          const raw = yield* educoder.HomeworkCommon.searchMemberList({
-            params: {
-              homeworkId: input.homeworkId,
-            },
-            query: {
-              coursesId: input.courseId,
-              commonHomeworkId: input.homeworkId,
-              page: input.page,
-              limit: input.limit,
-              search: input.search,
-              zzud: login,
-            },
-          });
+      const searchMembers: CommonAssignmentFeatureShape["searchMembers"] = Effect.fn(
+        "features.assignments.common.members",
+      )(function* (input) {
+        const login = yield* resolveLogin();
+        const raw = yield* educoder.HomeworkCommon.searchMemberList({
+          params: {
+            homeworkId: input.homeworkId,
+          },
+          query: {
+            coursesId: input.courseId,
+            commonHomeworkId: input.homeworkId,
+            page: input.page,
+            limit: input.limit,
+            search: input.search,
+            zzud: login,
+          },
+        });
 
-          return {
-            raw,
-            view: {
-              ai: raw.is_ai,
-              members: Object.fromEntries(
-                raw.members.map((member, index) => {
-                  const record = asRecord(member);
-                  const id = numberField(record, "user_id") ?? index + 1;
+        return {
+          raw,
+          view: {
+            ai: raw.is_ai,
+            members: Object.fromEntries(raw.members.map((member) => [member.user_id, formatMember(member)])),
+          },
+        };
+      });
 
-                  return [id, formatMember(member)];
-                }),
-              ),
-            },
-          };
-        },
-      );
+      const getComments: CommonAssignmentFeatureShape["getComments"] = Effect.fn(
+        "features.assignments.common.comments",
+      )(function* (input) {
+        const login = yield* resolveLogin();
+        const categoryId = resolveCategoryId(input.homeworkId, input.categoryId);
+        const raw = yield* educoder.HomeworkCommon.showComment({
+          params: {
+            homeworkId: input.homeworkId,
+          },
+          query: {
+            coursesId: input.courseId,
+            categoryId,
+            page_size: input.pageSize,
+            zzud: login,
+          },
+        });
 
-      const getComments: CommonAssignmentFeatureShape["getComments"] = Effect.fn("features.assignments.common.comments")(
-        function* (input) {
-          const login = yield* resolveLogin();
-          const categoryId = resolveCategoryId(input.homeworkId, input.categoryId);
-          const raw = yield* educoder.HomeworkCommon.showComment({
-            params: {
-              homeworkId: input.homeworkId,
+        return {
+          raw,
+          view: {
+            comments: {
+              assignmentUserId: raw.homework_user_id,
+              messagesCount: raw.messages_count,
+              parentMessagesCount: raw.parent_messages_count,
+              items: raw.comments,
             },
-            query: {
-              coursesId: input.courseId,
-              categoryId,
-              page_size: input.pageSize,
-              zzud: login,
-            },
-          });
+          },
+        };
+      });
 
-          return {
-            raw,
-            view: {
-              comments: {
-                assignmentUserId: raw.homework_user_id,
-                messagesCount: raw.messages_count,
-                parentMessagesCount: raw.parent_messages_count,
-                items: raw.comments,
-              },
-            },
-          };
-        },
-      );
+      const getSettings: CommonAssignmentFeatureShape["getSettings"] = Effect.fn(
+        "features.assignments.common.settings",
+      )(function* (input) {
+        const login = yield* resolveLogin();
+        const categoryId = resolveCategoryId(input.homeworkId, input.categoryId);
+        const raw = yield* educoder.HomeworkCommon.settings({
+          params: {
+            homeworkId: input.homeworkId,
+          },
+          query: {
+            coursesId: input.courseId,
+            categoryId,
+            zzud: login,
+          },
+        });
 
-      const getSettings: CommonAssignmentFeatureShape["getSettings"] = Effect.fn("features.assignments.common.settings")(
-        function* (input) {
-          const login = yield* resolveLogin();
-          const categoryId = resolveCategoryId(input.homeworkId, input.categoryId);
-          const raw = yield* educoder.HomeworkCommon.settings({
-            params: {
-              homeworkId: input.homeworkId,
-            },
-            query: {
-              coursesId: input.courseId,
-              categoryId,
-              zzud: login,
-            },
-          });
+        return {
+          raw,
+          view: formatSettingsResponse(raw),
+        };
+      });
 
-          return {
-            raw,
-            view: formatSettingsResponse(raw),
-          };
-        },
-      );
+      const getRedoLogs: CommonAssignmentFeatureShape["getRedoLogs"] = Effect.fn(
+        "features.assignments.common.redoLogs",
+      )(function* (input) {
+        const login = yield* resolveLogin();
+        const raw = yield* educoder.HomeworkCommon.redoLogs({
+          params: {
+            homeworkId: input.homeworkId,
+          },
+          query: {
+            type: input.type,
+            limit: input.limit,
+            page: input.page,
+            zzud: login,
+          },
+        });
 
-      const getRedoLogs: CommonAssignmentFeatureShape["getRedoLogs"] = Effect.fn("features.assignments.common.redoLogs")(
-        function* (input) {
-          const login = yield* resolveLogin();
-          const raw = yield* educoder.HomeworkCommon.redoLogs({
-            params: {
-              homeworkId: input.homeworkId,
+        return {
+          raw,
+          view: {
+            redoLogs: {
+              status: raw.status,
+              message: raw.message,
+              assignmentType: raw.data.homework_type,
+              count: raw.data.count,
+              list: raw.data.list ?? [],
             },
-            query: {
-              type: input.type,
-              limit: input.limit,
-              page: input.page,
-              zzud: login,
-            },
-          });
-
-          return {
-            raw,
-            view: {
-              redoLogs: {
-                status: raw.status,
-                message: raw.message,
-                assignmentType: raw.data.homework_type,
-                count: raw.data.count,
-                list: raw.data.list ?? [],
-              },
-            },
-          };
-        },
-      );
+          },
+        };
+      });
 
       return CommonAssignmentFeature.of({
         list,

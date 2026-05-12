@@ -1,16 +1,16 @@
 import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/unstable/httpapi";
 
-const NonEmptyString = Schema.String.pipe(Schema.check(Schema.isMinLength(1)));
+const StringValue = Schema.String;
 const IdFromString = Schema.NumberFromString.pipe(Schema.check(Schema.isInt()));
 const NullableString = Schema.NullOr(Schema.String);
 const NullableBoolean = Schema.NullOr(Schema.Boolean);
 const EmptyArray = Schema.Array(Schema.Never);
 const ExamQuery = {
-  coursesId: NonEmptyString,
+  coursesId: StringValue,
   categoryId: IdFromString,
-  login: NonEmptyString,
-  zzud: NonEmptyString,
+  login: StringValue,
+  zzud: StringValue,
 };
 /*
 Sample: GET /api/exercises/198085/start.json
@@ -445,7 +445,7 @@ export const Exam = HttpApiGroup.make("Exam")
       },
       query: {
         id: IdFromString,
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       success: BeginCommitResponse,
     }),
@@ -456,7 +456,7 @@ export const Exam = HttpApiGroup.make("Exam")
         examId: IdFromString,
       },
       query: {
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       payload: CommitPayload,
       success: CommitResponse,
@@ -468,7 +468,7 @@ export const Exam = HttpApiGroup.make("Exam")
         questionId: IdFromString,
       },
       query: {
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       payload: AnswerPayload,
       success: AnswerResponse,

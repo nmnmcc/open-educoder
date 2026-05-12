@@ -79,7 +79,7 @@ Sample: GET /api/users/get_user_info.json
 export const User = Schema.Struct({
   username: Schema.String,
   real_name: Schema.String,
-  login: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+  login: Schema.String,
   user_id: Schema.Int,
   account_auth: Schema.optionalKey(Schema.Boolean),
   admin: Schema.optionalKey(Schema.Boolean),

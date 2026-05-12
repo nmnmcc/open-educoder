@@ -16,13 +16,12 @@ import {
 } from "../../flags.js";
 import { renderGeneric } from "../../render.js";
 import {
-  asRecord,
   optionToUndefined,
   printJson,
   printStatusResponse,
   readOptionalContent,
   requireChallengeSelector,
-  stringField,
+  runningStatusMessage,
 } from "../../shared.js";
 
 export const Evaluate = Command.make(
@@ -73,9 +72,7 @@ export const Evaluate = Command.make(
       onRunning: input.json
         ? undefined
         : ({ attempt, limit, response }) => {
-            const running = asRecord(response);
-
-            return Console.log(`[${attempt}/${limit}] ${stringField(running, "running_code_message") ?? "running"}`);
+            return Console.log(`[${attempt}/${limit}] ${runningStatusMessage(response) ?? "running"}`);
           },
     });
 

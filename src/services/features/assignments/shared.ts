@@ -1,30 +1,34 @@
+import { Buffer } from "node:buffer";
+
 import { Data, Effect, Option } from "effect";
 
-import {
-  type CurrentUser,
-  type JsonRecord,
-  asArray,
-  asRecord,
-  booleanField,
-  decodeBase64,
-  formatLabels,
-  formatOperation,
-  numberField,
-  stringField,
-} from "../shared.js";
+import type { EducoderApiResponse } from "../shared.js";
 
-export {
-  asArray,
-  asRecord,
-  booleanField,
-  decodeBase64,
-  formatLabels,
-  formatOperation,
-  numberField,
-  stringField,
-  type CurrentUser,
-  type JsonRecord,
+type TaskInfoRaw = EducoderApiResponse<"Task", "info">;
+type GameStatusRaw = EducoderApiResponse<"Task", "gameStatus">;
+type RunningGameStatusRaw = Extract<GameStatusRaw, { readonly running_code_status: number }>;
+type TaskOperation = readonly [string, string, boolean?];
+
+export type CurrentUser = {
+  readonly login: string;
+  readonly userId: number;
 };
+
+export const decodeBase64 = (value: string) => Buffer.from(value, "base64").toString("utf8");
+
+export const formatLabels = (labels: ReadonlyArray<string>) => labels.join(", ");
+
+export const formatOperation = (operation: TaskOperation | undefined) => ({
+  action: operation?.[0] ?? null,
+  path: operation?.[1] ?? null,
+  resumed: operation?.[2] ?? null,
+});
+
+export const isRunningStatusResponse = (value: GameStatusRaw): value is RunningGameStatusRaw =>
+  "running_code_status" in value;
+
+export const runningStatusMessage = (value: GameStatusRaw) =>
+  isRunningStatusResponse(value) ? value.running_code_message : null;
 
 export class AssignmentInputError extends Data.TaggedError("AssignmentInputError")<{
   readonly message: string;
@@ -62,41 +66,34 @@ export const makeTaskQuery = (taskId: string, homeworkId: string, login: string)
   },
 });
 
-export const formatTaskInfo = (value: unknown) => {
-  const root = asRecord(value);
-  const game = asRecord(root?.["game"]);
-  const challenge = asRecord(root?.["challenge"]);
-  const lab = asRecord(root?.["shixun"]);
-  const workspace = asRecord(root?.["myshixun"]);
-  const user = asRecord(root?.["user"]);
+export const formatTaskInfo = (value: TaskInfoRaw) => {
+  const lab = value.shixun;
+  const user = value.user;
   const environments = Object.fromEntries(
-    asArray(root?.["shixun_environments"]).map((environment, index) => {
-      const record = asRecord(environment);
-      const id = numberField(record, "shixun_environment_id") ?? index + 1;
+    (value.shixun_environments ?? []).map((environment, index) => {
+      const id = environment.shixun_environment_id ?? index + 1;
 
       return [
         id,
         {
-          name: stringField(record, "name"),
-          tabType: numberField(record, "tab_type"),
-          resourceType: numberField(record, "resource_type"),
-          tpiType: numberField(record, "tpi_type"),
+          name: environment.name ?? null,
+          tabType: environment.tab_type ?? null,
+          resourceType: environment.resource_type ?? null,
+          tpiType: environment.tpi_type ?? null,
         },
       ];
     }),
   );
   const testSets = Object.fromEntries(
-    asArray(root?.["test_sets"]).map((testSet, index) => {
-      const record = asRecord(testSet);
-
+    (value.test_sets ?? []).map((testSet, index) => {
       return [
         index + 1,
         {
-          public: booleanField(record, "is_public"),
-          result: booleanField(record, "result"),
-          expected: stringField(record, "output"),
-          actual: stringField(record, "actual_output"),
-          matchRule: stringField(record, "matchRule"),
+          public: testSet.is_public ?? null,
+          result: testSet.result ?? null,
+          expected: testSet.output ?? null,
+          actual: testSet.actual_output ?? null,
+          matchRule: testSet.matchRule ?? null,
         },
       ];
     }),
@@ -104,76 +101,71 @@ export const formatTaskInfo = (value: unknown) => {
 
   return {
     homework: {
-      id: numberField(root, "homework_common_id"),
-      name: stringField(root, "homework_common_name"),
-      ended: booleanField(root, "homework_common_is_end"),
+      id: value.homework_common_id ?? null,
+      name: value.homework_common_name ?? null,
+      ended: value.homework_common_is_end ?? null,
     },
     task: {
-      identifier: stringField(game, "identifier"),
-      gameId: numberField(game, "id"),
-      status: numberField(game, "status"),
-      finalScore: numberField(game, "final_score"),
-      costTime: numberField(game, "cost_time"),
+      identifier: value.game.identifier ?? null,
+      gameId: value.game.id ?? null,
+      status: value.game.status ?? null,
+      finalScore: value.game.final_score ?? null,
+      costTime: value.game.cost_time ?? null,
     },
     challenge: {
-      id: numberField(challenge, "id"),
-      position: numberField(challenge, "position"),
-      subject: stringField(challenge, "subject"),
-      score: numberField(challenge, "score"),
-      path: stringField(challenge, "path"),
-      difficulty: numberField(challenge, "difficulty"),
-      execTime: numberField(challenge, "exec_time"),
+      id: value.challenge.id ?? null,
+      position: value.challenge.position ?? null,
+      subject: value.challenge.subject ?? null,
+      score: value.challenge.score ?? null,
+      path: value.challenge.path ?? null,
+      difficulty: value.challenge.difficulty ?? null,
+      execTime: value.challenge.exec_time ?? null,
     },
     lab: {
-      id: numberField(lab, "id"),
-      identifier: stringField(lab, "identifier"),
-      name: stringField(lab, "name"),
-      language: stringField(lab, "language"),
-      status: numberField(root, "shixun_status"),
+      id: lab?.id ?? null,
+      identifier: lab?.identifier ?? null,
+      name: lab?.name ?? null,
+      language: lab?.language ?? null,
+      status: value.shixun_status ?? null,
     },
     workspace: {
-      id: numberField(workspace, "id"),
-      identifier: stringField(workspace, "identifier"),
-      status: numberField(workspace, "status"),
-      commitId: stringField(workspace, "commit_id"),
+      id: value.myshixun.id ?? null,
+      identifier: value.myshixun.identifier ?? null,
+      status: value.myshixun.status ?? null,
+      commitId: value.myshixun.commit_id ?? null,
     },
     user: {
-      id: numberField(user, "user_id"),
-      login: stringField(user, "login"),
-      name: stringField(user, "name"),
+      id: user?.user_id ?? null,
+      login: user?.login ?? null,
+      name: user?.name ?? null,
     },
     environments,
     testSets,
   };
 };
 
-export const formatStatusResponse = (value: unknown) => {
-  const root = asRecord(value);
-  const runningStatus = numberField(root, "running_code_status");
-
-  if (runningStatus !== null) {
+export const formatStatusResponse = (value: GameStatusRaw) => {
+  if (isRunningStatusResponse(value)) {
     return {
       running: {
-        status: runningStatus,
-        message: stringField(root, "running_code_message"),
+        status: value.running_code_status,
+        message: value.running_code_message,
       },
     };
   }
 
   const testSets = Object.fromEntries(
-    asArray(root?.["test_sets"]).map((testSet, index) => {
-      const record = asRecord(testSet);
-
+    (value.test_sets ?? []).map((testSet, index) => {
       return [
         index + 1,
         {
-          result: booleanField(record, "result"),
-          expected: stringField(record, "output"),
-          actual: stringField(record, "actual_output"),
-          compileSuccess: numberField(record, "compile_success"),
-          time: numberField(record, "ts_time"),
-          memory: numberField(record, "ts_mem"),
-          matchRule: stringField(record, "matchRule"),
+          result: testSet.result ?? null,
+          expected: testSet.output ?? null,
+          actual: testSet.actual_output ?? null,
+          compileSuccess: testSet.compile_success ?? null,
+          time: testSet.ts_time ?? null,
+          memory: testSet.ts_mem ?? null,
+          matchRule: testSet.matchRule ?? null,
         },
       ];
     }),
@@ -181,15 +173,15 @@ export const formatStatusResponse = (value: unknown) => {
 
   return {
     result: {
-      status: numberField(root, "status"),
-      grade: numberField(root, "grade"),
-      gold: numberField(root, "gold"),
-      experience: numberField(root, "experience"),
-      position: numberField(root, "position"),
-      lastCompileOutput: stringField(root, "last_compile_output"),
-      secKey: stringField(root, "sec_key"),
-      testSetsCount: numberField(root, "test_sets_count"),
-      errorCount: numberField(root, "sets_error_count"),
+      status: value.status,
+      grade: value.grade ?? null,
+      gold: value.gold ?? null,
+      experience: value.experience ?? null,
+      position: value.position ?? null,
+      lastCompileOutput: value.last_compile_output ?? null,
+      secKey: value.sec_key ?? null,
+      testSetsCount: value.test_sets_count ?? null,
+      errorCount: value.sets_error_count ?? null,
     },
     testSets,
   };

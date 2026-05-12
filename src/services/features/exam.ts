@@ -2,7 +2,7 @@ import { Context, Data, Effect, Layer } from "effect";
 
 import { AppContext } from "../context/index.js";
 import { EducoderApi } from "../educoder-api/index.js";
-import { type EducoderApiResponse, type FeatureWorkflow, formatLabels } from "./shared.js";
+import { type EducoderApiResponse, type FeatureWorkflow } from "./shared.js";
 
 export class AnswerInputError extends Data.TaggedError("AnswerInputError")<{
   readonly message: string;
@@ -252,7 +252,7 @@ export class ExamFeature extends Context.Service<ExamFeature, ExamFeatureShape>(
                 {
                   name: exam.exercise_name,
                   author: exam.author,
-                  tips: formatLabels(exam.exercise_tips),
+                  tips: exam.exercise_tips.join(", "),
                   created: exam.created_at,
                   time: exam.time,
                   random: exam.is_random,

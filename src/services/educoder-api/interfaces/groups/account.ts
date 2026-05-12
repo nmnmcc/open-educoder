@@ -8,15 +8,15 @@ export const Account = HttpApiGroup.make("Account")
       Sample unavailable: no captured /api/accounts/login.json payload.
       */
       payload: Schema.Struct({
-        login: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
-        password: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+        login: Schema.String,
+        password: Schema.String,
       }),
     }),
   )
   .add(
     HttpApiEndpoint.get("logout", "/api/accounts/logout.json", {
       query: {
-        zzud: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+        zzud: Schema.String,
       },
     }),
   );

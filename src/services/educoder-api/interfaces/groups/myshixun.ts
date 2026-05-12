@@ -1,11 +1,11 @@
 import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/unstable/httpapi";
 
-const NonEmptyString = Schema.String.pipe(Schema.check(Schema.isMinLength(1)));
+const StringValue = Schema.String;
 const NullableString = Schema.NullishOr(Schema.String);
 
 const MyshixunRequestParams = {
-  myshixunId: NonEmptyString,
+  myshixunId: StringValue,
 };
 
 /*
@@ -42,19 +42,19 @@ Sample: POST /api/myshixuns/iwk6hzbgyf/update_file.json
 }
 */
 const UpdateFilePayload = Schema.Struct({
-  path: NonEmptyString,
+  path: StringValue,
   evaluate: Schema.Int,
   content: Schema.String,
   game_id: Schema.Int,
   tab_type: Schema.Int,
   exercise_id: Schema.NullishOr(Schema.String),
-  homework_common_id: NonEmptyString,
+  homework_common_id: StringValue,
   extras: Schema.Struct({
     exercise_id: Schema.String,
     question_id: Schema.String,
     challenge_id: Schema.Int,
     subject_id: Schema.String,
-    homework_common_id: NonEmptyString,
+    homework_common_id: StringValue,
     competition_entry_id: Schema.String,
     currentUserId: Schema.Int,
   }),
@@ -93,7 +93,7 @@ Sample: POST /api/myshixuns/iwk6hzbgyf/reset_repository.json
 */
 const ResetRepositoryPayload = Schema.Struct({
   challenge_id: Schema.Int,
-  homework_common_id: NonEmptyString,
+  homework_common_id: StringValue,
 }).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
 
 /*
@@ -192,7 +192,7 @@ export const Myshixun = HttpApiGroup.make("Myshixun")
     HttpApiEndpoint.post("updateFile", "/api/myshixuns/:myshixunId/update_file.json", {
       params: MyshixunRequestParams,
       query: {
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       payload: UpdateFilePayload,
       success: UpdateFileResponse,
@@ -205,8 +205,8 @@ export const Myshixun = HttpApiGroup.make("Myshixun")
         shixun_environment_id: Schema.Int,
         tab_type: Schema.Int,
         game_id: Schema.Int,
-        homework_common_id: NonEmptyString,
-        zzud: NonEmptyString,
+        homework_common_id: StringValue,
+        zzud: StringValue,
       },
       success: StartResponse,
     }),
@@ -215,7 +215,7 @@ export const Myshixun = HttpApiGroup.make("Myshixun")
     HttpApiEndpoint.get("getRemainingTime", "/api/myshixuns/:myshixunId/get_remaining_time.json", {
       params: MyshixunRequestParams,
       query: {
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       success: RemainingTimeResponse,
     }),
@@ -224,7 +224,7 @@ export const Myshixun = HttpApiGroup.make("Myshixun")
     HttpApiEndpoint.get("versionRepositoryDelete", "/api/myshixuns/:myshixunId/version_repository_delete.json", {
       params: MyshixunRequestParams,
       query: {
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       success: VersionRepositoryDeleteResponse,
     }),
@@ -233,7 +233,7 @@ export const Myshixun = HttpApiGroup.make("Myshixun")
     HttpApiEndpoint.post("resetRepository", "/api/myshixuns/:myshixunId/reset_repository.json", {
       params: MyshixunRequestParams,
       query: {
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       payload: ResetRepositoryPayload,
       success: SimpleResponse,
@@ -243,7 +243,7 @@ export const Myshixun = HttpApiGroup.make("Myshixun")
     HttpApiEndpoint.post("repository", "/api/myshixuns/:myshixunId/repository.json", {
       params: MyshixunRequestParams,
       query: {
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       payload: RepositoryPayload,
       success: RepositoryResponse,

@@ -4,23 +4,21 @@ import { Console, Effect, Option } from "effect";
 
 import {
   AssignmentInputError,
-  asRecord,
   failInput,
   formatStatusResponse,
   optionToUndefined,
-  stringField,
+  runningStatusMessage,
 } from "../../services/features/assignments/shared.js";
 import { inspectOptions } from "../../utils/inspect-options.js";
 import { renderGeneric } from "./render.js";
 
 export {
   AssignmentInputError,
-  asRecord,
   failInput,
   formatStatusResponse,
   inspectOptions,
   optionToUndefined,
-  stringField,
+  runningStatusMessage,
 };
 
 export const printJson = (value: unknown) => Console.log(JSON.stringify(value, null, 2));
@@ -75,7 +73,7 @@ export const requireChallengeSelector = Effect.fn("assignments.requireChallengeS
 });
 
 export const printStatusResponse = Effect.fn("assignments.printStatusResponse")(function* (
-  response: unknown,
+  response: Parameters<typeof formatStatusResponse>[0],
   json: boolean,
 ) {
   if (json) {

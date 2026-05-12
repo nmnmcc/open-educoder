@@ -1,15 +1,15 @@
 import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/unstable/httpapi";
 
-const NonEmptyString = Schema.String.pipe(Schema.check(Schema.isMinLength(1)));
+const StringValue = Schema.String;
 const EmptyArray = Schema.Array(Schema.Never);
 const NullableString = Schema.NullOr(Schema.String);
 const NullableNumber = Schema.NullOr(Schema.Number);
 const NullableBoolean = Schema.NullOr(Schema.Boolean);
-const TaskOperationItem = Schema.Union([Schema.String, Schema.Boolean]);
+const TaskOperation = Schema.Tuple([Schema.String, Schema.String, Schema.optionalKey(Schema.Boolean)]);
 
 const HomeworkCommonRequestParams = {
-  homeworkId: NonEmptyString,
+  homeworkId: StringValue,
 };
 
 /*
@@ -117,7 +117,7 @@ const HomeworkCommonDetailResponse = Schema.Struct({
   submit_limit: Schema.optionalKey(Schema.Boolean),
   submit_limit_num: Schema.optionalKey(Schema.Int),
   must_file: Schema.optionalKey(Schema.Boolean),
-  task_operation: Schema.optionalKey(Schema.Array(TaskOperationItem)),
+  task_operation: Schema.optionalKey(TaskOperation),
   shixun_identifier: Schema.optionalKey(Schema.String),
   shixun_id: Schema.optionalKey(Schema.Int),
   shixun_status: Schema.optionalKey(Schema.Int),
@@ -139,7 +139,7 @@ Sample: GET /api/homework_commons/3487324/shixun_challenge_data.json
 */
 const ShixunChallengeSetting = Schema.Struct({
   challenge_id: Schema.Int,
-  task_operation: Schema.Array(TaskOperationItem),
+  task_operation: TaskOperation,
   challenge_name: Schema.String,
   is_choose_todo: Schema.Boolean,
   challenge_score: Schema.Number,
@@ -199,8 +199,8 @@ Sample: POST /api/homework_commons/3487339/works_list.json
 }
 */
 const WorksListPayload = Schema.Struct({
-  coursesId: NonEmptyString,
-  categoryId: NonEmptyString,
+  coursesId: StringValue,
+  categoryId: StringValue,
 }).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
 
 /*
@@ -306,6 +306,7 @@ Sample: GET /api/homework_commons/3487339/student_works/search_member_list.json
 const SearchMemberListResponse = Schema.Struct({
   members: Schema.Array(
     Schema.Struct({
+      user_id: Schema.Int,
       user_name: Schema.String,
       group_name: Schema.String,
       student_id: Schema.String,
@@ -483,7 +484,7 @@ export const HomeworkCommon = HttpApiGroup.make("HomeworkCommon")
     HttpApiEndpoint.get("info", "/api/homework_commons/:homeworkId.json", {
       params: HomeworkCommonRequestParams,
       query: {
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       success: HomeworkCommonDetailResponse,
     }),
@@ -492,10 +493,10 @@ export const HomeworkCommon = HttpApiGroup.make("HomeworkCommon")
     HttpApiEndpoint.get("studentWorkNew", "/api/homework_commons/:homeworkId/student_works/new.json", {
       params: HomeworkCommonRequestParams,
       query: {
-        coursesId: NonEmptyString,
-        commonHomeworkId: NonEmptyString,
+        coursesId: StringValue,
+        commonHomeworkId: StringValue,
         type: Schema.Int,
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       success: HomeworkCommonBaseResponse,
     }),
@@ -504,12 +505,12 @@ export const HomeworkCommon = HttpApiGroup.make("HomeworkCommon")
     HttpApiEndpoint.get("searchMemberList", "/api/homework_commons/:homeworkId/student_works/search_member_list.json", {
       params: HomeworkCommonRequestParams,
       query: {
-        coursesId: NonEmptyString,
-        commonHomeworkId: NonEmptyString,
+        coursesId: StringValue,
+        commonHomeworkId: StringValue,
         page: Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1))),
         limit: Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1))),
         search: Schema.String,
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       success: SearchMemberListResponse,
     }),
@@ -518,7 +519,7 @@ export const HomeworkCommon = HttpApiGroup.make("HomeworkCommon")
     HttpApiEndpoint.post("worksList", "/api/homework_commons/:homeworkId/works_list.json", {
       params: HomeworkCommonRequestParams,
       query: {
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       payload: WorksListPayload,
       success: WorksListResponse,
@@ -528,10 +529,10 @@ export const HomeworkCommon = HttpApiGroup.make("HomeworkCommon")
     HttpApiEndpoint.get("showComment", "/api/homework_commons/:homeworkId/show_comment.json", {
       params: HomeworkCommonRequestParams,
       query: {
-        coursesId: NonEmptyString,
-        categoryId: NonEmptyString,
+        coursesId: StringValue,
+        categoryId: StringValue,
         page_size: Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1))),
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       success: ShowCommentResponse,
     }),
@@ -540,9 +541,9 @@ export const HomeworkCommon = HttpApiGroup.make("HomeworkCommon")
     HttpApiEndpoint.get("settings", "/api/homework_commons/:homeworkId/settings.json", {
       params: HomeworkCommonRequestParams,
       query: {
-        coursesId: NonEmptyString,
-        categoryId: NonEmptyString,
-        zzud: NonEmptyString,
+        coursesId: StringValue,
+        categoryId: StringValue,
+        zzud: StringValue,
       },
       success: SettingsResponse,
     }),
@@ -554,7 +555,7 @@ export const HomeworkCommon = HttpApiGroup.make("HomeworkCommon")
         type: Schema.Int,
         limit: Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1))),
         page: Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1))),
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       success: RedoLogsResponse,
     }),
@@ -563,7 +564,7 @@ export const HomeworkCommon = HttpApiGroup.make("HomeworkCommon")
     HttpApiEndpoint.get("shixunChallengeData", "/api/homework_commons/:homeworkId/shixun_challenge_data.json", {
       params: HomeworkCommonRequestParams,
       query: {
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       success: ShixunChallengeDataResponse,
     }),

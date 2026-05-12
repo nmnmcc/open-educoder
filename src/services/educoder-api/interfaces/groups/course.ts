@@ -1,16 +1,16 @@
 import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
 
-const NonEmptyString = Schema.String.pipe(Schema.check(Schema.isMinLength(1)));
+const StringValue = Schema.String;
 const IdFromString = Schema.NumberFromString.pipe(Schema.check(Schema.isInt()));
 const NullableString = Schema.NullishOr(Schema.String);
-const TaskOperationItem = Schema.Union([Schema.String, Schema.Boolean]);
+const TaskOperation = Schema.Tuple([Schema.String, Schema.String, Schema.optionalKey(Schema.Boolean)]);
 const CourseRequestParams = {
-  courseId: NonEmptyString,
+  courseId: StringValue,
 };
 const CourseRequestQuery = {
-  id: NonEmptyString,
-  zzud: NonEmptyString,
+  id: StringValue,
+  zzud: StringValue,
 };
 /*
 Sample: GET /api/courses/MOAPGNLO/left_banner.json
@@ -90,7 +90,7 @@ const Homework = Schema.Struct({
   work_status: Schema.optionalKey(Schema.Array(Schema.String)),
   un_commit_work: Schema.optionalKey(Schema.Boolean),
   shixun_identifier: Schema.optionalKey(Schema.String),
-  task_operation: Schema.optionalKey(Schema.Array(TaskOperationItem)),
+  task_operation: Schema.optionalKey(TaskOperation),
   shixun_finished_status: Schema.optionalKey(Schema.Int),
   myshixun_identifier: Schema.optionalKey(NullableString),
   publish_time: Schema.String,
@@ -221,7 +221,7 @@ export const Course = HttpApiGroup.make("Course")
   .add(
     HttpApiEndpoint.get("list", "/api/users/:username/courses.json", {
       params: {
-        username: NonEmptyString,
+        username: StringValue,
       },
       query: {
         category: Schema.NullishOr(Schema.String),
@@ -230,8 +230,8 @@ export const Course = HttpApiGroup.make("Course")
         per_page: Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1))),
         sort_by: Schema.Literals(["updated_at", "created_at", "name"]),
         sort_direction: Schema.Literals(["desc", "asc"]),
-        username: NonEmptyString,
-        zzud: NonEmptyString,
+        username: StringValue,
+        zzud: StringValue,
       },
       /*
       Sample: GET /api/users/pl2kfhv6g/courses.json
@@ -416,8 +416,8 @@ export const Course = HttpApiGroup.make("Course")
     HttpApiEndpoint.get("homeworkCommons", "/api/courses/:courseId/homework_commons.json", {
       params: CourseRequestParams,
       query: {
-        coursesId: Schema.NullishOr(NonEmptyString),
-        id: NonEmptyString,
+        coursesId: Schema.NullishOr(StringValue),
+        id: StringValue,
         limit: Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1))),
         type: Schema.Int,
         status: Schema.NullishOr(Schema.Int),
@@ -427,7 +427,7 @@ export const Course = HttpApiGroup.make("Course")
         search: Schema.NullishOr(Schema.String),
         sort_by: Schema.NullishOr(Schema.Literals(["created_at", "updated_at", "name_pinyin", "position"])),
         sort_direction: Schema.NullishOr(Schema.Literals(["asc", "desc"])),
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       success: HomeworkCommonsResponse,
     }),
@@ -436,12 +436,12 @@ export const Course = HttpApiGroup.make("Course")
     HttpApiEndpoint.get("exercises", "/api/v2/courses/:courseId/exercises.json", {
       params: CourseRequestParams,
       query: {
-        coursesId: NonEmptyString,
+        coursesId: StringValue,
         limit: Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1))),
         type: Schema.String,
-        id: NonEmptyString,
+        id: StringValue,
         page: Schema.NullishOr(Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1)))),
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       /*
       Sample: GET /api/v2/courses/MOAPGNLO/exercises.json

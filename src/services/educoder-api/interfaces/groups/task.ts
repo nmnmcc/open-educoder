@@ -1,13 +1,13 @@
 import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/unstable/httpapi";
 
-const NonEmptyString = Schema.String.pipe(Schema.check(Schema.isMinLength(1)));
+const StringValue = Schema.String;
 const NullableString = Schema.NullOr(Schema.String);
 const NullableNumber = Schema.NullOr(Schema.Number);
 const NullableBoolean = Schema.NullOr(Schema.Boolean);
 
 const TaskRequestParams = {
-  taskId: NonEmptyString,
+  taskId: StringValue,
 };
 
 /*
@@ -32,7 +32,7 @@ Sample: POST /api/tasks/sflmr2fxi4wn/game_build.json
 }
 */
 const GameBuildPayload = Schema.Struct({
-  sec_key: NonEmptyString,
+  sec_key: StringValue,
   resubmit: Schema.String,
   first: Schema.Int,
   content_modified: Schema.Int,
@@ -43,9 +43,9 @@ const GameBuildPayload = Schema.Struct({
     question_id: Schema.String,
     challenge_id: Schema.Int,
     subject_id: Schema.String,
-    homework_common_id: NonEmptyString,
+    homework_common_id: StringValue,
     competition_entry_id: Schema.String,
-    commitID: NonEmptyString,
+    commitID: StringValue,
     currentUserId: Schema.Int,
   }),
 }).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
@@ -64,7 +64,7 @@ const LogOutputPayload = Schema.Struct({
   shixun_environment_id: Schema.Int,
   tab_type: Schema.Int,
   extras: Schema.Struct({
-    homework_common_id: NonEmptyString,
+    homework_common_id: StringValue,
   }),
 }).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
 
@@ -399,8 +399,8 @@ export const Task = HttpApiGroup.make("Task")
     HttpApiEndpoint.get("info", "/api/tasks/:taskId.json", {
       params: TaskRequestParams,
       query: {
-        homework_common_id: NonEmptyString,
-        zzud: NonEmptyString,
+        homework_common_id: StringValue,
+        zzud: StringValue,
       },
       success: TaskInfoResponse,
     }),
@@ -409,10 +409,10 @@ export const Task = HttpApiGroup.make("Task")
     HttpApiEndpoint.get("repContent", "/api/tasks/:taskId/rep_content.json", {
       params: TaskRequestParams,
       query: {
-        path: NonEmptyString,
-        homework_common_id: NonEmptyString,
+        path: StringValue,
+        homework_common_id: StringValue,
         exercise_id: Schema.String,
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       success: RepositoryContentResponse,
     }),
@@ -421,7 +421,7 @@ export const Task = HttpApiGroup.make("Task")
     HttpApiEndpoint.post("logOutput", "/api/tasks/:taskId/log_output", {
       params: TaskRequestParams,
       query: {
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       payload: LogOutputPayload,
       success: LogOutputResponse,
@@ -431,7 +431,7 @@ export const Task = HttpApiGroup.make("Task")
     HttpApiEndpoint.post("gameBuild", "/api/tasks/:taskId/game_build.json", {
       params: TaskRequestParams,
       query: {
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       payload: GameBuildPayload,
       success: GameBuildResponse,
@@ -444,11 +444,11 @@ export const Task = HttpApiGroup.make("Task")
         resubmit: Schema.String,
         time_out: Schema.Boolean,
         port: Schema.Int,
-        sec_key: NonEmptyString,
+        sec_key: StringValue,
         challenge_id: Schema.Int,
         subject_id: Schema.String,
-        homework_common_id: NonEmptyString,
-        zzud: NonEmptyString,
+        homework_common_id: StringValue,
+        zzud: StringValue,
       },
       success: GameStatusResponse,
     }),
@@ -458,7 +458,7 @@ export const Task = HttpApiGroup.make("Task")
       params: TaskRequestParams,
       query: {
         shixun_environment_id: Schema.Int,
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       success: SimpleResponse,
     }),
@@ -468,7 +468,7 @@ export const Task = HttpApiGroup.make("Task")
       params: TaskRequestParams,
       query: {
         shixun_environment_id: Schema.Int,
-        zzud: NonEmptyString,
+        zzud: StringValue,
       },
       success: SimpleResponse,
     }),
@@ -477,8 +477,8 @@ export const Task = HttpApiGroup.make("Task")
     HttpApiEndpoint.get("resetPassedCode", "/api/tasks/:taskId/reset_passed_code.json", {
       params: TaskRequestParams,
       query: {
-        path: NonEmptyString,
-        zzud: NonEmptyString,
+        path: StringValue,
+        zzud: StringValue,
       },
       success: ResetPassedCodeResponse,
     }),

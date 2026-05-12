@@ -10,8 +10,6 @@ import {
   AssignmentTypeCode,
   type CurrentUser,
   type TaskContext,
-  asArray,
-  asRecord,
   decodeBase64,
   failInput,
   formatLabels,
@@ -19,12 +17,11 @@ import {
   formatSaveResponse,
   formatStatusResponse,
   formatTaskInfo,
+  isRunningStatusResponse,
   makeGameBuildPayload,
   makeStatusRequest,
   makeTaskQuery,
   makeUpdateFilePayload,
-  numberField,
-  stringField,
 } from "./shared.js";
 
 type ListLabAssignmentsInput = {
@@ -504,20 +501,16 @@ export class LabAssignmentFeature extends Context.Service<LabAssignmentFeature, 
           visited.add(taskId);
 
           const task = yield* fetchTaskInfo({ taskId, homeworkId: input.homeworkId, login: input.login });
-          const challenge = asRecord(asRecord(task)?.["challenge"]);
 
-          if (numberField(challenge, "id") === input.challengeId) {
+          if (task.challenge.id === input.challengeId) {
             return {
               taskId,
               task,
             };
           }
 
-          for (const candidate of [
-            stringField(asRecord(task), "prev_game"),
-            stringField(asRecord(task), "next_game"),
-          ]) {
-            if (candidate !== null && !visited.has(candidate)) {
+          for (const candidate of [task.prev_game, task.next_game]) {
+            if (candidate !== null && candidate !== undefined && !visited.has(candidate)) {
               pending.push(candidate);
             }
           }
@@ -819,10 +812,9 @@ export class LabAssignmentFeature extends Context.Service<LabAssignmentFeature, 
       )(function* (input) {
         const resolved = yield* resolveTask({ ...input, courseId: input.courseId ?? "" });
         const raw = resolved.raw.task;
-        const challenge = asRecord(asRecord(raw)?.["challenge"]);
-        const markdown = stringField(challenge, "task_pass");
+        const markdown = raw.challenge.task_pass;
 
-        if (markdown === null || markdown.trim().length === 0) {
+        if (markdown === undefined || markdown.trim().length === 0) {
           return yield* failInput("This lab challenge does not include learning content.");
         }
 
@@ -831,9 +823,9 @@ export class LabAssignmentFeature extends Context.Service<LabAssignmentFeature, 
           view: {
             resolved: resolved.view,
             challenge: {
-              id: numberField(challenge, "id"),
-              index: numberField(challenge, "position"),
-              name: stringField(challenge, "subject"),
+              id: raw.challenge.id ?? null,
+              index: raw.challenge.position ?? null,
+              name: raw.challenge.subject ?? null,
             },
             content: yield* renderLearningContent(markdown),
           },
@@ -1300,7 +1292,7 @@ export class LabAssignmentFeature extends Context.Service<LabAssignmentFeature, 
               zzud: user.login,
             },
           });
-          const sshArgs = input.resolveArgs === false ? null : yield* resolveSshArgs(raw);
+          const sshArgs = input.resolveArgs === false ? null : resolveSshArgs(raw);
 
           return {
             raw,
@@ -1425,54 +1417,33 @@ const formatResolvedTask = (
   taskInfo: TaskInfoRaw,
   selected: SelectedChallenge | null,
   homework: HomeworkInfoRaw | undefined,
-): ResolveLabTaskView => {
-  const root = asRecord(taskInfo);
-  const challenge = asRecord(root?.["challenge"]);
-  const lab = asRecord(root?.["shixun"]);
+): ResolveLabTaskView => ({
+  taskId,
+  homeworkId: input.homeworkId,
+  courseId: input.courseId.length >= 1 ? input.courseId : null,
+  labIdentifier: taskInfo.shixun?.identifier ?? homework?.shixun_identifier ?? null,
+  challengeId: taskInfo.challenge.id ?? selected?.challengeId ?? null,
+  challengeIndex: taskInfo.challenge.position ?? selected?.index ?? null,
+  challengeName: taskInfo.challenge.subject ?? selected?.name ?? null,
+});
 
-  return {
-    taskId,
-    homeworkId: input.homeworkId,
-    courseId: input.courseId.length >= 1 ? input.courseId : null,
-    labIdentifier: stringField(lab, "identifier") ?? homework?.shixun_identifier ?? null,
-    challengeId: numberField(challenge, "id") ?? selected?.challengeId ?? null,
-    challengeIndex: numberField(challenge, "position") ?? selected?.index ?? null,
-    challengeName: stringField(challenge, "subject") ?? selected?.name ?? null,
-  };
-};
-
-const parsePort = (value: unknown) => {
-  const port = typeof value === "number" ? value : typeof value === "string" ? Number.parseInt(value, 10) : Number.NaN;
+const parsePort = (value: string) => {
+  const port = Number.parseInt(value, 10);
 
   return Number.isInteger(port) && port >= 1 && port <= 65535 ? port : null;
 };
 
-const resolveSshArgs = (value: unknown) => {
-  const root = asRecord(value);
-  const data = asRecord(root?.["data"]) ?? root;
-  const host = stringField(data, "ssh_address") ?? stringField(data, "sshAddress") ?? stringField(data, "host");
-  const user = stringField(data, "username") ?? stringField(data, "user") ?? stringField(data, "login");
-  const port = parsePort(data?.["port"]);
+const resolveSshArgs = (value: StartSshRaw) => {
+  const port = parsePort(value.data.port);
+  const target = `${value.data.username}@${value.data.ssh_address}`;
 
-  if (host === null) {
-    return failInput("Cannot infer SSH target from terminal start response. Re-run with --json to inspect it.");
-  }
-
-  const target = user === null ? host : `${user}@${host}`;
-
-  return Effect.succeed(port === null ? [target] : ["-p", String(port), target]);
+  return port === null ? [target] : ["-p", String(port), target];
 };
 
-const requiredRecord = (value: unknown, name: string) => {
-  const record = asRecord(value);
-
-  return record !== null ? Effect.succeed(record) : failInput(`Cannot read ${name} from task response.`);
-};
-
-const requiredString = (value: unknown, name: string) =>
+const requiredString = (value: string | null | undefined, name: string) =>
   typeof value === "string" && value.length >= 1 ? Effect.succeed(value) : failInput(`Cannot read ${name}.`);
 
-const requiredNumber = (value: unknown, name: string) =>
+const requiredNumber = (value: number | null | undefined, name: string) =>
   typeof value === "number" && Number.isFinite(value) ? Effect.succeed(value) : failInput(`Cannot read ${name}.`);
 
 const resolveEnvironmentId = Effect.fn("features.assignments.labs.resolveEnvironmentId")(function* (
@@ -1484,29 +1455,25 @@ const resolveEnvironmentId = Effect.fn("features.assignments.labs.resolveEnviron
     return envId;
   }
 
-  const root = yield* requiredRecord(taskInfo, "root");
-  const codeEditor = asRecord(root["code_editor"]);
-  const codeEditorEnvironmentId = numberField(codeEditor, "shixun_environment_id");
+  const codeEditorEnvironmentId = taskInfo.code_editor?.shixun_environment_id;
 
-  if (tabType === 1 && codeEditorEnvironmentId !== null) {
+  if (tabType === 1 && codeEditorEnvironmentId !== undefined) {
     return codeEditorEnvironmentId;
   }
 
-  for (const environment of asArray(root["shixun_environments"])) {
-    const record = asRecord(environment);
-    const candidateTabType = numberField(record, "tab_type");
-    const candidateEnvironmentId = numberField(record, "shixun_environment_id");
+  for (const environment of taskInfo.shixun_environments ?? []) {
+    const candidateTabType = environment.tab_type;
+    const candidateEnvironmentId = environment.shixun_environment_id;
 
-    if (candidateTabType === tabType && candidateEnvironmentId !== null) {
+    if (candidateTabType === tabType && candidateEnvironmentId !== undefined) {
       return candidateEnvironmentId;
     }
   }
 
-  for (const environment of asArray(root["shixun_environments"])) {
-    const record = asRecord(environment);
-    const candidateEnvironmentId = numberField(record, "shixun_environment_id");
+  for (const environment of taskInfo.shixun_environments ?? []) {
+    const candidateEnvironmentId = environment.shixun_environment_id;
 
-    if (candidateEnvironmentId !== null) {
+    if (candidateEnvironmentId !== undefined) {
       return candidateEnvironmentId;
     }
   }
@@ -1519,20 +1486,14 @@ const parseTaskContext = Effect.fn("features.assignments.labs.parseTaskContext")
   envId: number | undefined,
   tabType: number,
 ) {
-  const root = yield* requiredRecord(taskInfo, "root");
-  const game = yield* requiredRecord(root["game"], "game");
-  const challenge = yield* requiredRecord(root["challenge"], "challenge");
-  const workspace = yield* requiredRecord(root["myshixun"], "myshixun");
   const environmentId = yield* resolveEnvironmentId(taskInfo, envId, tabType);
 
   return {
-    gameId: yield* requiredNumber(game["id"], "game.id"),
-    challengeId: yield* requiredNumber(challenge["id"], "challenge.id"),
-    challengePath: yield* requiredString(challenge["path"], "challenge.path"),
-    workspaceId: yield* requiredNumber(workspace["id"] ?? game["myshixun_id"], "workspace.id"),
-    workspaceIdentifier: yield* requiredString(workspace["identifier"], "workspace.identifier"),
+    gameId: yield* requiredNumber(taskInfo.game.id, "game.id"),
+    challengeId: yield* requiredNumber(taskInfo.challenge.id, "challenge.id"),
+    challengePath: yield* requiredString(taskInfo.challenge.path, "challenge.path"),
+    workspaceId: yield* requiredNumber(taskInfo.myshixun.id ?? taskInfo.game.myshixun_id, "workspace.id"),
+    workspaceIdentifier: yield* requiredString(taskInfo.myshixun.identifier, "workspace.identifier"),
     environmentId,
   } satisfies TaskContext;
 });
-
-const isRunningStatusResponse = (value: GameStatusRaw) => numberField(asRecord(value), "running_code_status") !== null;
