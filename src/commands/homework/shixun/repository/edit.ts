@@ -7,8 +7,17 @@ import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
 import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
-import { EnvironmentId, HomeworkId, RepositoryPath, TabType, TaskId } from "../../flags.js";
-import { HomeworkInputError, failInput, inspectOptions, optionToUndefined, printJson } from "../../shared.js";
+import {
+  ChallengeId,
+  ChallengeIndex,
+  CourseId,
+  EnvironmentId,
+  HomeworkIdArgument,
+  RepositoryPath,
+  TabType,
+} from "../../flags.js";
+import { renderGeneric } from "../../render.js";
+import { HomeworkInputError, failInput, optionToUndefined, printJson } from "../../shared.js";
 
 type EditedContent = {
   readonly editor: string;
@@ -124,9 +133,11 @@ const cleanupTemporaryDirectory = (directory: string) =>
 export const Edit = Command.make(
   "edit",
   {
-    taskId: TaskId,
+    courseId: CourseId,
+    homeworkId: HomeworkIdArgument,
     path: RepositoryPath,
-    homeworkId: HomeworkId,
+    challengeIndex: ChallengeIndex,
+    challengeId: ChallengeId,
     exerciseId: Flag.string("exercise-id").pipe(Flag.withDefault("")),
     evaluate: Flag.boolean("evaluate"),
     envId: EnvironmentId,
@@ -135,10 +146,14 @@ export const Edit = Command.make(
   },
   Effect.fn("homework.shixun.edit")(function* (input) {
     const homeworkShixunFeature = yield* HomeworkShixunFeature;
+    const challengeIndex = optionToUndefined(input.challengeIndex);
+    const challengeId = optionToUndefined(input.challengeId);
     const contentResult = yield* homeworkShixunFeature.getRepositoryContent({
-      taskId: input.taskId,
+      courseId: input.courseId,
       path: input.path,
       homeworkId: input.homeworkId,
+      challengeIndex,
+      challengeId,
       exerciseId: input.exerciseId,
     });
     const currentContent = contentResult.view.decodedContent;
@@ -162,23 +177,24 @@ export const Edit = Command.make(
         });
       }
 
-      return yield* Console.dir(
-        {
+      return yield* Console.log(
+        renderGeneric("编辑结果 / Edit Result", {
           edit: {
             path: input.path,
             editor: edited.editor,
             changed,
           },
-        },
-        inspectOptions,
+        }),
       );
     }
 
     const saveResult = yield* homeworkShixunFeature
       .saveRepositoryFile({
-        taskId: input.taskId,
+        courseId: input.courseId,
         path: input.path,
         homeworkId: input.homeworkId,
+        challengeIndex,
+        challengeId,
         content: edited.content,
         evaluate: input.evaluate,
         envId: optionToUndefined(input.envId),
@@ -206,27 +222,25 @@ export const Edit = Command.make(
       });
     }
 
-    yield* Console.dir(
-      {
+    yield* Console.log(
+      renderGeneric("编辑结果 / Edit Result", {
         edit: {
           editor: edited.editor,
           changed,
           ...saveResult.view.saved,
         },
-      },
-      inspectOptions,
+      }),
     );
   }),
 ).pipe(
   Command.withDescription("Open a repository file in $VISUAL/$EDITOR, then save back any edits."),
   Command.withExamples([
     {
-      command: "open-educoder homework shixun edit sflmr2fxi4wn case1/code.sh --homework-id 3487324",
+      command: "open-educoder homework shixun edit 109348 3487324 case1/code.sh",
       description: "Edit a task file interactively and save the changes",
     },
     {
-      command:
-        "VISUAL='code --wait' open-educoder homework shixun edit sflmr2fxi4wn case1/code.sh --homework-id 3487324",
+      command: "VISUAL='code --wait' open-educoder homework shixun edit 109348 3487324 case1/code.sh",
       description: "Use an editor command that blocks until saving is complete",
     },
   ]),

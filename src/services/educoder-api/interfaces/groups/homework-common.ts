@@ -6,6 +6,7 @@ const EmptyArray = Schema.Array(Schema.Never);
 const NullableString = Schema.NullOr(Schema.String);
 const NullableNumber = Schema.NullOr(Schema.Number);
 const NullableBoolean = Schema.NullOr(Schema.Boolean);
+const TaskOperationItem = Schema.Union([Schema.String, Schema.Boolean]);
 
 const HomeworkCommonRequestParams = {
   homeworkId: NonEmptyString,
@@ -95,7 +96,12 @@ Sample: GET /api/homework_commons/3487339.json
   ],
   "submit_limit": false,
   "submit_limit_num": 200,
-  "must_file": false
+  "must_file": false,
+  "task_operation": ["继续挑战", "/shixuns/e6fhjnqx/shixun_exec.json?homework_common_id=3487324", true],
+  "shixun_identifier": "e6fhjnqx",
+  "shixun_id": 123456,
+  "shixun_status": 2,
+  "myshixun_identifier": "iwk6hzbgyf"
 }
 */
 const HomeworkCommonDetailResponse = Schema.Struct({
@@ -111,6 +117,78 @@ const HomeworkCommonDetailResponse = Schema.Struct({
   submit_limit: Schema.optionalKey(Schema.Boolean),
   submit_limit_num: Schema.optionalKey(Schema.Int),
   must_file: Schema.optionalKey(Schema.Boolean),
+  task_operation: Schema.optionalKey(Schema.Array(TaskOperationItem)),
+  shixun_identifier: Schema.optionalKey(Schema.String),
+  shixun_id: Schema.optionalKey(Schema.Int),
+  shixun_status: Schema.optionalKey(Schema.Int),
+  myshixun_identifier: Schema.optionalKey(NullableString),
+});
+
+/*
+Sample: GET /api/homework_commons/3487324/shixun_challenge_data.json
+{
+  "challenge_id": 3475325,
+  "task_operation": ["继续挑战", "/shixuns/e6fhjnqx/shixun_exec.json?homework_common_id=3487324", true],
+  "challenge_name": "<challenge name>",
+  "challenge_score": 20,
+  "status": "required",
+  "difficulty": "简单",
+  "passed_status": 2,
+  "game_score": "20.00"
+}
+*/
+const ShixunChallengeSetting = Schema.Struct({
+  challenge_id: Schema.Int,
+  task_operation: Schema.Array(TaskOperationItem),
+  challenge_name: Schema.String,
+  is_choose_todo: Schema.Boolean,
+  challenge_score: Schema.Number,
+  status: Schema.String,
+  difficulty: Schema.String,
+  challenge_st: Schema.Int,
+  passed_rate: Schema.Number,
+  knowledge_points: Schema.String,
+  evaluate_count: Schema.Int,
+  time_consuming: Schema.String,
+  passed_status: Schema.Int,
+  game_score: Schema.String,
+});
+
+/*
+Sample: GET /api/homework_commons/3487324/shixun_challenge_data.json
+{
+  "status": 0,
+  "message": "响应成功",
+  "data": {
+    "challenge_settings": ["<ShixunChallengeSetting>"],
+    "work_score": "40.0",
+    "evaluate_count": 3,
+    "time_consuming": "5分 16秒",
+    "passed_count": 2,
+    "no_evaluate_count": 3,
+    "progress_count": 0,
+    "is_submit_test_result": false
+  }
+}
+*/
+const ShixunChallengeDataResponse = Schema.Struct({
+  status: Schema.Int,
+  message: Schema.String,
+  data: Schema.Struct({
+    challenge_settings: Schema.Array(ShixunChallengeSetting),
+    user_id: Schema.optionalKey(Schema.Int),
+    username: Schema.optionalKey(Schema.String),
+    student_id: Schema.optionalKey(Schema.String),
+    image_url: Schema.optionalKey(Schema.String),
+    group_name: Schema.optionalKey(Schema.String),
+    work_score: Schema.String,
+    evaluate_count: Schema.Int,
+    time_consuming: Schema.String,
+    passed_count: Schema.Int,
+    no_evaluate_count: Schema.Int,
+    progress_count: Schema.Int,
+    is_submit_test_result: Schema.Boolean,
+  }),
 });
 
 /*
@@ -479,5 +557,14 @@ export const HomeworkCommon = HttpApiGroup.make("HomeworkCommon")
         zzud: NonEmptyString,
       },
       success: RedoLogsResponse,
+    }),
+  )
+  .add(
+    HttpApiEndpoint.get("shixunChallengeData", "/api/homework_commons/:homeworkId/shixun_challenge_data.json", {
+      params: HomeworkCommonRequestParams,
+      query: {
+        zzud: NonEmptyString,
+      },
+      success: ShixunChallengeDataResponse,
     }),
   );

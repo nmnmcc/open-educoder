@@ -2,15 +2,17 @@ import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
 import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
-import { HomeworkId, RepositoryPath, TaskId } from "../../flags.js";
-import { printJson } from "../../shared.js";
+import { ChallengeId, ChallengeIndex, CourseId, HomeworkIdArgument, RepositoryPath } from "../../flags.js";
+import { optionToUndefined, printJson } from "../../shared.js";
 
 export const Content = Command.make(
   "content",
   {
-    taskId: TaskId,
+    courseId: CourseId,
+    homeworkId: HomeworkIdArgument,
     path: RepositoryPath,
-    homeworkId: HomeworkId,
+    challengeIndex: ChallengeIndex,
+    challengeId: ChallengeId,
     exerciseId: Flag.string("exercise-id").pipe(Flag.withDefault("")),
     raw: Flag.boolean("raw"),
     json: Flag.boolean("json"),
@@ -18,9 +20,11 @@ export const Content = Command.make(
   Effect.fn("homework.shixun.content")(function* (input) {
     const homeworkShixunFeature = yield* HomeworkShixunFeature;
     const result = yield* homeworkShixunFeature.getRepositoryContent({
-      taskId: input.taskId,
+      courseId: input.courseId,
       path: input.path,
       homeworkId: input.homeworkId,
+      challengeIndex: optionToUndefined(input.challengeIndex),
+      challengeId: optionToUndefined(input.challengeId),
       exerciseId: input.exerciseId,
     });
 
@@ -34,11 +38,11 @@ export const Content = Command.make(
   Command.withDescription("Read a repository file and decode base64 content for display."),
   Command.withExamples([
     {
-      command: "open-educoder homework shixun content sflmr2fxi4wn case1/code.sh --homework-id 3487324",
+      command: "open-educoder homework shixun content 109348 3487324 case1/code.sh",
       description: "Read a task file as text",
     },
     {
-      command: "open-educoder homework shixun content sflmr2fxi4wn case1/code.sh --homework-id 3487324 --raw",
+      command: "open-educoder homework shixun content 109348 3487324 case1/code.sh --raw",
       description: "Print raw base64 payload without decoding",
     },
   ]),

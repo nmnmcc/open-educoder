@@ -2,14 +2,16 @@ import { Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
 import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
-import { HomeworkId, SecKey, TaskId } from "../../flags.js";
-import { printStatusResponse } from "../../shared.js";
+import { ChallengeId, ChallengeIndex, CourseId, HomeworkIdArgument, SecKey } from "../../flags.js";
+import { optionToUndefined, printStatusResponse } from "../../shared.js";
 
 export const Status = Command.make(
   "status",
   {
-    taskId: TaskId,
-    homeworkId: HomeworkId,
+    courseId: CourseId,
+    homeworkId: HomeworkIdArgument,
+    challengeIndex: ChallengeIndex,
+    challengeId: ChallengeId,
     secKey: SecKey,
     resubmit: Flag.string("resubmit").pipe(Flag.withDefault("")),
     timeOut: Flag.boolean("time-out"),
@@ -20,8 +22,10 @@ export const Status = Command.make(
   Effect.fn("homework.shixun.status")(function* (input) {
     const homeworkShixunFeature = yield* HomeworkShixunFeature;
     const result = yield* homeworkShixunFeature.getEvaluationStatus({
-      taskId: input.taskId,
+      courseId: input.courseId,
       homeworkId: input.homeworkId,
+      challengeIndex: optionToUndefined(input.challengeIndex),
+      challengeId: optionToUndefined(input.challengeId),
       secKey: input.secKey,
       resubmit: input.resubmit,
       timeOut: input.timeOut,
@@ -35,11 +39,11 @@ export const Status = Command.make(
   Command.withDescription("Check evaluation status for a shixun task run."),
   Command.withExamples([
     {
-      command: "open-educoder homework shixun status sflmr2fxi4wn --homework-id 3487324 --sec-key ypzno7qmxwjt",
+      command: "open-educoder homework shixun status 109348 3487324 --sec-key ypzno7qmxwjt",
       description: "Check run status with a sec-key",
     },
     {
-      command: "open-educoder homework shixun status sflmr2fxi4wn --homework-id 3487324 --sec-key ypzno7qmxwjt --json",
+      command: "open-educoder homework shixun status 109348 3487324 --sec-key ypzno7qmxwjt --json",
       description: "Print evaluation status as JSON",
     },
   ]),

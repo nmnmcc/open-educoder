@@ -3,7 +3,8 @@ import { Command, Flag } from "effect/unstable/cli";
 
 import { HomeworkCommonFeature } from "../../../services/features/homework/common.js";
 import { CourseId, HomeworkSortByChoices, PositiveInteger, SortDirectionChoices } from "../flags.js";
-import { inspectOptions, optionToUndefined, printJson } from "../shared.js";
+import { renderCommonHomeworks } from "../render.js";
+import { optionToUndefined, printJson } from "../shared.js";
 
 export const List = Command.make(
   "list",
@@ -41,21 +42,21 @@ export const List = Command.make(
       return yield* Console.log("No common homeworks found.");
     }
 
-    yield* Console.dir(result.view, inspectOptions);
+    yield* Console.log(renderCommonHomeworks(input.courseId, result.view));
   }),
 ).pipe(
   Command.withDescription("List common assignments in a course with optional filters and sorting."),
   Command.withExamples([
     {
-      command: "open-educoder homework common list MOAPGNLO --sort-by position --sort-direction desc",
+      command: "open-educoder homework common list 109348 --sort-by position --sort-direction desc",
       description: "Sort by category position and order descending",
     },
     {
-      command: "open-educoder homework common list MOAPGNLO --sort-by updated_at --sort-direction asc --order 7",
+      command: "open-educoder homework common list 109348 --sort-by updated_at --sort-direction asc --order 7",
       description: "Apply custom ordering and sorting to the assignment list",
     },
     {
-      command: "open-educoder homework common list MOAPGNLO --search 123 --status 0",
+      command: "open-educoder homework common list 109348 --search 123 --status 0",
       description: "Search assignments by keyword",
     },
   ]),

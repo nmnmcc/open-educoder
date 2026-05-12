@@ -3,31 +3,28 @@ import { Command, Flag } from "effect/unstable/cli";
 
 import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
 import {
+  ChallengeId,
+  ChallengeIndex,
   Content,
   ContentFile,
+  CourseId,
   EnvironmentId,
-  HomeworkId,
+  HomeworkIdArgument,
   PositiveInteger,
   RepositoryPath,
   TabType,
-  TaskId,
 } from "../../flags.js";
-import {
-  asRecord,
-  inspectOptions,
-  optionToUndefined,
-  printJson,
-  printStatusResponse,
-  readContent,
-  stringField,
-} from "../../shared.js";
+import { renderGeneric } from "../../render.js";
+import { asRecord, optionToUndefined, printJson, printStatusResponse, readContent, stringField } from "../../shared.js";
 
 export const Evaluate = Command.make(
   "evaluate",
   {
-    taskId: TaskId,
+    courseId: CourseId,
+    homeworkId: HomeworkIdArgument,
     path: RepositoryPath,
-    homeworkId: HomeworkId,
+    challengeIndex: ChallengeIndex,
+    challengeId: ChallengeId,
     content: Content,
     file: ContentFile,
     envId: EnvironmentId,
@@ -44,9 +41,11 @@ export const Evaluate = Command.make(
     });
     const homeworkShixunFeature = yield* HomeworkShixunFeature;
     const result = yield* homeworkShixunFeature.evaluateRepositoryFile({
-      taskId: input.taskId,
+      courseId: input.courseId,
       path: input.path,
       homeworkId: input.homeworkId,
+      challengeIndex: optionToUndefined(input.challengeIndex),
+      challengeId: optionToUndefined(input.challengeId),
       content,
       envId: optionToUndefined(input.envId),
       tabType: input.tabType,
@@ -70,19 +69,18 @@ export const Evaluate = Command.make(
       return yield* printStatusResponse(result.raw.status, false);
     }
 
-    yield* Console.dir(result.view, inspectOptions);
+    yield* Console.log(renderGeneric("评测提交 / Evaluation Submission", result.view));
   }),
 ).pipe(
   Command.withDescription("Submit a file for evaluation and optionally poll until a result is available."),
   Command.withExamples([
     {
-      command:
-        "open-educoder homework shixun evaluate sflmr2fxi4wn case1/code.sh --homework-id 3487324 --file ./code.sh",
+      command: "open-educoder homework shixun evaluate 109348 3487324 case1/code.sh --file ./code.sh",
       description: "Save and evaluate one repository file",
     },
     {
       command:
-        "open-educoder homework shixun evaluate sflmr2fxi4wn case1/code.sh --homework-id 3487324 --file ./code.sh --poll --poll-interval 2 --poll-limit 20",
+        "open-educoder homework shixun evaluate 109348 3487324 case1/code.sh --file ./code.sh --poll --poll-interval 2 --poll-limit 20",
       description: "Save, evaluate, and poll until completion",
     },
   ]),

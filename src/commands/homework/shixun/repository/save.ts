@@ -2,15 +2,28 @@ import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
 import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
-import { Content, ContentFile, EnvironmentId, HomeworkId, RepositoryPath, TabType, TaskId } from "../../flags.js";
-import { inspectOptions, optionToUndefined, printJson, readContent } from "../../shared.js";
+import {
+  ChallengeId,
+  ChallengeIndex,
+  Content,
+  ContentFile,
+  CourseId,
+  EnvironmentId,
+  HomeworkIdArgument,
+  RepositoryPath,
+  TabType,
+} from "../../flags.js";
+import { renderGeneric } from "../../render.js";
+import { optionToUndefined, printJson, readContent } from "../../shared.js";
 
 export const Save = Command.make(
   "save",
   {
-    taskId: TaskId,
+    courseId: CourseId,
+    homeworkId: HomeworkIdArgument,
     path: RepositoryPath,
-    homeworkId: HomeworkId,
+    challengeIndex: ChallengeIndex,
+    challengeId: ChallengeId,
     content: Content,
     file: ContentFile,
     evaluate: Flag.boolean("evaluate"),
@@ -25,9 +38,11 @@ export const Save = Command.make(
     });
     const homeworkShixunFeature = yield* HomeworkShixunFeature;
     const result = yield* homeworkShixunFeature.saveRepositoryFile({
-      taskId: input.taskId,
+      courseId: input.courseId,
       path: input.path,
       homeworkId: input.homeworkId,
+      challengeIndex: optionToUndefined(input.challengeIndex),
+      challengeId: optionToUndefined(input.challengeId),
       content,
       evaluate: input.evaluate,
       envId: optionToUndefined(input.envId),
@@ -38,18 +53,17 @@ export const Save = Command.make(
       return yield* printJson(result.raw);
     }
 
-    yield* Console.dir(result.view, inspectOptions);
+    yield* Console.log(renderGeneric("保存结果 / Save Result", result.view));
   }),
 ).pipe(
   Command.withDescription("Upload content to a shixun repository file (inline or from file)."),
   Command.withExamples([
     {
-      command: "open-educoder homework shixun save sflmr2fxi4wn case1/code.sh --homework-id 3487324 --file ./code.sh",
+      command: "open-educoder homework shixun save 109348 3487324 case1/code.sh --file ./code.sh",
       description: "Upload local file content to a repository path",
     },
     {
-      command:
-        'open-educoder homework shixun save sflmr2fxi4wn case1/code.sh --homework-id 3487324 --content "touch file1"',
+      command: 'open-educoder homework shixun save 109348 3487324 case1/code.sh --content "touch file1"',
       description: "Upload inline content directly",
     },
   ]),

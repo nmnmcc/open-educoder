@@ -2,21 +2,27 @@ import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
 import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
-import { RepositoryPath, TaskId } from "../../flags.js";
-import { printJson } from "../../shared.js";
+import { ChallengeId, ChallengeIndex, CourseId, HomeworkIdArgument, RepositoryPath } from "../../flags.js";
+import { optionToUndefined, printJson } from "../../shared.js";
 
 export const Passed = Command.make(
   "passed",
   {
-    taskId: TaskId,
+    courseId: CourseId,
+    homeworkId: HomeworkIdArgument,
     path: RepositoryPath,
+    challengeIndex: ChallengeIndex,
+    challengeId: ChallengeId,
     json: Flag.boolean("json"),
   },
   Effect.fn("homework.shixun.passed")(function* (input) {
     const homeworkShixunFeature = yield* HomeworkShixunFeature;
     const result = yield* homeworkShixunFeature.getPassedCode({
-      taskId: input.taskId,
+      courseId: input.courseId,
+      homeworkId: input.homeworkId,
       path: input.path,
+      challengeIndex: optionToUndefined(input.challengeIndex),
+      challengeId: optionToUndefined(input.challengeId),
     });
 
     if (input.json) {
@@ -29,7 +35,7 @@ export const Passed = Command.make(
   Command.withDescription("Fetch the last accepted code version for a shixun file."),
   Command.withExamples([
     {
-      command: "open-educoder homework shixun passed sflmr2fxi4wn case1/code.sh",
+      command: "open-educoder homework shixun passed 109348 3487324 case1/code.sh",
       description: "Show latest passed code for one file",
     },
   ]),

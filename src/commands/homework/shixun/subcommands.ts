@@ -1,4 +1,5 @@
 import { List } from "./catalog/list.js";
+import { Challenges } from "./context/challenges.js";
 import { Task } from "./context/task.js";
 import { Commit } from "./environment/commit.js";
 import { Logs } from "./environment/logs.js";
@@ -19,7 +20,7 @@ import { Save } from "./repository/save.js";
 export const ShixunSubcommands = [
   {
     group: "Discovery",
-    commands: [List, Task],
+    commands: [List, Challenges, Task],
   },
   {
     group: "Repository",

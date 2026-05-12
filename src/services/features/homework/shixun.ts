@@ -38,47 +38,53 @@ type ListShixunHomeworksInput = {
   readonly sortDirection?: HomeworkSortDirection | undefined;
 };
 
-type ShixunTaskInput = {
-  readonly taskId: string;
+type ShixunTaskSelector = {
+  readonly courseId?: string | undefined;
+  readonly homeworkId: string;
+  readonly taskId?: string | undefined;
+  readonly challengeIndex?: number | undefined;
+  readonly challengeId?: number | undefined;
+};
+
+type SelectedChallenge = {
+  readonly index: number;
+  readonly challengeId: number;
+  readonly name: string;
+};
+
+type ShixunTaskInput = ShixunTaskSelector & {
+  readonly courseId: string;
+};
+
+type ListShixunChallengesInput = {
+  readonly courseId?: string | undefined;
   readonly homeworkId: string;
 };
 
-type ShixunRepositoryContentInput = {
-  readonly taskId: string;
+type ShixunRepositoryContentInput = ShixunTaskSelector & {
   readonly path: string;
-  readonly homeworkId: string;
   readonly exerciseId: string;
 };
 
-type ListShixunRepositoryInput = {
-  readonly taskId: string;
-  readonly homeworkId: string;
+type ListShixunRepositoryInput = ShixunTaskSelector & {
   readonly path?: string | undefined;
 };
 
-type SaveShixunRepositoryFileInput = {
-  readonly taskId: string;
+type SaveShixunRepositoryFileInput = ShixunTaskSelector & {
   readonly path: string;
-  readonly homeworkId: string;
   readonly content: string;
   readonly evaluate: boolean;
   readonly envId?: number | undefined;
   readonly tabType: number;
 };
 
-type ShixunTaskWithHomeworkInput = {
-  readonly taskId: string;
-  readonly homeworkId: string;
-};
+type ShixunTaskWithHomeworkInput = ShixunTaskSelector;
 
-type ShixunTaskWithPathInput = {
-  readonly taskId: string;
+type ShixunTaskWithPathInput = ShixunTaskSelector & {
   readonly path: string;
 };
 
-type BuildShixunRepositoryFileInput = {
-  readonly taskId: string;
-  readonly homeworkId: string;
+type BuildShixunRepositoryFileInput = ShixunTaskSelector & {
   readonly secKey: string;
   readonly commitId: string;
   readonly contentModified: number;
@@ -87,9 +93,7 @@ type BuildShixunRepositoryFileInput = {
   readonly tabType: number;
 };
 
-type ShixunEvaluationStatusInput = {
-  readonly taskId: string;
-  readonly homeworkId: string;
+type ShixunEvaluationStatusInput = ShixunTaskSelector & {
   readonly secKey: string;
   readonly resubmit: string;
   readonly timeOut: boolean;
@@ -97,10 +101,8 @@ type ShixunEvaluationStatusInput = {
   readonly subjectId: string;
 };
 
-type EvaluateShixunRepositoryFileInput = {
-  readonly taskId: string;
+type EvaluateShixunRepositoryFileInput = ShixunTaskSelector & {
   readonly path: string;
-  readonly homeworkId: string;
   readonly content: string;
   readonly envId?: number | undefined;
   readonly tabType: number;
@@ -116,28 +118,25 @@ type EvaluateShixunRepositoryFileInput = {
     | undefined;
 };
 
-type ShixunLogsInput = {
-  readonly taskId: string;
-  readonly homeworkId: string;
+type ShixunLogsInput = ShixunTaskSelector & {
   readonly envId?: number | undefined;
   readonly tabType: number;
 };
 
-type ShixunEnvironmentInput = {
-  readonly taskId: string;
-  readonly homeworkId: string;
+type ShixunEnvironmentInput = ShixunTaskSelector & {
   readonly envId?: number | undefined;
 };
 
-type StartShixunSshInput = {
-  readonly taskId: string;
-  readonly homeworkId: string;
+type StartShixunSshInput = ShixunTaskSelector & {
   readonly envId?: number | undefined;
   readonly tabType: number;
   readonly resolveArgs?: boolean | undefined;
 };
 
 type HomeworkCommonsRaw = EducoderApiResponse<"Course", "homeworkCommons">;
+type HomeworkInfoRaw = EducoderApiResponse<"HomeworkCommon", "info">;
+type ShixunChallengeDataRaw = EducoderApiResponse<"HomeworkCommon", "shixunChallengeData">;
+type ShixunExecRaw = EducoderApiResponse<"Shixun", "exec">;
 type TaskInfoRaw = EducoderApiResponse<"Task", "info">;
 type RepositoryContentRaw = EducoderApiResponse<"Task", "repContent">;
 type RepositoryRaw = EducoderApiResponse<"Myshixun", "repository">;
@@ -154,6 +153,7 @@ type StartSshRaw = EducoderApiResponse<"Myshixun", "start">;
 
 type ListShixunHomeworksView = {
   readonly total: number;
+  readonly order: ReadonlyArray<string>;
   readonly filters: {
     readonly status: number;
     readonly order: number;
@@ -196,7 +196,51 @@ type ListShixunHomeworksView = {
   >;
 };
 
-type ShixunTaskView = ReturnType<typeof formatTaskInfo>;
+type ResolveShixunTaskRaw = {
+  readonly exec: ShixunExecRaw | null;
+  readonly task: TaskInfoRaw;
+};
+type ResolveShixunTaskView = {
+  readonly taskId: string;
+  readonly homeworkId: string;
+  readonly courseId: string | null;
+  readonly shixunIdentifier: string | null;
+  readonly challengeId: number | null;
+  readonly challengeIndex: number | null;
+  readonly challengeName: string | null;
+};
+type ShixunChallengeListView = {
+  readonly homework: {
+    readonly courseId: string | null;
+    readonly homeworkId: string;
+    readonly name: string | null;
+    readonly shixunIdentifier: string | null;
+  };
+  readonly summary: {
+    readonly score: string;
+    readonly evaluateCount: number;
+    readonly timeConsuming: string;
+    readonly passed: number;
+    readonly pending: number;
+  };
+  readonly challenges: ReadonlyArray<{
+    readonly index: number;
+    readonly challengeId: number;
+    readonly name: string;
+    readonly score: number;
+    readonly status: string;
+    readonly difficulty: string;
+    readonly passedStatus: number;
+    readonly gameScore: string;
+    readonly evaluateCount: number;
+    readonly timeConsuming: string;
+    readonly knowledgePoints: string;
+    readonly operation: ReturnType<typeof formatOperation>;
+  }>;
+};
+type ShixunTaskView = ReturnType<typeof formatTaskInfo> & {
+  readonly resolved: ResolveShixunTaskView;
+};
 type RepositoryContentView = RepositoryContentRaw & {
   readonly decodedContent: string;
 };
@@ -253,6 +297,8 @@ type StartSshView = {
 
 export type HomeworkShixunFeatureShape = {
   readonly list: FeatureWorkflow<ListShixunHomeworksInput, HomeworkCommonsRaw, ListShixunHomeworksView>;
+  readonly listChallenges: FeatureWorkflow<ListShixunChallengesInput, ShixunChallengeDataRaw, ShixunChallengeListView>;
+  readonly resolveTask: FeatureWorkflow<ShixunTaskInput, ResolveShixunTaskRaw, ResolveShixunTaskView>;
   readonly getTask: FeatureWorkflow<ShixunTaskInput, TaskInfoRaw, ShixunTaskView>;
   readonly getRepositoryContent: FeatureWorkflow<
     ShixunRepositoryContentInput,
@@ -318,22 +364,219 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
         return yield* educoder.Task.info(makeTaskQuery(input.taskId, input.homeworkId, input.login));
       });
 
-      const resolveHomeworkContext = Effect.fn("features.homework.shixun.resolveHomeworkContext")(function* (input: {
-        readonly taskId: string;
+      const fetchHomeworkInfo = Effect.fn("features.homework.shixun.fetchHomeworkInfo")(function* (input: {
         readonly homeworkId: string;
-        readonly envId?: number | undefined;
-        readonly tabType: number;
+        readonly login: string;
       }) {
-        const user = yield* resolveCurrentUser();
-        const taskInfo = yield* fetchTaskInfo({
-          taskId: input.taskId,
-          homeworkId: input.homeworkId,
-          login: user.login,
+        return yield* educoder.HomeworkCommon.info({
+          params: {
+            homeworkId: input.homeworkId,
+          },
+          query: {
+            zzud: input.login,
+          },
         });
-        const context = yield* parseTaskContext(taskInfo, input.envId, input.tabType);
+      });
+
+      const fetchChallengeData = Effect.fn("features.homework.shixun.fetchChallengeData")(function* (input: {
+        readonly homeworkId: string;
+        readonly login: string;
+      }) {
+        return yield* educoder.HomeworkCommon.shixunChallengeData({
+          params: {
+            homeworkId: input.homeworkId,
+          },
+          query: {
+            zzud: input.login,
+          },
+        });
+      });
+
+      const resolveShixunIdentifier = Effect.fn("features.homework.shixun.resolveShixunIdentifier")(function* (input: {
+        readonly homeworkId: string;
+        readonly login: string;
+      }) {
+        const homework = yield* fetchHomeworkInfo(input);
+        const shixunIdentifier = homework.shixun_identifier ?? parseShixunIdentifier(homework.task_operation);
+
+        if (shixunIdentifier === null) {
+          return yield* failInput(`Cannot infer shixun id for homework ${input.homeworkId}.`);
+        }
+
+        return {
+          homework,
+          shixunIdentifier,
+        };
+      });
+
+      const listChallenges: HomeworkShixunFeatureShape["listChallenges"] = Effect.fn(
+        "features.homework.shixun.challenges",
+      )(function* (input) {
+        const login = yield* resolveLogin();
+        const homework = yield* fetchHomeworkInfo({ homeworkId: input.homeworkId, login });
+        const raw = yield* fetchChallengeData({ homeworkId: input.homeworkId, login });
+
+        return {
+          raw,
+          view: formatChallengeList(input, homework, raw),
+        };
+      });
+
+      const resolveSelectedChallenge = Effect.fn("features.homework.shixun.resolveSelectedChallenge")(function* (
+        input: ShixunTaskSelector & { readonly login: string },
+      ) {
+        if (input.challengeIndex !== undefined && input.challengeId !== undefined) {
+          return yield* failInput("Use either --challenge-index or --challenge-id, not both.");
+        }
+
+        if (input.challengeIndex === undefined && input.challengeId === undefined) {
+          return null;
+        }
+
+        const raw = yield* fetchChallengeData({ homeworkId: input.homeworkId, login: input.login });
+        const challenges = raw.data.challenge_settings;
+
+        if (input.challengeIndex !== undefined) {
+          const index = input.challengeIndex;
+
+          if (!Number.isInteger(index) || index < 1 || index > challenges.length) {
+            return yield* failInput(
+              `Challenge index must be between 1 and ${challenges.length}; got ${String(input.challengeIndex)}.`,
+            );
+          }
+
+          const challenge = challenges[index - 1]!;
+
+          return {
+            index,
+            challengeId: challenge.challenge_id,
+            name: challenge.challenge_name,
+          };
+        }
+
+        const challenge = challenges.find((item) => item.challenge_id === input.challengeId);
+
+        if (challenge === undefined) {
+          return yield* failInput(
+            `Unknown challenge id ${String(input.challengeId)}. Available ids: ${challenges
+              .map((item) => item.challenge_id)
+              .join(", ")}.`,
+          );
+        }
+
+        return {
+          index: challenges.indexOf(challenge) + 1,
+          challengeId: challenge.challenge_id,
+          name: challenge.challenge_name,
+        };
+      });
+
+      const findTaskForChallenge = Effect.fn("features.homework.shixun.findTaskForChallenge")(function* (input: {
+        readonly initialTaskId: string;
+        readonly homeworkId: string;
+        readonly login: string;
+        readonly challengeId: number;
+      }) {
+        const pending = [input.initialTaskId];
+        const visited = new Set<string>();
+
+        while (pending.length > 0 && visited.size < 64) {
+          const taskId = pending.shift()!;
+
+          if (visited.has(taskId)) {
+            continue;
+          }
+
+          visited.add(taskId);
+
+          const task = yield* fetchTaskInfo({ taskId, homeworkId: input.homeworkId, login: input.login });
+          const challenge = asRecord(asRecord(task)?.["challenge"]);
+
+          if (numberField(challenge, "id") === input.challengeId) {
+            return {
+              taskId,
+              task,
+            };
+          }
+
+          for (const candidate of [
+            stringField(asRecord(task), "prev_game"),
+            stringField(asRecord(task), "next_game"),
+          ]) {
+            if (candidate !== null && !visited.has(candidate)) {
+              pending.push(candidate);
+            }
+          }
+        }
+
+        return yield* failInput(`Cannot resolve task for challenge ${input.challengeId}.`);
+      });
+
+      const resolveTask: HomeworkShixunFeatureShape["resolveTask"] = Effect.fn("features.homework.shixun.resolveTask")(
+        function* (input) {
+          const login = yield* resolveLogin();
+          const selectedChallenge = yield* resolveSelectedChallenge({ ...input, login });
+          const resolvedByHomework =
+            input.taskId === undefined ? yield* resolveShixunIdentifier({ homeworkId: input.homeworkId, login }) : null;
+          const exec =
+            input.taskId === undefined
+              ? yield* educoder.Shixun.exec({
+                  params: {
+                    shixunId: resolvedByHomework!.shixunIdentifier,
+                  },
+                  query: {
+                    homework_common_id: input.homeworkId,
+                    zzud: login,
+                  },
+                })
+              : null;
+          const initialTaskId = input.taskId ?? exec!.game_identifier;
+          const resolved =
+            selectedChallenge === null
+              ? {
+                  taskId: initialTaskId,
+                  task: yield* fetchTaskInfo({
+                    taskId: initialTaskId,
+                    homeworkId: input.homeworkId,
+                    login,
+                  }),
+                }
+              : yield* findTaskForChallenge({
+                  initialTaskId,
+                  homeworkId: input.homeworkId,
+                  login,
+                  challengeId: selectedChallenge.challengeId,
+                });
+
+          return {
+            raw: {
+              exec,
+              task: resolved.task,
+            },
+            view: formatResolvedTask(
+              input,
+              resolved.taskId,
+              resolved.task,
+              selectedChallenge,
+              resolvedByHomework?.homework,
+            ),
+          };
+        },
+      );
+
+      const resolveHomeworkContext = Effect.fn("features.homework.shixun.resolveHomeworkContext")(function* (
+        input: ShixunTaskSelector & {
+          readonly envId?: number | undefined;
+          readonly tabType: number;
+        },
+      ) {
+        const user = yield* resolveCurrentUser();
+        const resolved = yield* resolveTask({ ...input, courseId: input.courseId ?? "" });
+        const context = yield* parseTaskContext(resolved.raw.task, input.envId, input.tabType);
 
         return {
           user,
+          taskId: resolved.view.taskId,
           context,
         };
       });
@@ -489,6 +732,7 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
           raw,
           view: {
             total: raw.query_total_count,
+            order: raw.homeworks.map((item) => String(item.homework_id)),
             filters: {
               status: input.status,
               order,
@@ -543,16 +787,15 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
 
       const getTask: HomeworkShixunFeatureShape["getTask"] = Effect.fn("features.homework.shixun.task")(
         function* (input) {
-          const login = yield* resolveLogin();
-          const raw = yield* fetchTaskInfo({
-            taskId: input.taskId,
-            homeworkId: input.homeworkId,
-            login,
-          });
+          const resolved = yield* resolveTask(input);
+          const raw = resolved.raw.task;
 
           return {
             raw,
-            view: formatTaskInfo(raw),
+            view: {
+              ...formatTaskInfo(raw),
+              resolved: resolved.view,
+            },
           };
         },
       );
@@ -561,8 +804,9 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
         "features.homework.shixun.content",
       )(function* (input) {
         const login = yield* resolveLogin();
+        const resolved = yield* resolveTask({ ...input, courseId: input.courseId ?? "" });
         const raw = yield* fetchRepositoryContent({
-          taskId: input.taskId,
+          taskId: resolved.view.taskId,
           path: input.path,
           homeworkId: input.homeworkId,
           exerciseId: input.exerciseId,
@@ -583,8 +827,10 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
         "features.homework.shixun.repository",
       )(function* (input) {
         const { user, context } = yield* resolveHomeworkContext({
-          taskId: input.taskId,
+          courseId: input.courseId,
           homeworkId: input.homeworkId,
+          challengeIndex: input.challengeIndex,
+          challengeId: input.challengeId,
           tabType: 1,
         });
         const path = input.path ?? "";
@@ -621,8 +867,10 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
         "features.homework.shixun.save",
       )(function* (input) {
         const { user, context } = yield* resolveHomeworkContext({
-          taskId: input.taskId,
+          courseId: input.courseId,
           homeworkId: input.homeworkId,
+          challengeIndex: input.challengeIndex,
+          challengeId: input.challengeId,
           envId: input.envId,
           tabType: input.tabType,
         });
@@ -647,9 +895,10 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
       const getPassedCode: HomeworkShixunFeatureShape["getPassedCode"] = Effect.fn("features.homework.shixun.passed")(
         function* (input) {
           const login = yield* resolveLogin();
+          const resolved = yield* resolveTask({ ...input, courseId: input.courseId ?? "" });
           const raw = yield* educoder.Task.resetPassedCode({
             params: {
-              taskId: input.taskId,
+              taskId: resolved.view.taskId,
             },
             query: {
               path: input.path,
@@ -668,8 +917,10 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
         "features.homework.shixun.reset",
       )(function* (input) {
         const { user, context } = yield* resolveHomeworkContext({
-          taskId: input.taskId,
+          courseId: input.courseId,
           homeworkId: input.homeworkId,
+          challengeIndex: input.challengeIndex,
+          challengeId: input.challengeId,
           tabType: 1,
         });
         const raw = yield* educoder.Myshixun.resetRepository({
@@ -697,8 +948,10 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
         "features.homework.shixun.prune",
       )(function* (input) {
         const { user, context } = yield* resolveHomeworkContext({
-          taskId: input.taskId,
+          courseId: input.courseId,
           homeworkId: input.homeworkId,
+          challengeIndex: input.challengeIndex,
+          challengeId: input.challengeId,
           tabType: 1,
         });
         const raw = yield* educoder.Myshixun.versionRepositoryDelete({
@@ -721,14 +974,16 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
       const buildRepositoryFile: HomeworkShixunFeatureShape["buildRepositoryFile"] = Effect.fn(
         "features.homework.shixun.build",
       )(function* (input) {
-        const { user, context } = yield* resolveHomeworkContext({
-          taskId: input.taskId,
+        const { user, taskId, context } = yield* resolveHomeworkContext({
+          courseId: input.courseId,
           homeworkId: input.homeworkId,
+          challengeIndex: input.challengeIndex,
+          challengeId: input.challengeId,
           envId: input.envId,
           tabType: input.tabType,
         });
         const raw = yield* triggerRepositoryBuild({
-          taskId: input.taskId,
+          taskId,
           homeworkId: input.homeworkId,
           secKey: input.secKey,
           resubmit: input.resubmit,
@@ -750,14 +1005,16 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
       const getEvaluationStatus: HomeworkShixunFeatureShape["getEvaluationStatus"] = Effect.fn(
         "features.homework.shixun.status",
       )(function* (input) {
-        const { user, context } = yield* resolveHomeworkContext({
-          taskId: input.taskId,
+        const { user, taskId, context } = yield* resolveHomeworkContext({
+          courseId: input.courseId,
           homeworkId: input.homeworkId,
+          challengeIndex: input.challengeIndex,
+          challengeId: input.challengeId,
           tabType: 1,
         });
         const raw = yield* educoder.Task.gameStatus(
           makeStatusRequest({
-            taskId: input.taskId,
+            taskId,
             homeworkId: input.homeworkId,
             login: user.login,
             secKey: input.secKey,
@@ -778,9 +1035,11 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
       const evaluateRepositoryFile: HomeworkShixunFeatureShape["evaluateRepositoryFile"] = Effect.fn(
         "features.homework.shixun.evaluate",
       )(function* (input) {
-        const { user, context } = yield* resolveHomeworkContext({
-          taskId: input.taskId,
+        const { user, taskId, context } = yield* resolveHomeworkContext({
+          courseId: input.courseId,
           homeworkId: input.homeworkId,
+          challengeIndex: input.challengeIndex,
+          challengeId: input.challengeId,
           envId: input.envId,
           tabType: input.tabType,
         });
@@ -800,7 +1059,7 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
         }
 
         const build = yield* triggerRepositoryBuild({
-          taskId: input.taskId,
+          taskId,
           homeworkId: input.homeworkId,
           secKey,
           resubmit: save.resubmit ?? "",
@@ -812,7 +1071,7 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
         });
         const status = input.poll
           ? yield* pollGameStatus({
-              taskId: input.taskId,
+              taskId,
               homeworkId: input.homeworkId,
               login: user.login,
               secKey,
@@ -850,15 +1109,17 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
 
       const getLogs: HomeworkShixunFeatureShape["getLogs"] = Effect.fn("features.homework.shixun.logs")(
         function* (input) {
-          const { user, context } = yield* resolveHomeworkContext({
-            taskId: input.taskId,
+          const { user, taskId, context } = yield* resolveHomeworkContext({
+            courseId: input.courseId,
             homeworkId: input.homeworkId,
+            challengeIndex: input.challengeIndex,
+            challengeId: input.challengeId,
             envId: input.envId,
             tabType: input.tabType,
           });
           const raw = yield* educoder.Task.logOutput({
             params: {
-              taskId: input.taskId,
+              taskId,
             },
             query: {
               zzud: user.login,
@@ -883,15 +1144,17 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
 
       const commitFiles: HomeworkShixunFeatureShape["commitFiles"] = Effect.fn("features.homework.shixun.commit")(
         function* (input) {
-          const { user, context } = yield* resolveHomeworkContext({
-            taskId: input.taskId,
+          const { user, taskId, context } = yield* resolveHomeworkContext({
+            courseId: input.courseId,
             homeworkId: input.homeworkId,
+            challengeIndex: input.challengeIndex,
+            challengeId: input.challengeId,
             envId: input.envId,
             tabType: 1,
           });
           const raw = yield* educoder.Task.commitFiles({
             params: {
-              taskId: input.taskId,
+              taskId,
             },
             query: {
               shixun_environment_id: context.environmentId,
@@ -910,15 +1173,17 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
 
       const pullFiles: HomeworkShixunFeatureShape["pullFiles"] = Effect.fn("features.homework.shixun.pull")(
         function* (input) {
-          const { user, context } = yield* resolveHomeworkContext({
-            taskId: input.taskId,
+          const { user, taskId, context } = yield* resolveHomeworkContext({
+            courseId: input.courseId,
             homeworkId: input.homeworkId,
+            challengeIndex: input.challengeIndex,
+            challengeId: input.challengeId,
             envId: input.envId,
             tabType: 1,
           });
           const raw = yield* educoder.Task.pullFiles({
             params: {
-              taskId: input.taskId,
+              taskId,
             },
             query: {
               shixun_environment_id: context.environmentId,
@@ -939,8 +1204,10 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
         "features.homework.shixun.remainingTime",
       )(function* (input) {
         const { user, context } = yield* resolveHomeworkContext({
-          taskId: input.taskId,
+          courseId: input.courseId,
           homeworkId: input.homeworkId,
+          challengeIndex: input.challengeIndex,
+          challengeId: input.challengeId,
           tabType: 1,
         });
         const raw = yield* educoder.Myshixun.getRemainingTime({
@@ -963,8 +1230,10 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
       const startSsh: HomeworkShixunFeatureShape["startSsh"] = Effect.fn("features.homework.shixun.ssh")(
         function* (input) {
           const { user, context } = yield* resolveHomeworkContext({
-            taskId: input.taskId,
+            courseId: input.courseId,
             homeworkId: input.homeworkId,
+            challengeIndex: input.challengeIndex,
+            challengeId: input.challengeId,
             envId: input.envId,
             tabType: input.tabType,
           });
@@ -993,6 +1262,8 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
 
       return HomeworkShixunFeature.of({
         list,
+        listChallenges,
+        resolveTask,
         getTask,
         getRepositoryContent,
         listRepository,
@@ -1012,6 +1283,72 @@ export class HomeworkShixunFeature extends Context.Service<HomeworkShixunFeature
     }),
   );
 }
+
+const parseShixunIdentifier = (operation: ReadonlyArray<unknown> | undefined) => {
+  const path = operation?.[1];
+
+  if (typeof path !== "string") {
+    return null;
+  }
+
+  return path.match(/\/shixuns\/([^/]+)\/shixun_exec/)?.[1] ?? null;
+};
+
+const formatChallengeList = (
+  input: ListShixunChallengesInput,
+  homework: HomeworkInfoRaw,
+  raw: ShixunChallengeDataRaw,
+): ShixunChallengeListView => ({
+  homework: {
+    courseId: input.courseId ?? String(homework.course_id),
+    homeworkId: input.homeworkId,
+    name: homework.homework_name,
+    shixunIdentifier: homework.shixun_identifier ?? parseShixunIdentifier(homework.task_operation),
+  },
+  summary: {
+    score: raw.data.work_score,
+    evaluateCount: raw.data.evaluate_count,
+    timeConsuming: raw.data.time_consuming,
+    passed: raw.data.passed_count,
+    pending: raw.data.no_evaluate_count,
+  },
+  challenges: raw.data.challenge_settings.map((challenge, index) => ({
+    index: index + 1,
+    challengeId: challenge.challenge_id,
+    name: challenge.challenge_name,
+    score: challenge.challenge_score,
+    status: challenge.status,
+    difficulty: challenge.difficulty,
+    passedStatus: challenge.passed_status,
+    gameScore: challenge.game_score,
+    evaluateCount: challenge.evaluate_count,
+    timeConsuming: challenge.time_consuming,
+    knowledgePoints: challenge.knowledge_points,
+    operation: formatOperation(challenge.task_operation),
+  })),
+});
+
+const formatResolvedTask = (
+  input: ShixunTaskInput,
+  taskId: string,
+  taskInfo: TaskInfoRaw,
+  selected: SelectedChallenge | null,
+  homework: HomeworkInfoRaw | undefined,
+): ResolveShixunTaskView => {
+  const root = asRecord(taskInfo);
+  const challenge = asRecord(root?.["challenge"]);
+  const shixun = asRecord(root?.["shixun"]);
+
+  return {
+    taskId,
+    homeworkId: input.homeworkId,
+    courseId: input.courseId.length >= 1 ? input.courseId : null,
+    shixunIdentifier: stringField(shixun, "identifier") ?? homework?.shixun_identifier ?? null,
+    challengeId: numberField(challenge, "id") ?? selected?.challengeId ?? null,
+    challengeIndex: numberField(challenge, "position") ?? selected?.index ?? null,
+    challengeName: stringField(challenge, "subject") ?? selected?.name ?? null,
+  };
+};
 
 const parsePort = (value: unknown) => {
   const port = typeof value === "number" ? value : typeof value === "string" ? Number.parseInt(value, 10) : Number.NaN;

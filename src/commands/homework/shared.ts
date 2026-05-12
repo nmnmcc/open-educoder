@@ -11,6 +11,7 @@ import {
   stringField,
 } from "../../services/features/homework/shared.js";
 import { inspectOptions } from "../../utils/inspect-options.js";
+import { renderGeneric } from "./render.js";
 
 export {
   HomeworkInputError,
@@ -59,5 +60,5 @@ export const printStatusResponse = Effect.fn("homework.printStatusResponse")(fun
     return yield* printJson(response);
   }
 
-  yield* Console.dir(formatStatusResponse(response), inspectOptions);
+  yield* Console.log(renderGeneric("评测状态 / Evaluation Status", formatStatusResponse(response)));
 });

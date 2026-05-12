@@ -7,7 +7,7 @@ export const Common = Command.make("common").pipe(
   Command.withDescription("Common homework actions: list tasks, view details, work status, and settings."),
   Command.withExamples([
     {
-      command: "open-educoder homework common list MOAPGNLO --sort-by position --sort-direction desc",
+      command: "open-educoder homework common list 109348 --sort-by position --sort-direction desc",
       description: "List common assignments",
     },
     {

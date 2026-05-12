@@ -6,7 +6,7 @@ import { HomeworkShixunFeature } from "../../../services/features/homework/shixu
 import type { Navigator, PageProps, Route } from "../../app/types.js";
 import { MenuPage } from "../../components/MenuPage.js";
 import { cleanupEditedContent, editInExternalEditor, readUtf8File, runSsh } from "../../runtime/process.js";
-import { askRequired, inferTaskId, nonNegativeNumber, renderResult, selectedRecord } from "../../shared/pageHelpers.js";
+import { askRequired, nonNegativeNumber, renderResult, selectedRecord } from "../../shared/pageHelpers.js";
 import {
   FieldList,
   JsonBlock,
@@ -121,9 +121,7 @@ function ShixunListContent({
       id,
       label: stringValue(record["name"], id),
       description: `${stringValue(record["status"])}  ${stringValue(record["statusTime"])}`,
-      meta: `${optionalText(progress["finished"]) ?? "-"}/${optionalText(progress["total"]) ?? "-"}  task ${
-        inferTaskId(record) ?? "-"
-      }`,
+      meta: `${optionalText(progress["finished"]) ?? "-"}/${optionalText(progress["total"]) ?? "-"}  homework ${id}`,
     };
   });
 
@@ -142,15 +140,12 @@ function ShixunListContent({
           selected={selected}
           onSelectedChange={setSelected}
           onOpen={(item) => {
-            const record = selectedRecord(homeworks, item.id);
-
             nav.push({
               name: "shixunDetail",
               courseId: route.courseId,
               courseName: route.courseName,
               homeworkId: item.id,
               homeworkName: item.label,
-              taskId: inferTaskId(record),
             });
           }}
           active={active}
@@ -184,18 +179,26 @@ export const ShixunDetailPage = Effect.gen(function* () {
       { id: "prune", label: "Prune snapshots", description: "Clean expired repository snapshots" },
     ];
 
-    const requireTaskId = async () => {
+    const resolveTaskId = async () => {
       if (taskId.length >= 1) {
         return taskId;
       }
 
-      const value = await askRequired(ui, "Task ID", "task-id");
+      const result = await ui.runAction(
+        "Resolve shixun task",
+        homeworkShixun.resolveTask({
+          courseId: route.courseId,
+          homeworkId: route.homeworkId,
+        }),
+      );
+      const value = stringValue(asRecord(result?.view)["taskId"]);
 
-      if (value !== null) {
+      if (value.length >= 1) {
         setTaskId(value);
+        return value;
       }
 
-      return value;
+      return null;
     };
 
     const readLocalContent = async () => {
@@ -216,7 +219,7 @@ export const ShixunDetailPage = Effect.gen(function* () {
 
     const promptRepositoryPath = () => askRequired(ui, "Repository path", "path");
 
-    const editFile = async (currentTaskId: string) => {
+    const editFile = async () => {
       const path = await promptRepositoryPath();
 
       if (path === null) {
@@ -227,7 +230,7 @@ export const ShixunDetailPage = Effect.gen(function* () {
         "Edit repository file",
         Effect.gen(function* () {
           const current = yield* homeworkShixun.getRepositoryContent({
-            taskId: currentTaskId,
+            courseId: route.courseId,
             homeworkId: route.homeworkId,
             path,
             exerciseId: "",
@@ -250,7 +253,7 @@ export const ShixunDetailPage = Effect.gen(function* () {
           }
 
           const saved = yield* homeworkShixun.saveRepositoryFile({
-            taskId: currentTaskId,
+            courseId: route.courseId,
             homeworkId: route.homeworkId,
             path,
             content: edited.content,
@@ -266,21 +269,21 @@ export const ShixunDetailPage = Effect.gen(function* () {
     };
 
     const run = async (id: string) => {
-      const currentTaskId = await requireTaskId();
-
-      if (currentTaskId === null) {
-        return;
-      }
-
       if (id === "task") {
         await ui.runAction(
           "Shixun task",
-          homeworkShixun.getTask({ taskId: currentTaskId, homeworkId: route.homeworkId }),
+          homeworkShixun.getTask({ courseId: route.courseId, homeworkId: route.homeworkId }),
         );
         return;
       }
 
       if (id === "repository") {
+        const currentTaskId = await resolveTaskId();
+
+        if (currentTaskId === null) {
+          return;
+        }
+
         nav.push({
           name: "repository",
           courseId: route.courseId,
@@ -296,7 +299,7 @@ export const ShixunDetailPage = Effect.gen(function* () {
       if (id === "remaining") {
         await ui.runAction(
           "Remaining time",
-          homeworkShixun.getRemainingTime({ taskId: currentTaskId, homeworkId: route.homeworkId }),
+          homeworkShixun.getRemainingTime({ courseId: route.courseId, homeworkId: route.homeworkId }),
         );
         return;
       }
@@ -305,7 +308,7 @@ export const ShixunDetailPage = Effect.gen(function* () {
         await ui.runAction(
           "Shixun logs",
           homeworkShixun.getLogs({
-            taskId: currentTaskId,
+            courseId: route.courseId,
             homeworkId: route.homeworkId,
             tabType: 1,
           }),
@@ -317,14 +320,17 @@ export const ShixunDetailPage = Effect.gen(function* () {
         const path = await promptRepositoryPath();
 
         if (path !== null) {
-          await ui.runAction("Passed code", homeworkShixun.getPassedCode({ taskId: currentTaskId, path }));
+          await ui.runAction(
+            "Passed code",
+            homeworkShixun.getPassedCode({ courseId: route.courseId, homeworkId: route.homeworkId, path }),
+          );
         }
 
         return;
       }
 
       if (id === "edit") {
-        await editFile(currentTaskId);
+        await editFile();
         return;
       }
 
@@ -339,7 +345,7 @@ export const ShixunDetailPage = Effect.gen(function* () {
             await ui.runAction(
               "Save repository file",
               homeworkShixun.saveRepositoryFile({
-                taskId: currentTaskId,
+                courseId: route.courseId,
                 homeworkId: route.homeworkId,
                 path,
                 content,
@@ -368,7 +374,7 @@ export const ShixunDetailPage = Effect.gen(function* () {
             await ui.runAction(
               "Evaluate repository file",
               homeworkShixun.evaluateRepositoryFile({
-                taskId: currentTaskId,
+                courseId: route.courseId,
                 homeworkId: route.homeworkId,
                 path,
                 content,
@@ -400,7 +406,7 @@ export const ShixunDetailPage = Effect.gen(function* () {
             await ui.runAction(
               "Build repository snapshot",
               homeworkShixun.buildRepositoryFile({
-                taskId: currentTaskId,
+                courseId: route.courseId,
                 homeworkId: route.homeworkId,
                 secKey,
                 commitId,
@@ -422,7 +428,7 @@ export const ShixunDetailPage = Effect.gen(function* () {
           await ui.runAction(
             "Evaluation status",
             homeworkShixun.getEvaluationStatus({
-              taskId: currentTaskId,
+              courseId: route.courseId,
               homeworkId: route.homeworkId,
               secKey,
               resubmit: "",
@@ -439,14 +445,14 @@ export const ShixunDetailPage = Effect.gen(function* () {
       if (id === "commit") {
         const confirmed = await ui.danger(
           "Commit files",
-          `Commit current environment for ${currentTaskId}.`,
-          currentTaskId,
+          `Commit current environment for homework ${route.homeworkId}.`,
+          route.homeworkId,
         );
 
         if (confirmed) {
           await ui.runAction(
             "Commit files",
-            homeworkShixun.commitFiles({ taskId: currentTaskId, homeworkId: route.homeworkId }),
+            homeworkShixun.commitFiles({ courseId: route.courseId, homeworkId: route.homeworkId }),
           );
         }
 
@@ -454,12 +460,16 @@ export const ShixunDetailPage = Effect.gen(function* () {
       }
 
       if (id === "pull") {
-        const confirmed = await ui.danger("Pull files", `Pull runtime files for ${currentTaskId}.`, currentTaskId);
+        const confirmed = await ui.danger(
+          "Pull files",
+          `Pull runtime files for homework ${route.homeworkId}.`,
+          route.homeworkId,
+        );
 
         if (confirmed) {
           await ui.runAction(
             "Pull files",
-            homeworkShixun.pullFiles({ taskId: currentTaskId, homeworkId: route.homeworkId }),
+            homeworkShixun.pullFiles({ courseId: route.courseId, homeworkId: route.homeworkId }),
           );
         }
 
@@ -467,14 +477,18 @@ export const ShixunDetailPage = Effect.gen(function* () {
       }
 
       if (id === "ssh") {
-        const confirmed = await ui.danger("Start SSH", `Open SSH session for ${currentTaskId}.`, currentTaskId);
+        const confirmed = await ui.danger(
+          "Start SSH",
+          `Open SSH session for homework ${route.homeworkId}.`,
+          route.homeworkId,
+        );
 
         if (confirmed) {
           await ui.runAction(
             "SSH",
             Effect.gen(function* () {
               const result = yield* homeworkShixun.startSsh({
-                taskId: currentTaskId,
+                courseId: route.courseId,
                 homeworkId: route.homeworkId,
                 tabType: 4,
               });
@@ -494,24 +508,28 @@ export const ShixunDetailPage = Effect.gen(function* () {
       }
 
       if (id === "reset") {
-        const confirmed = await ui.danger("Reset repository", "This discards repository edits.", currentTaskId);
+        const confirmed = await ui.danger("Reset repository", "This discards repository edits.", route.homeworkId);
 
         if (confirmed) {
           await ui.runAction(
             "Reset repository",
-            homeworkShixun.resetRepository({ taskId: currentTaskId, homeworkId: route.homeworkId }),
+            homeworkShixun.resetRepository({ courseId: route.courseId, homeworkId: route.homeworkId }),
           );
         }
 
         return;
       }
 
-      const confirmed = await ui.danger("Prune snapshots", "This cleans expired repository snapshots.", currentTaskId);
+      const confirmed = await ui.danger(
+        "Prune snapshots",
+        "This cleans expired repository snapshots.",
+        route.homeworkId,
+      );
 
       if (confirmed) {
         await ui.runAction(
           "Prune snapshots",
-          homeworkShixun.pruneRepository({ taskId: currentTaskId, homeworkId: route.homeworkId }),
+          homeworkShixun.pruneRepository({ courseId: route.courseId, homeworkId: route.homeworkId }),
         );
       }
     };
@@ -519,11 +537,7 @@ export const ShixunDetailPage = Effect.gen(function* () {
     useInput(
       (input) => {
         if (input === "t") {
-          void askRequired(ui, "Task ID", "task-id", taskId).then((value) => {
-            if (value !== null) {
-              setTaskId(value);
-            }
-          });
+          void resolveTaskId();
         }
       },
       { isActive: active },
@@ -532,10 +546,10 @@ export const ShixunDetailPage = Effect.gen(function* () {
     return (
       <MenuPage
         title={route.homeworkName}
-        subtitle={`shixun homework ${route.homeworkId}  task ${taskId || "unset"}`}
+        subtitle={`shixun homework ${route.homeworkId}  task ${taskId || "auto"}`}
         items={items}
         active={active}
-        footer="Enter open  t set task-id  Esc back  q quit"
+        footer="Enter open  t resolve task-id  Esc back  q quit"
         onOpen={(item) => void run(item.id)}
       />
     );
@@ -548,6 +562,7 @@ export const RepositoryPage = Effect.gen(function* () {
   return function RepositoryPage({ route, nav, ui, active }: PageProps<Extract<Route, { name: "repository" }>>) {
     const data = useRemoteData(`repo:${route.taskId}:${route.homeworkId}:${route.path}`, () =>
       homeworkShixun.listRepository({
+        courseId: route.courseId,
         taskId: route.taskId,
         homeworkId: route.homeworkId,
         path: route.path.length >= 1 ? route.path : undefined,
@@ -559,6 +574,7 @@ export const RepositoryPage = Effect.gen(function* () {
         if (input === "j") {
           void Effect.runPromise(
             homeworkShixun.listRepository({
+              courseId: route.courseId,
               taskId: route.taskId,
               homeworkId: route.homeworkId,
               path: route.path.length >= 1 ? route.path : undefined,
@@ -641,6 +657,7 @@ export const FilePage = Effect.gen(function* () {
     const [refresh, setRefresh] = useState(0);
     const data = useRemoteData(`file:${route.taskId}:${route.homeworkId}:${route.path}:${refresh}`, () =>
       homeworkShixun.getRepositoryContent({
+        courseId: route.courseId,
         taskId: route.taskId,
         homeworkId: route.homeworkId,
         path: route.path,
@@ -673,6 +690,7 @@ export const FilePage = Effect.gen(function* () {
           }
 
           const saved = yield* homeworkShixun.saveRepositoryFile({
+            courseId: route.courseId,
             taskId: route.taskId,
             homeworkId: route.homeworkId,
             path: route.path,

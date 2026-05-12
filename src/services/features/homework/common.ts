@@ -265,6 +265,7 @@ type CommonHomeworkRedoLogsRaw = EducoderApiResponse<"HomeworkCommon", "redoLogs
 
 type ListCommonHomeworksView = {
   readonly total: number;
+  readonly order: ReadonlyArray<string>;
   readonly filters: {
     readonly status: number;
     readonly order: number;
@@ -399,6 +400,7 @@ export class HomeworkCommonFeature extends Context.Service<HomeworkCommonFeature
           raw,
           view: {
             total: raw.query_total_count,
+            order: raw.homeworks.map((item) => String(item.homework_id)),
             filters: {
               status: input.status,
               order,

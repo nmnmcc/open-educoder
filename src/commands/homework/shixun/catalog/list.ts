@@ -3,7 +3,8 @@ import { Command, Flag } from "effect/unstable/cli";
 
 import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
 import { CourseId, HomeworkSortByChoices, PositiveInteger, SortDirectionChoices } from "../../flags.js";
-import { inspectOptions, optionToUndefined, printJson } from "../../shared.js";
+import { renderShixunHomeworks } from "../../render.js";
+import { optionToUndefined, printJson } from "../../shared.js";
 
 export const List = Command.make(
   "list",
@@ -41,22 +42,22 @@ export const List = Command.make(
       return yield* Console.log("No homeworks found.");
     }
 
-    yield* Console.dir(result.view, inspectOptions);
+    yield* Console.log(renderShixunHomeworks(input.courseId, result.view));
   }),
 ).pipe(
   Command.withDescription("List shixun tasks for a course category with optional filters and search."),
   Command.withExamples([
     {
-      command: "open-educoder homework shixun list MOAPGNLO --category 1213302",
+      command: "open-educoder homework shixun list 109348 --category 1213302",
       description: "List shixun tasks in a category",
     },
     {
       command:
-        "open-educoder homework shixun list MOAPGNLO --category 1213302 --sort-by name_pinyin --sort-direction desc",
+        "open-educoder homework shixun list 109348 --category 1213302 --sort-by name_pinyin --sort-direction desc",
       description: "Sort shixun tasks by pinyin name",
     },
     {
-      command: "open-educoder homework shixun list MOAPGNLO --category 1213302 --search 123 --status 7",
+      command: "open-educoder homework shixun list 109348 --category 1213302 --search 123 --status 7",
       description: "Search within the selected category",
     },
   ]),

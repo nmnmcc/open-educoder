@@ -3,7 +3,8 @@ import { Command, Flag } from "effect/unstable/cli";
 
 import { HomeworkCommonFeature } from "../../../services/features/homework/common.js";
 import { CourseId, HomeworkIdArgument, PositiveInteger } from "../flags.js";
-import { inspectOptions, optionToUndefined, printJson } from "../shared.js";
+import { renderGeneric } from "../render.js";
+import { optionToUndefined, printJson } from "../shared.js";
 
 const CategoryId = Flag.string("category-id").pipe(Flag.optional);
 
@@ -21,7 +22,7 @@ export const Info = Command.make(
       return yield* printJson(result.raw);
     }
 
-    yield* Console.dir(result.view, inspectOptions);
+    yield* Console.log(renderGeneric("普通作业详情 / Common Homework Info", result.view));
   }),
 ).pipe(
   Command.withDescription("Show one common assignment's metadata, instructions, and attachments."),
@@ -58,7 +59,7 @@ export const Works = Command.make(
       return yield* printJson(result.raw);
     }
 
-    yield* Console.dir(result.view, inspectOptions);
+    yield* Console.log(renderGeneric("作品状态 / Work Status", result.view));
   }),
 ).pipe(
   Command.withDescription("Show your work summary, score, and submit state for a common assignment."),
@@ -95,7 +96,7 @@ export const Draft = Command.make(
       return yield* printJson(result.raw);
     }
 
-    yield* Console.dir(result.view, inspectOptions);
+    yield* Console.log(renderGeneric("草稿上下文 / Draft Context", result.view));
   }),
 ).pipe(
   Command.withDescription("Open draft context for a common assignment."),
@@ -132,13 +133,13 @@ export const Members = Command.make(
       return yield* printJson(result.raw);
     }
 
-    yield* Console.dir(result.view, inspectOptions);
+    yield* Console.log(renderGeneric("成员列表 / Members", result.view));
   }),
 ).pipe(
   Command.withDescription("Search members and view their common-assignment submission status."),
   Command.withExamples([
     {
-      command: "open-educoder homework common members 109348 3487339 --search 0424",
+      command: "open-educoder homework common members 109348 3487339 --search keyword",
       description: "Search by student number or name",
     },
   ]),
@@ -167,7 +168,7 @@ export const Comments = Command.make(
       return yield* printJson(result.raw);
     }
 
-    yield* Console.dir(result.view, inspectOptions);
+    yield* Console.log(renderGeneric("评论 / Comments", result.view));
   }),
 ).pipe(
   Command.withDescription("Open discussion comments for a common assignment."),
@@ -200,7 +201,7 @@ export const Settings = Command.make(
       return yield* printJson(result.raw);
     }
 
-    yield* Console.dir(result.view, inspectOptions);
+    yield* Console.log(renderGeneric("作业设置 / Homework Settings", result.view));
   }),
 ).pipe(
   Command.withDescription("Show assignment rules such as deadline, scoring, visibility, and constraints."),
@@ -235,7 +236,7 @@ export const RedoLogs = Command.make(
       return yield* printJson(result.raw);
     }
 
-    yield* Console.dir(result.view, inspectOptions);
+    yield* Console.log(renderGeneric("重做记录 / Redo Logs", result.view));
   }),
 ).pipe(
   Command.withDescription("Show redo history for one common assignment."),

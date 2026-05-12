@@ -3,7 +3,14 @@ import { Command, Flag } from "effect/unstable/cli";
 import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process";
 
 import { HomeworkShixunFeature } from "../../../../services/features/homework/shixun.js";
-import { EnvironmentId, HomeworkId, TaskId, TerminalTabType } from "../../flags.js";
+import {
+  ChallengeId,
+  ChallengeIndex,
+  CourseId,
+  EnvironmentId,
+  HomeworkIdArgument,
+  TerminalTabType,
+} from "../../flags.js";
 import { optionToUndefined, printJson } from "../../shared.js";
 
 const runSsh = Effect.fn("homework.shixun.ssh.runSsh")(function* (args: ReadonlyArray<string>) {
@@ -27,8 +34,10 @@ const runSsh = Effect.fn("homework.shixun.ssh.runSsh")(function* (args: Readonly
 export const Ssh = Command.make(
   "ssh",
   {
-    taskId: TaskId,
-    homeworkId: HomeworkId,
+    courseId: CourseId,
+    homeworkId: HomeworkIdArgument,
+    challengeIndex: ChallengeIndex,
+    challengeId: ChallengeId,
     envId: EnvironmentId,
     tabType: TerminalTabType,
     json: Flag.boolean("json"),
@@ -36,8 +45,10 @@ export const Ssh = Command.make(
   Effect.fn("homework.shixun.ssh")(function* (input) {
     const homeworkShixunFeature = yield* HomeworkShixunFeature;
     const result = yield* homeworkShixunFeature.startSsh({
-      taskId: input.taskId,
+      courseId: input.courseId,
       homeworkId: input.homeworkId,
+      challengeIndex: optionToUndefined(input.challengeIndex),
+      challengeId: optionToUndefined(input.challengeId),
       envId: optionToUndefined(input.envId),
       tabType: input.tabType,
       resolveArgs: !input.json,
@@ -55,11 +66,11 @@ export const Ssh = Command.make(
   Command.withDescription("Connect to a shixun runtime through SSH when available."),
   Command.withExamples([
     {
-      command: "open-educoder homework shixun ssh sflmr2fxi4wn --homework-id 3487324 --env-id 1128633",
+      command: "open-educoder homework shixun ssh 109348 3487324 --env-id 1128633",
       description: "Connect to one environment by env id",
     },
     {
-      command: "open-educoder homework shixun ssh sflmr2fxi4wn --homework-id 3487324 --tab-type 4 --json",
+      command: "open-educoder homework shixun ssh 109348 3487324 --tab-type 4 --json",
       description: "Print SSH connection arguments as JSON",
     },
   ]),

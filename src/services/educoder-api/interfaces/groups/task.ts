@@ -130,6 +130,7 @@ const TaskGame = Schema.Struct({
   id: Schema.optionalKey(Schema.Int),
   identifier: Schema.optionalKey(Schema.String),
   myshixun_id: Schema.optionalKey(Schema.Int),
+  challenge_id: Schema.optionalKey(Schema.Int),
   status: Schema.optionalKey(Schema.Int),
   final_score: Schema.optionalKey(Schema.Number),
   cost_time: Schema.optionalKey(Schema.Number),
@@ -269,6 +270,9 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
 }
 */
 const TaskInfoResponse = Schema.Struct({
+  game_count: Schema.optionalKey(Schema.Int),
+  prev_game: Schema.optionalKey(NullableString),
+  next_game: Schema.optionalKey(NullableString),
   game: TaskGame,
   challenge: TaskChallenge,
   myshixun: TaskMyshixun,
