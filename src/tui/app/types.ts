@@ -14,9 +14,9 @@ export type Route =
       readonly homeworkId: string;
       readonly homeworkName: string;
     }
-  | { readonly name: "shixunList"; readonly courseId: string; readonly courseName: string }
+  | { readonly name: "labList"; readonly courseId: string; readonly courseName: string }
   | {
-      readonly name: "shixunDetail";
+      readonly name: "labDetail";
       readonly courseId: string;
       readonly courseName: string;
       readonly homeworkId: string;
@@ -121,8 +121,8 @@ export type AppComponents = {
   readonly ModulesPage: PageComponent<Extract<Route, { name: "modules" }>>;
   readonly CommonListPage: PageComponent<Extract<Route, { name: "commonList" }>>;
   readonly CommonDetailPage: PageComponent<Extract<Route, { name: "commonDetail" }>>;
-  readonly ShixunListPage: PageComponent<Extract<Route, { name: "shixunList" }>>;
-  readonly ShixunDetailPage: PageComponent<Extract<Route, { name: "shixunDetail" }>>;
+  readonly LabListPage: PageComponent<Extract<Route, { name: "labList" }>>;
+  readonly LabDetailPage: PageComponent<Extract<Route, { name: "labDetail" }>>;
   readonly RepositoryPage: PageComponent<Extract<Route, { name: "repository" }>>;
   readonly FilePage: PageComponent<Extract<Route, { name: "file" }>>;
   readonly ExamsPage: PageComponent<Extract<Route, { name: "exams" }>>;

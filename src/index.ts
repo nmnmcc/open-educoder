@@ -10,10 +10,10 @@ import { Command, Flag } from "effect/unstable/cli";
 import { ProxyAgent } from "proxy-agent";
 
 import meta from "../package.json" with { type: "json" };
-import { Course } from "./commands/course.js";
-import { Exam } from "./commands/exam.js";
-import { Homework } from "./commands/homework/index.js";
-import { Profile } from "./commands/profile.js";
+import { Assignments } from "./commands/assignments/index.js";
+import { Courses } from "./commands/courses.js";
+import { Exams } from "./commands/exams.js";
+import { Profiles } from "./commands/profiles.js";
 import { Tui } from "./commands/tui.js";
 import { AppConfig } from "./services/config/index.js";
 import { AppContext } from "./services/context/index.js";
@@ -28,7 +28,7 @@ const OpenEducoder = Command.make("open-educoder").pipe(
     config: Flag.path("config").pipe(Flag.withDefault(path.join(homedir(), ".config", meta.name))),
     otel: Flag.boolean("otel").pipe(Flag.withDefault(false)),
   }),
-  Command.withSubcommands([Profile, Course, Homework, Exam, Tui]),
+  Command.withSubcommands([Profiles, Courses, Assignments, Exams, Tui]),
   Command.provide(({ url, profile, config, otel }) =>
     Layer.unwrap(
       Effect.gen(function* () {

@@ -17,8 +17,8 @@ export function renderRoute(route: Route, components: AppComponents, nav: Naviga
     ModulesPage,
     CommonListPage,
     CommonDetailPage,
-    ShixunListPage,
-    ShixunDetailPage,
+    LabListPage,
+    LabDetailPage,
     RepositoryPage,
     FilePage,
     ExamsPage,
@@ -39,10 +39,10 @@ export function renderRoute(route: Route, components: AppComponents, nav: Naviga
       return <CommonListPage route={route} nav={nav} ui={ui} active={active} />;
     case "commonDetail":
       return <CommonDetailPage route={route} nav={nav} ui={ui} active={active} />;
-    case "shixunList":
-      return <ShixunListPage route={route} nav={nav} ui={ui} active={active} />;
-    case "shixunDetail":
-      return <ShixunDetailPage route={route} nav={nav} ui={ui} active={active} />;
+    case "labList":
+      return <LabListPage route={route} nav={nav} ui={ui} active={active} />;
+    case "labDetail":
+      return <LabDetailPage route={route} nav={nav} ui={ui} active={active} />;
     case "repository":
       return <RepositoryPage route={route} nav={nav} ui={ui} active={active} />;
     case "file":

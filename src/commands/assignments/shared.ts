@@ -1,0 +1,86 @@
+import { readFile } from "node:fs/promises";
+
+import { Console, Effect, Option } from "effect";
+
+import {
+  AssignmentInputError,
+  asRecord,
+  failInput,
+  formatStatusResponse,
+  optionToUndefined,
+  stringField,
+} from "../../services/features/assignments/shared.js";
+import { inspectOptions } from "../../utils/inspect-options.js";
+import { renderGeneric } from "./render.js";
+
+export {
+  AssignmentInputError,
+  asRecord,
+  failInput,
+  formatStatusResponse,
+  inspectOptions,
+  optionToUndefined,
+  stringField,
+};
+
+export const printJson = (value: unknown) => Console.log(JSON.stringify(value, null, 2));
+
+export const readContent = Effect.fn("assignments.readContent")(function* (input: {
+  readonly content: Option.Option<string>;
+  readonly file: Option.Option<string>;
+}) {
+  const content = yield* readOptionalContent(input);
+
+  if (content !== undefined) {
+    return content;
+  }
+
+  return yield* failInput("Provide file content with --content or --file.");
+});
+
+export const readOptionalContent = Effect.fn("assignments.readOptionalContent")(function* (input: {
+  readonly content: Option.Option<string>;
+  readonly file: Option.Option<string>;
+}) {
+  if (Option.isSome(input.content) && Option.isSome(input.file)) {
+    return yield* failInput("Use either --content or --file, not both.");
+  }
+
+  if (Option.isSome(input.content)) {
+    return input.content.value;
+  }
+
+  if (Option.isSome(input.file)) {
+    const file = input.file.value;
+
+    return yield* Effect.tryPromise({
+      try: () => readFile(file, "utf8"),
+      catch: (error) =>
+        new AssignmentInputError({
+          message: `Failed to read ${file}: ${error instanceof Error ? error.message : String(error)}`,
+        }),
+    });
+  }
+
+  return undefined;
+});
+
+export const requireChallengeSelector = Effect.fn("assignments.requireChallengeSelector")(function* (input: {
+  readonly challengeIndex: Option.Option<number>;
+  readonly challengeId: Option.Option<number>;
+}) {
+  if (Option.isNone(input.challengeIndex) && Option.isNone(input.challengeId)) {
+    return yield* failInput("Missing required flag: --challenge-index (or --challenge-id).");
+  }
+});
+
+export const printStatusResponse = Effect.fn("assignments.printStatusResponse")(function* (
+  response: unknown,
+  json: boolean,
+) {
+  if (json) {
+    return yield* printJson(response);
+  }
+
+  yield* Console.log(renderGeneric("评测状态 / Evaluation Status", formatStatusResponse(response)));
+});

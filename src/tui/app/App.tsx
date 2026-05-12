@@ -4,8 +4,8 @@ import { useState } from "react";
 
 import { CourseInfoPage, CoursesPage, ModulesPage } from "../pages/course.js";
 import { ExamDetailPage, ExamShowPage, ExamsPage } from "../pages/exams.js";
-import { CommonDetailPage, CommonListPage } from "../pages/homeworks/common.js";
-import { FilePage, RepositoryPage, ShixunDetailPage, ShixunListPage } from "../pages/homeworks/shixun.js";
+import { CommonDetailPage, CommonListPage } from "../pages/assignments/common.js";
+import { FilePage, RepositoryPage, LabDetailPage, LabListPage } from "../pages/assignments/labs.js";
 import { formatError } from "../runtime/process.js";
 import { OverlayPane } from "./overlay.js";
 import { renderRoute } from "./router.js";
@@ -17,8 +17,8 @@ export const TuiApp = Effect.gen(function* () {
   const ModulesPageComponent = yield* ModulesPage;
   const CommonListPageComponent = yield* CommonListPage;
   const CommonDetailPageComponent = yield* CommonDetailPage;
-  const ShixunListPageComponent = yield* ShixunListPage;
-  const ShixunDetailPageComponent = yield* ShixunDetailPage;
+  const LabListPageComponent = yield* LabListPage;
+  const LabDetailPageComponent = yield* LabDetailPage;
   const RepositoryPageComponent = yield* RepositoryPage;
   const FilePageComponent = yield* FilePage;
   const ExamsPageComponent = yield* ExamsPage;
@@ -30,8 +30,8 @@ export const TuiApp = Effect.gen(function* () {
     ModulesPage: ModulesPageComponent,
     CommonListPage: CommonListPageComponent,
     CommonDetailPage: CommonDetailPageComponent,
-    ShixunListPage: ShixunListPageComponent,
-    ShixunDetailPage: ShixunDetailPageComponent,
+    LabListPage: LabListPageComponent,
+    LabDetailPage: LabDetailPageComponent,
     RepositoryPage: RepositoryPageComponent,
     FilePage: FilePageComponent,
     ExamsPage: ExamsPageComponent,

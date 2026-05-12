@@ -170,7 +170,7 @@ type SubmitExamView = {
     readonly studentLeftMinutes: number;
     readonly userEndTime: string;
     readonly unanswered: {
-      readonly shixun: number;
+      readonly lab: number;
       readonly question: number;
       readonly oj: number;
     };
@@ -342,7 +342,7 @@ export class ExamFeature extends Context.Service<ExamFeature, ExamFeatureShape>(
               studentLeftMinutes: time.student_left_minutes,
               userEndTime: time.user_end_time,
               unanswered: {
-                shixun: preview.shixun_undo,
+                lab: preview.shixun_undo,
                 question: preview.question_undo,
                 oj: preview.oj_undo,
               },

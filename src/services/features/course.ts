@@ -48,7 +48,7 @@ type ListCoursesView = {
       readonly school: string;
       readonly teacher: string;
       readonly members: number;
-      readonly homeworks: number;
+      readonly assignments: number;
       readonly attachments: number;
       readonly visits: number;
       readonly status: "end" | "processing";
@@ -152,7 +152,7 @@ export class CourseFeature extends Context.Service<CourseFeature, CourseFeatureS
                   school: course.school,
                   teacher: course.teacher.real_name,
                   members: course.members_count,
-                  homeworks: course.homework_commons_count,
+                  assignments: course.homework_commons_count,
                   attachments: course.attachments_count,
                   visits: course.visits,
                   status: course.is_end ? "end" : "processing",

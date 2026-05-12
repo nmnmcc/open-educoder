@@ -101,7 +101,7 @@ function CoursesContent({
       id,
       label: stringValue(record["name"], id),
       description: `${stringValue(record["school"])}  ${stringValue(record["teacher"])}`,
-      meta: `${optionalText(record["status"]) ?? "-"}  ${numberValue(record["homeworks"])} homework`,
+      meta: `${optionalText(record["status"]) ?? "-"}  ${numberValue(record["assignments"])} assignments`,
     };
   });
 
@@ -132,8 +132,8 @@ export function CoursePage({ route, nav, active }: PageProps<Extract<Route, { na
   const items: ReadonlyArray<SelectItem> = [
     { id: "info", label: "Course info", description: "Teacher, counts, visibility, invite code" },
     { id: "modules", label: "Modules", description: "Course module and category structure" },
-    { id: "common", label: "Common homeworks", description: "Assignments, work status, comments and settings" },
-    { id: "shixun", label: "Shixun homeworks", description: "Task, repository, evaluation and environment actions" },
+    { id: "common", label: "Common assignments", description: "Assignments, work status, comments and settings" },
+    { id: "lab", label: "Lab assignments", description: "Task, repository, evaluation and environment actions" },
     { id: "exams", label: "Exams", description: "List, start, answer, show and submit exams" },
   ];
 
@@ -159,8 +159,8 @@ export function CoursePage({ route, nav, active }: PageProps<Extract<Route, { na
           return;
         }
 
-        if (item.id === "shixun") {
-          nav.push({ name: "shixunList", courseId: route.courseId, courseName: route.courseName });
+        if (item.id === "lab") {
+          nav.push({ name: "labList", courseId: route.courseId, courseName: route.courseName });
           return;
         }
 

@@ -2,21 +2,21 @@ import { Layer } from "effect";
 
 import { CourseFeature } from "./course.js";
 import { ExamFeature } from "./exam.js";
-import { HomeworkCommonFeature } from "./homework/common.js";
-import { HomeworkShixunFeature } from "./homework/shixun.js";
+import { CommonAssignmentFeature } from "./assignments/common.js";
+import { LabAssignmentFeature } from "./assignments/lab.js";
 import { ProfileFeature } from "./profile.js";
 
 export { CourseFeature } from "./course.js";
 export { ExamFeature } from "./exam.js";
-export { HomeworkCommonFeature } from "./homework/common.js";
-export { HomeworkShixunFeature } from "./homework/shixun.js";
+export { CommonAssignmentFeature } from "./assignments/common.js";
+export { LabAssignmentFeature } from "./assignments/lab.js";
 export { ProfileFeature } from "./profile.js";
 export * from "./shared.js";
 
 export const FeatureLayer = Layer.mergeAll(
   CourseFeature.layer,
   ExamFeature.layer,
-  HomeworkCommonFeature.layer,
-  HomeworkShixunFeature.layer,
+  CommonAssignmentFeature.layer,
+  LabAssignmentFeature.layer,
   ProfileFeature.layer,
 );
