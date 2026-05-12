@@ -2,10 +2,9 @@ import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/unstable/httpapi";
 
 const StringValue = Schema.String;
-const EmptyArray = Schema.Array(Schema.Never);
-const NullableString = Schema.NullOr(Schema.String);
-const NullableNumber = Schema.NullOr(Schema.Number);
-const NullableBoolean = Schema.NullOr(Schema.Boolean);
+const NullableString = Schema.NullishOr(Schema.String);
+const NullableNumber = Schema.NullishOr(Schema.Number);
+const NullableBoolean = Schema.NullishOr(Schema.Boolean);
 const TaskOperation = Schema.Tuple([Schema.String, Schema.String, Schema.optionalKey(Schema.Boolean)]);
 
 const HomeworkCommonRequestParams = {
@@ -27,8 +26,12 @@ Sample: GET /api/homework_commons/3487339/student_works/new.json
 {
   "course_id": 109348,
   "course_name": "<course name>",
+  "is_end": false,
+  "course_end_date": null,
   "category": { "category_id": 1809406, "category_name": "<category>", "main": 1 },
   "homework_status": ["提交中"],
+  "time_status": 1,
+  "open_evaluate": null,
   "homework_name": "<homework name>",
   "homework_id": 3487339,
   "homework_type": "normal"
@@ -56,7 +59,6 @@ Sample: GET /api/homework_commons/3487339.json
   "id": 20544909,
   "title": "<attachment title>",
   "filesize": "17.0 KB",
-  "description": null,
   "is_pdf": false,
   "file_type": "office",
   "url": "https://<attachment-url>",
@@ -66,15 +68,15 @@ Sample: GET /api/homework_commons/3487339.json
 }
 */
 const Attachment = Schema.Struct({
-  id: Schema.optionalKey(Schema.Int),
-  title: Schema.optionalKey(Schema.String),
-  filesize: Schema.optionalKey(Schema.String),
-  is_pdf: Schema.optionalKey(Schema.Boolean),
-  file_type: Schema.optionalKey(Schema.String),
-  url: Schema.optionalKey(Schema.String),
-  file_sub: Schema.optionalKey(Schema.String),
-  is_edit: Schema.optionalKey(Schema.Boolean),
-  download_url: Schema.optionalKey(Schema.String),
+  id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  title: Schema.optionalKey(NullableString),
+  filesize: Schema.optionalKey(NullableString),
+  is_pdf: Schema.optionalKey(NullableBoolean),
+  file_type: Schema.optionalKey(NullableString),
+  url: Schema.optionalKey(NullableString),
+  file_sub: Schema.optionalKey(NullableString),
+  is_edit: Schema.optionalKey(NullableBoolean),
+  download_url: Schema.optionalKey(NullableString),
 });
 
 /*
@@ -106,21 +108,21 @@ Sample: GET /api/homework_commons/3487339.json
 */
 const HomeworkCommonDetailResponse = Schema.Struct({
   ...HomeworkCommonBaseFields,
-  view_answer: Schema.optionalKey(Schema.Boolean),
-  work_statuses: Schema.optionalKey(Schema.Array(Schema.String)),
-  work_id: Schema.optionalKey(Schema.Int),
-  submit_size: Schema.optionalKey(Schema.Int),
-  can_submit: Schema.optionalKey(Schema.Boolean),
-  answer_public: Schema.optionalKey(Schema.Boolean),
-  description: Schema.optionalKey(Schema.String),
-  attachments: Schema.optionalKey(Schema.Array(Attachment)),
-  submit_limit: Schema.optionalKey(Schema.Boolean),
-  submit_limit_num: Schema.optionalKey(Schema.Int),
-  must_file: Schema.optionalKey(Schema.Boolean),
-  task_operation: Schema.optionalKey(TaskOperation),
-  shixun_identifier: Schema.optionalKey(Schema.String),
-  shixun_id: Schema.optionalKey(Schema.Int),
-  shixun_status: Schema.optionalKey(Schema.Int),
+  view_answer: Schema.optionalKey(NullableBoolean),
+  work_statuses: Schema.optionalKey(Schema.NullishOr(Schema.Array(Schema.String))),
+  work_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  submit_size: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  can_submit: Schema.optionalKey(NullableBoolean),
+  answer_public: Schema.optionalKey(NullableBoolean),
+  description: Schema.optionalKey(NullableString),
+  attachments: Schema.optionalKey(Schema.NullishOr(Schema.Array(Attachment))),
+  submit_limit: Schema.optionalKey(NullableBoolean),
+  submit_limit_num: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  must_file: Schema.optionalKey(NullableBoolean),
+  task_operation: Schema.optionalKey(Schema.NullishOr(TaskOperation)),
+  shixun_identifier: Schema.optionalKey(NullableString),
+  shixun_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  shixun_status: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   myshixun_identifier: Schema.optionalKey(NullableString),
 });
 
@@ -133,20 +135,20 @@ Sample: GET /api/homework_commons/3487324/shixun_challenge_data.json
   "challenge_score": 20,
   "status": "required",
   "difficulty": "简单",
+  "knowledge_points": "",
+  "evaluate_count": 1,
+  "time_consuming": "1分 30秒",
   "passed_status": 2,
   "game_score": "20.00"
 }
 */
 const ShixunChallengeSetting = Schema.Struct({
   challenge_id: Schema.Int,
-  task_operation: TaskOperation,
+  task_operation: Schema.NullishOr(TaskOperation),
   challenge_name: Schema.String,
-  is_choose_todo: Schema.Boolean,
   challenge_score: Schema.Number,
   status: Schema.String,
   difficulty: Schema.String,
-  challenge_st: Schema.Int,
-  passed_rate: Schema.Number,
   knowledge_points: Schema.String,
   evaluate_count: Schema.Int,
   time_consuming: Schema.String,
@@ -165,9 +167,7 @@ Sample: GET /api/homework_commons/3487324/shixun_challenge_data.json
     "evaluate_count": 3,
     "time_consuming": "5分 16秒",
     "passed_count": 2,
-    "no_evaluate_count": 3,
-    "progress_count": 0,
-    "is_submit_test_result": false
+    "no_evaluate_count": 3
   }
 }
 */
@@ -176,18 +176,11 @@ const ShixunChallengeDataResponse = Schema.Struct({
   message: Schema.String,
   data: Schema.Struct({
     challenge_settings: Schema.Array(ShixunChallengeSetting),
-    user_id: Schema.optionalKey(Schema.Int),
-    username: Schema.optionalKey(Schema.String),
-    student_id: Schema.optionalKey(Schema.String),
-    image_url: Schema.optionalKey(Schema.String),
-    group_name: Schema.optionalKey(Schema.String),
     work_score: Schema.String,
     evaluate_count: Schema.Int,
     time_consuming: Schema.String,
     passed_count: Schema.Int,
     no_evaluate_count: Schema.Int,
-    progress_count: Schema.Int,
-    is_submit_test_result: Schema.Boolean,
   }),
 });
 
@@ -227,15 +220,15 @@ Sample: POST /api/homework_commons/3487339/works_list.json
 }
 */
 const WorksGroupData = Schema.Struct({
-  work_count: NullableNumber,
-  not_submitted_num: NullableNumber,
-  submitted_num: NullableNumber,
-  delayed_num: NullableNumber,
-  no_evaluate: NullableNumber,
-  evaluate: NullableNumber,
-  in_evaluate: NullableNumber,
-  review: NullableNumber,
-  under_review: NullableNumber,
+  work_count: Schema.optionalKey(NullableNumber),
+  not_submitted_num: Schema.optionalKey(NullableNumber),
+  submitted_num: Schema.optionalKey(NullableNumber),
+  delayed_num: Schema.optionalKey(NullableNumber),
+  no_evaluate: Schema.optionalKey(NullableNumber),
+  evaluate: Schema.optionalKey(NullableNumber),
+  in_evaluate: Schema.optionalKey(NullableNumber),
+  review: Schema.optionalKey(NullableNumber),
+  under_review: Schema.optionalKey(NullableNumber),
 });
 
 /*
@@ -254,21 +247,20 @@ Sample: POST /api/homework_commons/3487339/works_list.json
   "user_login": "<login>",
   "student_id": "<student id>",
   "user_name": "<student name>",
-  "group_name": "<group>",
-  "student_works": []
+  "group_name": "<group>"
 }
 */
 const WorksListResponse = Schema.Struct({
   ...HomeworkCommonBaseFields,
-  work_id: Schema.optionalKey(Schema.Int),
-  submit_num: Schema.optionalKey(Schema.Int),
-  can_submit: Schema.optionalKey(Schema.Boolean),
-  submit_size: Schema.optionalKey(Schema.Int),
-  commit_count: Schema.optionalKey(Schema.Int),
-  uncommit_count: Schema.optionalKey(Schema.Int),
-  left_time: Schema.optionalKey(LeftTime),
-  id: Schema.optionalKey(Schema.Int),
-  work_status: Schema.optionalKey(Schema.Int),
+  work_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  submit_num: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  can_submit: Schema.optionalKey(NullableBoolean),
+  submit_size: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  commit_count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  uncommit_count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  left_time: Schema.optionalKey(Schema.NullishOr(LeftTime)),
+  id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  work_status: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   update_time: Schema.optionalKey(NullableString),
   work_score: Schema.optionalKey(Schema.String),
   final_score: Schema.optionalKey(Schema.String),
@@ -276,15 +268,14 @@ const WorksListResponse = Schema.Struct({
   student_score: Schema.optionalKey(Schema.String),
   teaching_asistant_score: Schema.optionalKey(Schema.String),
   group_leader_score: Schema.optionalKey(Schema.String),
-  ta_comment_count: Schema.optionalKey(Schema.Int),
-  submit_count: Schema.optionalKey(Schema.Int),
-  redo_count: Schema.optionalKey(Schema.Int),
+  ta_comment_count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  submit_count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  redo_count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   user_login: Schema.optionalKey(Schema.String),
   student_id: Schema.optionalKey(Schema.String),
   user_name: Schema.optionalKey(Schema.String),
   group_name: Schema.optionalKey(Schema.String),
-  group_data: Schema.optionalKey(WorksGroupData),
-  student_works: Schema.optionalKey(EmptyArray),
+  group_data: Schema.optionalKey(Schema.NullishOr(WorksGroupData)),
 });
 
 /*
@@ -308,10 +299,10 @@ const SearchMemberListResponse = Schema.Struct({
     Schema.Struct({
       user_id: Schema.Int,
       user_name: Schema.String,
-      group_name: Schema.String,
-      student_id: Schema.String,
-      commit_status: Schema.Boolean,
-      is_team: Schema.Boolean,
+      group_name: NullableString,
+      student_id: NullableString,
+      commit_status: NullableBoolean,
+      is_team: NullableBoolean,
     }),
   ),
   is_ai: Schema.Boolean,
@@ -322,15 +313,13 @@ Sample: GET /api/homework_commons/3487339/show_comment.json
 {
   "homework_user_id": 317512,
   "messages_count": 0,
-  "parent_messages_count": 0,
-  "comments": []
+  "parent_messages_count": 0
 }
 */
 const ShowCommentResponse = Schema.Struct({
   homework_user_id: Schema.Int,
   messages_count: Schema.Int,
   parent_messages_count: Schema.Int,
-  comments: EmptyArray,
 });
 
 /*
@@ -345,70 +334,49 @@ const ScoreDetail = Schema.Struct({
 /*
 Sample: GET /api/homework_commons/3487339/settings.json
 {
-  "is_admin": false,
   "group_id": 144948,
-  "group_name": "<group>",
-  "publish_time": "2026-05-10T08:30:00.000+08:00",
-  "end_time": "2026-06-21T23:59:00.000+08:00",
-  "rank_forbidden_start": null,
-  "rank_forbidden_end": null,
-  "late_minus_score": 0
+  "group_name": "<group>"
 }
 */
 const GroupSetting = Schema.Struct({
-  group_id: Schema.optionalKey(Schema.Int),
-  group_name: Schema.optionalKey(Schema.String),
+  group_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  group_name: Schema.optionalKey(NullableString),
 });
 
 /*
 Sample: GET /api/homework_commons/3487339/settings.json
 {
-  "is_admin": false,
   "group_id": 144948,
-  "group_name": "<group>",
-  "penalty_type": 1,
-  "evaluation_start": null,
-  "late_penalty": "5.0",
-  "late_time": null
+  "group_name": "<group>"
 }
 */
 const AllowLateSetting = Schema.Struct({
-  group_id: Schema.optionalKey(Schema.Int),
-  group_name: Schema.optionalKey(Schema.String),
+  group_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  group_name: Schema.optionalKey(NullableString),
 });
 
 /*
 Sample: GET /api/homework_commons/3487339/settings.json
 {
-  "is_admin": false,
   "group_id": 144948,
-  "group_name": "<group>",
-  "evaluation_start": null,
-  "evaluation_end": null,
-  "evaluation_num": 3,
-  "absence_penalty": 0,
-  "student_comment": false,
-  "all_user_size": 63
+  "group_name": "<group>"
 }
 */
 const AnonymousCommentSetting = Schema.Struct({
-  group_id: Schema.optionalKey(Schema.Int),
-  group_name: Schema.optionalKey(Schema.String),
+  group_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  group_name: Schema.optionalKey(NullableString),
 });
 
 /*
 Sample: GET /api/homework_commons/3487339/settings.json
 {
-  "is_admin": false,
   "group_id": 144948,
-  "group_name": "<group>",
-  "appeal_time": null,
-  "appeal_penalty": 0
+  "group_name": "<group>"
 }
 */
 const AnonymousAppealSetting = Schema.Struct({
-  group_id: Schema.optionalKey(Schema.Int),
-  group_name: Schema.optionalKey(Schema.String),
+  group_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  group_name: Schema.optionalKey(NullableString),
 });
 
 /*
@@ -428,33 +396,33 @@ Sample: GET /api/homework_commons/3487339/settings.json
 */
 const SettingsResponse = Schema.Struct({
   ...HomeworkCommonBaseFields,
-  publish_time: Schema.optionalKey(Schema.String),
-  end_time: Schema.optionalKey(Schema.String),
+  publish_time: Schema.optionalKey(NullableString),
+  end_time: Schema.optionalKey(NullableString),
   late_time: Schema.optionalKey(NullableString),
-  work_public: Schema.optionalKey(Schema.Boolean),
-  score_open: Schema.optionalKey(Schema.Boolean),
-  answer_public: Schema.optionalKey(Schema.Boolean),
-  comment_public: Schema.optionalKey(Schema.Boolean),
-  total_score: Schema.optionalKey(Schema.Number),
-  late_penalty: Schema.optionalKey(Schema.Number),
-  allow_late: Schema.optionalKey(Schema.Boolean),
-  score_details: Schema.optionalKey(Schema.Array(ScoreDetail)),
-  submit_num: Schema.optionalKey(Schema.Int),
-  can_submit: Schema.optionalKey(Schema.Boolean),
-  can_make_up: Schema.optionalKey(Schema.Boolean),
-  group_settings: Schema.optionalKey(Schema.Array(GroupSetting)),
-  allow_late_settings: Schema.optionalKey(Schema.Array(AllowLateSetting)),
-  anonymous_comment: Schema.optionalKey(Schema.Boolean),
-  anonymous_appeal: Schema.optionalKey(Schema.Boolean),
-  submit_limit: Schema.optionalKey(Schema.Boolean),
-  submit_limit_num: Schema.optionalKey(Schema.Int),
-  must_file: Schema.optionalKey(Schema.Boolean),
-  anonymous_comment_settings: Schema.optionalKey(Schema.Array(AnonymousCommentSetting)),
-  all_user_size: Schema.optionalKey(Schema.Int),
-  student_works: Schema.optionalKey(Schema.Boolean),
-  anonymous_appeal_settings: Schema.optionalKey(Schema.Array(AnonymousAppealSetting)),
-  can_edit: Schema.optionalKey(Schema.Boolean),
-  submit_size: Schema.optionalKey(Schema.Int),
+  work_public: Schema.optionalKey(NullableBoolean),
+  score_open: Schema.optionalKey(NullableBoolean),
+  answer_public: Schema.optionalKey(NullableBoolean),
+  comment_public: Schema.optionalKey(NullableBoolean),
+  total_score: Schema.optionalKey(NullableNumber),
+  late_penalty: Schema.optionalKey(NullableNumber),
+  allow_late: Schema.optionalKey(NullableBoolean),
+  score_details: Schema.optionalKey(Schema.NullishOr(Schema.Array(ScoreDetail))),
+  submit_num: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  can_submit: Schema.optionalKey(NullableBoolean),
+  can_make_up: Schema.optionalKey(NullableBoolean),
+  group_settings: Schema.optionalKey(Schema.NullishOr(Schema.Array(GroupSetting))),
+  allow_late_settings: Schema.optionalKey(Schema.NullishOr(Schema.Array(AllowLateSetting))),
+  anonymous_comment: Schema.optionalKey(NullableBoolean),
+  anonymous_appeal: Schema.optionalKey(NullableBoolean),
+  submit_limit: Schema.optionalKey(NullableBoolean),
+  submit_limit_num: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  must_file: Schema.optionalKey(NullableBoolean),
+  anonymous_comment_settings: Schema.optionalKey(Schema.NullishOr(Schema.Array(AnonymousCommentSetting))),
+  all_user_size: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  student_works: Schema.optionalKey(NullableBoolean),
+  anonymous_appeal_settings: Schema.optionalKey(Schema.NullishOr(Schema.Array(AnonymousAppealSetting))),
+  can_edit: Schema.optionalKey(NullableBoolean),
+  submit_size: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
 });
 
 /*
@@ -464,8 +432,7 @@ Sample: GET /api/homework_commons/3487339/redo_logs.json
   "message": "响应成功",
   "data": {
     "homework_type": "normal",
-    "count": 0,
-    "list": []
+    "count": 0
   }
 }
 */
@@ -475,7 +442,6 @@ const RedoLogsResponse = Schema.Struct({
   data: Schema.Struct({
     homework_type: Schema.String,
     count: Schema.Int,
-    list: EmptyArray,
   }),
 });
 

@@ -20,7 +20,7 @@ type CommonHomeworkBaseRaw = {
   readonly course_id: number;
   readonly course_name: string;
   readonly is_end: boolean;
-  readonly course_end_date: string | null;
+  readonly course_end_date: string | null | undefined;
   readonly category: {
     readonly category_id: number;
     readonly category_name: string;
@@ -28,7 +28,7 @@ type CommonHomeworkBaseRaw = {
   };
   readonly homework_status: ReadonlyArray<string>;
   readonly time_status: number;
-  readonly open_evaluate: boolean | null;
+  readonly open_evaluate: boolean | null | undefined;
   readonly homework_name: string;
   readonly homework_id: number;
   readonly homework_type: string;
@@ -43,7 +43,7 @@ const formatBaseAssignment = (value: CommonHomeworkBaseRaw) => {
       id: value.course_id,
       name: value.course_name,
       ended: value.is_end,
-      endDate: value.course_end_date,
+      endDate: value.course_end_date ?? null,
     },
     category: {
       id: value.category.category_id,
@@ -52,7 +52,7 @@ const formatBaseAssignment = (value: CommonHomeworkBaseRaw) => {
     },
     status: formatLabels(value.homework_status),
     timeStatus: value.time_status,
-    openEvaluate: value.open_evaluate,
+    openEvaluate: value.open_evaluate ?? null,
   };
 };
 
@@ -81,7 +81,7 @@ const formatInfoResponse = (value: CommonHomeworkInfoRaw) => {
     assignment: {
       ...formatBaseAssignment(value),
       workId: value.work_id ?? null,
-      workStatus: value.work_statuses === undefined ? null : formatLabels(value.work_statuses),
+      workStatus: value.work_statuses == null ? null : formatLabels(value.work_statuses),
       canSubmit: value.can_submit ?? null,
       answerPublic: value.answer_public ?? null,
       viewAnswer: value.view_answer ?? null,
@@ -121,7 +121,7 @@ const formatWorksResponse = (value: CommonHomeworkWorksRaw) => {
         commitCount: value.commit_count ?? null,
         uncommitCount: value.uncommit_count ?? null,
         leftTime:
-          value.left_time === undefined
+          value.left_time == null
             ? null
             : {
                 status: value.left_time.status,
@@ -136,7 +136,7 @@ const formatWorksResponse = (value: CommonHomeworkWorksRaw) => {
       },
       taCommentCount: value.ta_comment_count ?? null,
       groupData: value.group_data ?? null,
-      studentWorksCount: value.student_works === undefined ? null : value.student_works.length,
+      studentWorksCount: null,
     },
   };
 };
@@ -144,10 +144,10 @@ const formatWorksResponse = (value: CommonHomeworkWorksRaw) => {
 const formatMember = (member: CommonHomeworkMembersRaw["members"][number]) => {
   return {
     name: member.user_name,
-    studentId: member.student_id,
-    group: member.group_name,
-    committed: member.commit_status,
-    team: member.is_team,
+    studentId: member.student_id ?? null,
+    group: member.group_name ?? null,
+    committed: member.commit_status ?? null,
+    team: member.is_team ?? null,
   };
 };
 
@@ -180,8 +180,8 @@ const formatSettingsResponse = (value: CommonHomeworkSettingsRaw) => {
     },
     groups: {
       allUsers: value.all_user_size ?? null,
-      settingsCount: value.group_settings === undefined ? null : value.group_settings.length,
-      allowLateSettingsCount: value.allow_late_settings === undefined ? null : value.allow_late_settings.length,
+      settingsCount: value.group_settings == null ? null : value.group_settings.length,
+      allowLateSettingsCount: value.allow_late_settings == null ? null : value.allow_late_settings.length,
     },
     anonymous: {
       comment: value.anonymous_comment ?? null,
@@ -296,7 +296,7 @@ type CommonHomeworkCommentsView = {
     readonly assignmentUserId: number;
     readonly messagesCount: number;
     readonly parentMessagesCount: number;
-    readonly items: CommonHomeworkCommentsRaw["comments"];
+    readonly items: ReadonlyArray<never>;
   };
 };
 type CommonHomeworkSettingsView = ReturnType<typeof formatSettingsResponse>;
@@ -412,7 +412,7 @@ export class CommonAssignmentFeature extends Context.Service<CommonAssignmentFea
                     lateTime: item.late_time,
                     studentWorkId: item.student_work_id,
                     workId: item.work_id ?? null,
-                    workStatus: item.work_status === undefined ? null : formatLabels(item.work_status),
+                    workStatus: item.work_status == null ? null : formatLabels(item.work_status),
                     uncommitted: item.un_commit_work ?? null,
                     labStatus: item.lab_status ?? null,
                   },
@@ -541,7 +541,7 @@ export class CommonAssignmentFeature extends Context.Service<CommonAssignmentFea
               assignmentUserId: raw.homework_user_id,
               messagesCount: raw.messages_count,
               parentMessagesCount: raw.parent_messages_count,
-              items: raw.comments,
+              items: [],
             },
           },
         };
@@ -593,7 +593,7 @@ export class CommonAssignmentFeature extends Context.Service<CommonAssignmentFea
               message: raw.message,
               assignmentType: raw.data.homework_type,
               count: raw.data.count,
-              list: raw.data.list ?? [],
+              list: [],
             },
           },
         };

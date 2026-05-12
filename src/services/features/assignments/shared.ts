@@ -18,7 +18,7 @@ export const decodeBase64 = (value: string) => Buffer.from(value, "base64").toSt
 
 export const formatLabels = (labels: ReadonlyArray<string>) => labels.join(", ");
 
-export const formatOperation = (operation: TaskOperation | undefined) => ({
+export const formatOperation = (operation: TaskOperation | null | undefined) => ({
   action: operation?.[0] ?? null,
   path: operation?.[1] ?? null,
   resumed: operation?.[2] ?? null,

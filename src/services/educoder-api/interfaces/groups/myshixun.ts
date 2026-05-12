@@ -65,7 +65,6 @@ Sample: POST /api/myshixuns/iwk6hzbgyf/update_file.json
 {
   "content": {
     "commitID": "<commit sha>",
-    "content": "<base64>",
     "size": 127
   },
   "resubmit": "",
@@ -76,7 +75,6 @@ Sample: POST /api/myshixuns/iwk6hzbgyf/update_file.json
 const UpdateFileResponse = Schema.Struct({
   content: Schema.Struct({
     commitID: Schema.String,
-    content: Schema.String,
     size: Schema.Int,
   }),
   resubmit: NullableString,
@@ -158,14 +156,11 @@ const StartResponse = Schema.Struct({
   message: Schema.String,
   data: Schema.Struct({
     host: Schema.String,
-    link_url: Schema.String,
-    myshixun_id: Schema.Int,
     password: Schema.String,
     port: Schema.String,
     remaining_time: Schema.Int,
     ssh_address: Schema.String,
     username: Schema.String,
-    webssh_url: Schema.String,
   }),
 });
 

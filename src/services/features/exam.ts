@@ -54,7 +54,7 @@ const formatChoices = (
     readonly choice_id: number;
     readonly choice_position: number;
     readonly choice_text: string;
-    readonly user_answer_boolean: boolean;
+    readonly user_answer_boolean: boolean | null | undefined;
   }>,
   includeContent: boolean,
 ) => {
@@ -64,12 +64,12 @@ const formatChoices = (
     formatted[choice.choice_position] = includeContent
       ? {
           id: choice.choice_id,
-          selected: choice.user_answer_boolean,
+          selected: choice.user_answer_boolean ?? false,
           text: choice.choice_text,
         }
       : {
           id: choice.choice_id,
-          selected: choice.user_answer_boolean,
+          selected: choice.user_answer_boolean ?? false,
         };
   }
 
@@ -251,8 +251,8 @@ export class ExamFeature extends Context.Service<ExamFeature, ExamFeatureShape>(
                 exam.id,
                 {
                   name: exam.exercise_name,
-                  author: exam.author,
-                  tips: exam.exercise_tips.join(", "),
+                  author: exam.author ?? "",
+                  tips: (exam.exercise_tips ?? []).join(", "),
                   created: exam.created_at,
                   time: exam.time,
                   random: exam.is_random,
@@ -263,7 +263,7 @@ export class ExamFeature extends Context.Service<ExamFeature, ExamFeatureShape>(
                   wholeStatus: exam.whole_exercise_status,
                   leftTime: exam.exercise_left_time ?? null,
                   exerciseUserId: exam.exercise_user_id,
-                  commitMethod: exam.commit_method,
+                  commitMethod: exam.commit_method ?? "",
                 },
               ]),
             ),

@@ -2,9 +2,9 @@ import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/unstable/httpapi";
 
 const StringValue = Schema.String;
-const NullableString = Schema.NullOr(Schema.String);
-const NullableNumber = Schema.NullOr(Schema.Number);
-const NullableBoolean = Schema.NullOr(Schema.Boolean);
+const NullableString = Schema.NullishOr(Schema.String);
+const NullableNumber = Schema.NullishOr(Schema.Number);
+const NullableBoolean = Schema.NullishOr(Schema.Boolean);
 
 const TaskRequestParams = {
   taskId: StringValue,
@@ -127,13 +127,13 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
 }
 */
 const TaskGame = Schema.Struct({
-  id: Schema.optionalKey(Schema.Int),
-  identifier: Schema.optionalKey(Schema.String),
-  myshixun_id: Schema.optionalKey(Schema.Int),
-  challenge_id: Schema.optionalKey(Schema.Int),
-  status: Schema.optionalKey(Schema.Int),
-  final_score: Schema.optionalKey(Schema.Number),
-  cost_time: Schema.optionalKey(Schema.Number),
+  id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  identifier: Schema.optionalKey(NullableString),
+  myshixun_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  challenge_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  status: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  final_score: Schema.optionalKey(NullableNumber),
+  cost_time: Schema.optionalKey(NullableNumber),
 });
 
 /*
@@ -150,14 +150,14 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
 }
 */
 const TaskChallenge = Schema.Struct({
-  id: Schema.optionalKey(Schema.Int),
-  position: Schema.optionalKey(Schema.Int),
-  subject: Schema.optionalKey(Schema.String),
-  task_pass: Schema.optionalKey(Schema.String),
-  score: Schema.optionalKey(Schema.Number),
-  path: Schema.optionalKey(Schema.String),
-  difficulty: Schema.optionalKey(Schema.Int),
-  exec_time: Schema.optionalKey(Schema.Int),
+  id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  position: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  subject: Schema.optionalKey(NullableString),
+  task_pass: Schema.optionalKey(NullableString),
+  score: Schema.optionalKey(NullableNumber),
+  path: Schema.optionalKey(NullableString),
+  difficulty: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  exec_time: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
 });
 
 /*
@@ -166,16 +166,14 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
   "id": 93321,
   "identifier": "e6fhjnqx",
   "name": "<shixun name>",
-  "language": "shell",
-  "status": 2,
-  "open_local_evaluate": true
+  "language": "shell"
 }
 */
 const TaskShixun = Schema.Struct({
-  id: Schema.optionalKey(Schema.Int),
-  identifier: Schema.optionalKey(Schema.String),
-  name: Schema.optionalKey(Schema.String),
-  language: Schema.optionalKey(Schema.String),
+  id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  identifier: Schema.optionalKey(NullableString),
+  name: Schema.optionalKey(NullableString),
+  language: Schema.optionalKey(NullableString),
 });
 
 /*
@@ -184,15 +182,14 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
   "id": 64773861,
   "identifier": "iwk6hzbgyf",
   "commit_id": "<commit sha>",
-  "status": 0,
-  "repo_name": "<repo name>"
+  "status": 0
 }
 */
 const TaskMyshixun = Schema.Struct({
-  id: Schema.optionalKey(Schema.Int),
-  identifier: Schema.optionalKey(Schema.String),
-  commit_id: Schema.optionalKey(Schema.String),
-  status: Schema.optionalKey(Schema.Int),
+  id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  identifier: Schema.optionalKey(NullableString),
+  commit_id: Schema.optionalKey(NullableString),
+  status: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
 });
 
 /*
@@ -200,14 +197,13 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
 {
   "user_id": 2905482,
   "login": "pl2kfhv6g",
-  "name": "<user>",
-  "school": "<school>"
+  "name": "<user>"
 }
 */
 const TaskUser = Schema.Struct({
-  user_id: Schema.optionalKey(Schema.Int),
-  login: Schema.optionalKey(Schema.String),
-  name: Schema.optionalKey(Schema.String),
+  user_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  login: Schema.optionalKey(NullableString),
+  name: Schema.optionalKey(NullableString),
 });
 
 /*
@@ -221,11 +217,11 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
 }
 */
 const ShixunEnvironment = Schema.Struct({
-  shixun_environment_id: Schema.optionalKey(Schema.Int),
-  name: Schema.optionalKey(Schema.String),
-  tab_type: Schema.optionalKey(Schema.Int),
-  resource_type: Schema.optionalKey(Schema.Int),
-  tpi_type: Schema.optionalKey(Schema.Int),
+  shixun_environment_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  name: Schema.optionalKey(NullableString),
+  tab_type: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  resource_type: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  tpi_type: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
 });
 
 /*
@@ -239,11 +235,11 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
 }
 */
 const TaskTestSet = Schema.Struct({
-  output: Schema.optionalKey(Schema.String),
+  output: Schema.optionalKey(NullableString),
   actual_output: Schema.optionalKey(NullableString),
   result: Schema.optionalKey(NullableBoolean),
-  is_public: Schema.optionalKey(Schema.Boolean),
-  matchRule: Schema.optionalKey(Schema.String),
+  is_public: Schema.optionalKey(NullableBoolean),
+  matchRule: Schema.optionalKey(NullableString),
   compile_success: Schema.optionalKey(NullableNumber),
   ts_mem: Schema.optionalKey(NullableNumber),
   ts_time: Schema.optionalKey(NullableNumber),
@@ -254,14 +250,12 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
 { "shixun_environment_id": 1128633 }
 */
 const CodeEditor = Schema.Struct({
-  shixun_environment_id: Schema.optionalKey(Schema.Int),
+  shixun_environment_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
 });
 
 /*
 Sample: GET /api/tasks/sflmr2fxi4wn.json
 {
-  "st": 0,
-  "discusses_count": 0,
   "game_count": 1,
   "game": "<TaskGame>",
   "challenge": "<TaskChallenge>",
@@ -272,7 +266,7 @@ Sample: GET /api/tasks/sflmr2fxi4wn.json
 }
 */
 const TaskInfoResponse = Schema.Struct({
-  game_count: Schema.optionalKey(Schema.Int),
+  game_count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   prev_game: Schema.optionalKey(NullableString),
   next_game: Schema.optionalKey(NullableString),
   game: TaskGame,
@@ -280,13 +274,13 @@ const TaskInfoResponse = Schema.Struct({
   myshixun: TaskMyshixun,
   shixun: Schema.optionalKey(TaskShixun),
   user: Schema.optionalKey(TaskUser),
-  homework_common_id: Schema.optionalKey(Schema.Int),
-  homework_common_name: Schema.optionalKey(Schema.String),
-  homework_common_is_end: Schema.optionalKey(Schema.Boolean),
-  shixun_environments: Schema.optionalKey(Schema.Array(ShixunEnvironment)),
-  test_sets: Schema.optionalKey(Schema.Array(TaskTestSet)),
-  shixun_status: Schema.optionalKey(Schema.Int),
-  code_editor: Schema.optionalKey(CodeEditor),
+  homework_common_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  homework_common_name: Schema.optionalKey(NullableString),
+  homework_common_is_end: Schema.optionalKey(NullableBoolean),
+  shixun_environments: Schema.optionalKey(Schema.NullishOr(Schema.Array(ShixunEnvironment))),
+  test_sets: Schema.optionalKey(Schema.NullishOr(Schema.Array(TaskTestSet))),
+  shixun_status: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  code_editor: Schema.optionalKey(Schema.NullishOr(CodeEditor)),
 });
 
 /*
@@ -300,12 +294,14 @@ Sample: POST /api/tasks/sflmr2fxi4wn/log_output
 }
 */
 const LogOutputResponse = Schema.Struct({
-  status: Schema.optionalKey(Schema.Int),
-  message: Schema.optionalKey(Schema.String),
+  status: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  message: Schema.optionalKey(NullableString),
   data: Schema.optionalKey(
-    Schema.Struct({
-      wss_url: Schema.optionalKey(Schema.String),
-    }),
+    Schema.NullishOr(
+      Schema.Struct({
+        wss_url: Schema.optionalKey(NullableString),
+      }),
+    ),
   ),
 });
 
@@ -318,14 +314,16 @@ Sample: POST /api/tasks/sflmr2fxi4wn/game_build.json
 }
 */
 const GameBuildNestedResponse = Schema.Struct({
-  code: Schema.optionalKey(Schema.Int),
-  msg: Schema.optionalKey(Schema.String),
-  success: Schema.optionalKey(Schema.Boolean),
+  code: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  msg: Schema.optionalKey(NullableString),
+  success: Schema.optionalKey(NullableBoolean),
   data: Schema.optionalKey(
-    Schema.Struct({
-      port: Schema.optionalKey(Schema.Int),
-      wssUrl: Schema.optionalKey(Schema.String),
-    }),
+    Schema.NullishOr(
+      Schema.Struct({
+        port: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+        wssUrl: Schema.optionalKey(NullableString),
+      }),
+    ),
   ),
 });
 
@@ -341,14 +339,14 @@ Sample: POST /api/tasks/sflmr2fxi4wn/game_build.json
 }
 */
 const GameBuildResponse = Schema.Struct({
-  status: Schema.optionalKey(Schema.Int),
+  status: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   resubmit: Schema.optionalKey(NullableString),
-  position: Schema.optionalKey(Schema.Int),
-  port: Schema.optionalKey(Schema.Int),
-  had_done: Schema.optionalKey(Schema.Int),
-  tpi_id: Schema.optionalKey(Schema.String),
+  position: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  port: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  had_done: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  tpi_id: Schema.optionalKey(NullableString),
   code: Schema.optionalKey(NullableString),
-  res: Schema.optionalKey(GameBuildNestedResponse),
+  res: Schema.optionalKey(Schema.NullishOr(GameBuildNestedResponse)),
 });
 
 /*
@@ -377,15 +375,15 @@ Sample: GET /api/tasks/sflmr2fxi4wn/game_status.json
 */
 const GameStatusResultResponse = Schema.Struct({
   status: Schema.Int,
-  grade: Schema.optionalKey(Schema.Number),
-  gold: Schema.optionalKey(Schema.Int),
-  experience: Schema.optionalKey(Schema.Int),
-  position: Schema.optionalKey(Schema.Int),
-  test_sets: Schema.optionalKey(Schema.Array(TaskTestSet)),
-  last_compile_output: Schema.optionalKey(Schema.String),
-  sec_key: Schema.optionalKey(Schema.String),
-  test_sets_count: Schema.optionalKey(Schema.Int),
-  sets_error_count: Schema.optionalKey(Schema.Int),
+  grade: Schema.optionalKey(NullableNumber),
+  gold: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  experience: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  position: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  test_sets: Schema.optionalKey(Schema.NullishOr(Schema.Array(TaskTestSet))),
+  last_compile_output: Schema.optionalKey(NullableString),
+  sec_key: Schema.optionalKey(NullableString),
+  test_sets_count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  sets_error_count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
 });
 
 /*

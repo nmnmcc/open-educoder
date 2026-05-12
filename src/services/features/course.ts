@@ -186,7 +186,7 @@ export class CourseFeature extends Context.Service<CourseFeature, CourseFeatureS
               visits: raw.visits,
               public: raw.is_public,
               ended: raw.course_end,
-              inviteCode: raw.show_invite_code ? raw.invite_code : null,
+              inviteCode: raw.show_invite_code ? (raw.invite_code ?? null) : null,
               allowViewMessage: raw.allow_view_message,
             },
           },

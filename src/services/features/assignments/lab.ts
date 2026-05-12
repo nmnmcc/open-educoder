@@ -814,7 +814,7 @@ export class LabAssignmentFeature extends Context.Service<LabAssignmentFeature, 
         const raw = resolved.raw.task;
         const markdown = raw.challenge.task_pass;
 
-        if (markdown === undefined || markdown.trim().length === 0) {
+        if (typeof markdown !== "string" || markdown.trim().length === 0) {
           return yield* failInput("This lab challenge does not include learning content.");
         }
 
@@ -1328,7 +1328,7 @@ export class LabAssignmentFeature extends Context.Service<LabAssignmentFeature, 
   );
 }
 
-const parseLabIdentifier = (operation: ReadonlyArray<unknown> | undefined) => {
+const parseLabIdentifier = (operation: ReadonlyArray<unknown> | null | undefined) => {
   const path = operation?.[1];
 
   if (typeof path !== "string") {
@@ -1457,7 +1457,7 @@ const resolveEnvironmentId = Effect.fn("features.assignments.labs.resolveEnviron
 
   const codeEditorEnvironmentId = taskInfo.code_editor?.shixun_environment_id;
 
-  if (tabType === 1 && codeEditorEnvironmentId !== undefined) {
+  if (tabType === 1 && codeEditorEnvironmentId != null) {
     return codeEditorEnvironmentId;
   }
 
@@ -1465,7 +1465,7 @@ const resolveEnvironmentId = Effect.fn("features.assignments.labs.resolveEnviron
     const candidateTabType = environment.tab_type;
     const candidateEnvironmentId = environment.shixun_environment_id;
 
-    if (candidateTabType === tabType && candidateEnvironmentId !== undefined) {
+    if (candidateTabType === tabType && candidateEnvironmentId != null) {
       return candidateEnvironmentId;
     }
   }
@@ -1473,7 +1473,7 @@ const resolveEnvironmentId = Effect.fn("features.assignments.labs.resolveEnviron
   for (const environment of taskInfo.shixun_environments ?? []) {
     const candidateEnvironmentId = environment.shixun_environment_id;
 
-    if (candidateEnvironmentId !== undefined) {
+    if (candidateEnvironmentId != null) {
       return candidateEnvironmentId;
     }
   }
