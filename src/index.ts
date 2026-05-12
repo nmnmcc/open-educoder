@@ -21,25 +21,7 @@ import { EducoderApi } from "./services/educoder-api/index.js";
 import { FeatureLayer } from "./services/features/index.js";
 
 const OpenEducoder = Command.make("open-educoder").pipe(
-  Command.withDescription("Local CLI for authenticated Educoder workflows."),
-  Command.withExamples([
-    {
-      command: "open-educoder profile list",
-      description: "List saved login profiles",
-    },
-    {
-      command: "open-educoder course info MOAPGNLO",
-      description: "Inspect a course by course ID",
-    },
-    {
-      command: "open-educoder homework shixun list MOAPGNLO --category 1213302",
-      description: "List shixun homeworks in a course category",
-    },
-    {
-      command: "open-educoder exam show MOAPGNLO 198085 --with-choice-content",
-      description: "Show questions for an exam",
-    },
-  ]),
+  Command.withDescription("Open Educoder as a fast local CLI."),
   Command.withSharedFlags({
     url: Flag.string("url").pipe(Flag.withDefault("https://data.educoder.net")),
     profile: Flag.string("profile").pipe(Flag.withDefault("default")),
