@@ -3,16 +3,16 @@ import { Cookies } from "effect/unstable/http";
 
 import { defineVersion } from "../version.js";
 
-export const Account = Schema.Struct({
+export const Profile = Schema.Struct({
   url: Schema.URLFromString,
   cookies: Cookies.CookiesSchema,
 });
 
 export const v1 = defineVersion({
   schema: Schema.Struct({
-    account: Schema.Record(Schema.String.pipe(Schema.check(Schema.isMinLength(1))), Account),
+    profile: Schema.Record(Schema.String.pipe(Schema.check(Schema.isMinLength(1))), Profile),
   }),
   init: {
-    account: {},
+    profile: {},
   },
 });

@@ -1,3 +1,3 @@
-import { v1 } from "./versions/v1.js";
+import { v2 } from "./versions/v2.js";
 
-export const latest = v1;
+export const latest = v2;
