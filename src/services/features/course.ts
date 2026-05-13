@@ -68,7 +68,7 @@ type CourseInfoView = {
     readonly teacherCount: number;
     readonly studentCount: number;
     readonly groupCount: number;
-    readonly credit: number;
+    readonly credit: number | null;
     readonly classPeriod: number;
     readonly visits: number;
     readonly public: boolean;
@@ -181,7 +181,7 @@ export class CourseFeature extends Context.Service<CourseFeature, CourseFeatureS
               teacherCount: raw.teacher_count,
               studentCount: raw.student_count,
               groupCount: raw.course_group_count,
-              credit: raw.credit,
+              credit: raw.credit ?? null,
               classPeriod: raw.class_period,
               visits: raw.visits,
               public: raw.is_public,

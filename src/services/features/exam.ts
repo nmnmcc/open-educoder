@@ -54,7 +54,7 @@ const formatChoices = (
     readonly choice_id: number;
     readonly choice_position: number;
     readonly choice_text: string;
-    readonly user_answer_boolean: boolean | null | undefined;
+    readonly user_answer_boolean?: boolean | null | undefined;
   }>,
   includeContent: boolean,
 ) => {

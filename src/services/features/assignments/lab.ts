@@ -967,7 +967,11 @@ export class LabAssignmentFeature extends Context.Service<LabAssignmentFeature, 
         return {
           raw,
           view: {
-            saved: formatSaveResponse(input.path, raw),
+            saved: formatSaveResponse(input.path, {
+              ...raw,
+              sec_key: raw.sec_key ?? null,
+              resubmit: raw.resubmit ?? null,
+            }),
           },
         };
       });

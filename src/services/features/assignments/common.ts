@@ -20,7 +20,7 @@ type CommonHomeworkBaseRaw = {
   readonly course_id: number;
   readonly course_name: string;
   readonly is_end: boolean;
-  readonly course_end_date: string | null | undefined;
+  readonly course_end_date?: string | null | undefined;
   readonly category: {
     readonly category_id: number;
     readonly category_name: string;
@@ -28,7 +28,7 @@ type CommonHomeworkBaseRaw = {
   };
   readonly homework_status: ReadonlyArray<string>;
   readonly time_status: number;
-  readonly open_evaluate: boolean | null | undefined;
+  readonly open_evaluate?: boolean | null | undefined;
   readonly homework_name: string;
   readonly homework_id: number;
   readonly homework_type: string;

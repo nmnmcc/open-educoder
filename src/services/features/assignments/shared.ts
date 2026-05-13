@@ -7,7 +7,7 @@ import type { EducoderApiResponse } from "../shared.js";
 type TaskInfoRaw = EducoderApiResponse<"Task", "info">;
 type GameStatusRaw = EducoderApiResponse<"Task", "gameStatus">;
 type RunningGameStatusRaw = Extract<GameStatusRaw, { readonly running_code_status: number }>;
-type TaskOperation = readonly [string, string, boolean?];
+type TaskOperation = readonly [string, string, (boolean | null | undefined)?];
 
 export type CurrentUser = {
   readonly login: string;
