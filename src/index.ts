@@ -31,7 +31,7 @@ const OpenEducoder = Command.make("open-educoder").pipe(
       Flag.optional,
     ),
     account: Flag.string("account").pipe(
-      Flag.withDescription("Saved Educoder account to use for authenticated requests."),
+      Flag.withDescription('Choose the saved user for this command, e.g. --account lab. Defaults to "default".'),
       Flag.withDefault("default"),
     ),
     config: Flag.path("config").pipe(

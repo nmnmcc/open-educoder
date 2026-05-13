@@ -71,7 +71,7 @@ Sample: POST /api/myshixuns/iwk6hzbgyf/update_file.json
   "content_modified": 0
 }
 */
-const UpdateFileResponse = Schema.Struct({
+const UpdateFileSuccessResponse = Schema.Struct({
   content: Schema.Struct({
     commitID: Schema.String,
     size: Schema.Int,
@@ -80,6 +80,38 @@ const UpdateFileResponse = Schema.Struct({
   sec_key: Schema.optionalKey(Schema.NullishOr(Schema.String)),
   content_modified: Schema.Int,
 });
+
+/*
+Sample: POST /api/myshixuns/iwk6hzbgyf/update_file.json
+{
+  "status": -1,
+  "message": "非学员代码文件，不允许修改！"
+}
+*/
+const UpdateFileErrorResponse = Schema.Struct({
+  status: Schema.Int,
+  message: Schema.String,
+});
+
+/*
+Sample: POST /api/myshixuns/iwk6hzbgyf/update_file.json
+{
+  "content": {
+    "commitID": "<commit sha>",
+    "size": 127
+  },
+  "resubmit": "",
+  "sec_key": "",
+  "content_modified": 0
+}
+
+Sample: POST /api/myshixuns/iwk6hzbgyf/update_file.json
+{
+  "status": -1,
+  "message": "非学员代码文件，不允许修改！"
+}
+*/
+const UpdateFileResponse = Schema.Union([UpdateFileSuccessResponse, UpdateFileErrorResponse]);
 
 /*
 Sample: POST /api/myshixuns/iwk6hzbgyf/reset_repository.json

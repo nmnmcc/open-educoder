@@ -183,6 +183,22 @@ type TaskInfoRaw = EducoderApiResponse<"Task", "info">;
 type RepositoryContentRaw = EducoderApiResponse<"Task", "repContent">;
 type RepositoryRaw = EducoderApiResponse<"Myshixun", "repository">;
 type UpdateFileRaw = EducoderApiResponse<"Myshixun", "updateFile">;
+type UpdateFileSuccessRaw = Extract<
+  UpdateFileRaw,
+  {
+    readonly content: {
+      readonly commitID: string;
+      readonly size: number;
+    };
+  }
+>;
+type UpdateFileErrorRaw = Extract<
+  UpdateFileRaw,
+  {
+    readonly status: number;
+    readonly message: string;
+  }
+>;
 type ResetPassedCodeRaw = EducoderApiResponse<"Task", "resetPassedCode">;
 type ResetRepositoryRaw = EducoderApiResponse<"Myshixun", "resetRepository">;
 type VersionRepositoryDeleteRaw = EducoderApiResponse<"Myshixun", "versionRepositoryDelete">;
@@ -354,6 +370,28 @@ type RemainingTimeView = {
 type StartSshView = {
   readonly ssh: LabSshTemplateData;
 };
+
+const isUpdateFileSuccessResponse = (value: UpdateFileRaw): value is UpdateFileSuccessRaw => "content" in value;
+
+const isUpdateFileErrorResponse = (value: UpdateFileRaw): value is UpdateFileErrorRaw =>
+  "status" in value && "message" in value;
+
+const requireUpdateFileSuccess = Effect.fn("features.assignments.labs.requireUpdateFileSuccess")(function* (
+  value: UpdateFileRaw,
+) {
+  if (isUpdateFileSuccessResponse(value)) {
+    return value;
+  }
+
+  if (isUpdateFileErrorResponse(value)) {
+    const status = ` (status ${String(value.status)})`;
+    const message = value.message.trim().length >= 1 ? value.message : "unknown error";
+
+    return yield* failInput(`Educoder rejected repository file update: ${message}${status}`);
+  }
+
+  return yield* failInput("Educoder rejected repository file update: unknown error");
+});
 
 export type LabAssignmentFeatureShape = {
   readonly list: FeatureWorkflow<ListLabAssignmentsInput, HomeworkCommonsRaw, ListLabAssignmentsView>;
@@ -963,14 +1001,15 @@ export class LabAssignmentFeature extends Context.Service<LabAssignmentFeature, 
           user,
           tabType: input.tabType,
         });
+        const save = yield* requireUpdateFileSuccess(raw);
 
         return {
-          raw,
+          raw: save,
           view: {
             saved: formatSaveResponse(input.path, {
-              ...raw,
-              sec_key: raw.sec_key ?? null,
-              resubmit: raw.resubmit ?? null,
+              ...save,
+              sec_key: save.sec_key ?? null,
+              resubmit: save.resubmit ?? null,
             }),
           },
         };
@@ -1185,7 +1224,7 @@ export class LabAssignmentFeature extends Context.Service<LabAssignmentFeature, 
               login: user.login,
             })).content.content,
           );
-        const save = yield* updateRepositoryFile({
+        const update = yield* updateRepositoryFile({
           homeworkId: input.homeworkId,
           path: input.path,
           content,
@@ -1194,6 +1233,7 @@ export class LabAssignmentFeature extends Context.Service<LabAssignmentFeature, 
           user,
           tabType: input.tabType,
         });
+        const save = yield* requireUpdateFileSuccess(update);
         const secKey = save.sec_key ?? "";
 
         if (secKey.length === 0) {
