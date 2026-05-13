@@ -3,8 +3,6 @@ import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/unstable/ht
 
 const StringValue = Schema.String;
 const IdFromString = Schema.NumberFromString.pipe(Schema.check(Schema.isInt()));
-const NullableString = Schema.NullishOr(Schema.String);
-const NullableBoolean = Schema.NullishOr(Schema.Boolean);
 const ExamQuery = {
   coursesId: StringValue,
   categoryId: IdFromString,
@@ -41,29 +39,29 @@ Sample: GET /api/exercises/198085/get_exercise_user_info.json
 }
 */
 const ExerciseInfoData = Schema.Struct({
-  check_camera: Schema.optionalKey(NullableBoolean),
-  is_ip_limit: Schema.optionalKey(NullableBoolean),
-  ip_limit: Schema.optionalKey(NullableString),
-  ip_bind: Schema.optionalKey(NullableBoolean),
-  ip_bind_type: Schema.optionalKey(NullableBoolean),
-  last_ip: Schema.optionalKey(NullableString),
-  answered_open: Schema.optionalKey(NullableBoolean),
-  screen_open: Schema.optionalKey(NullableBoolean),
-  screen_shot_open: Schema.optionalKey(NullableBoolean),
+  check_camera: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  is_ip_limit: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  ip_limit: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  ip_bind: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  ip_bind_type: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  last_ip: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  answered_open: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  screen_open: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  screen_shot_open: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
   screen_num: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   screen_sec: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   used_screen_num: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  start_locked: Schema.optionalKey(NullableBoolean),
-  is_user_locked: Schema.optionalKey(NullableBoolean),
-  is_locked: Schema.optionalKey(NullableBoolean),
-  open_score: Schema.optionalKey(NullableBoolean),
-  is_commit: Schema.optionalKey(NullableBoolean),
-  screen_at: Schema.optionalKey(NullableString),
-  open_total_score: Schema.optionalKey(NullableBoolean),
+  start_locked: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  is_user_locked: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  is_locked: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  open_score: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  is_commit: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  screen_at: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  open_total_score: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
   exercise_user_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  show_pop: Schema.optionalKey(NullableBoolean),
-  user_is_enter: Schema.optionalKey(NullableBoolean),
-  can_start: Schema.optionalKey(NullableBoolean),
+  show_pop: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  user_is_enter: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  can_start: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
   exercise_type: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
 });
 /*
@@ -101,18 +99,18 @@ Sample: GET /api/exercises/198085/start.json
 const Exercise = Schema.Struct({
   id: Schema.Int,
   exercise_name: Schema.String,
-  exercise_description: Schema.optionalKey(NullableString),
-  is_random: Schema.optionalKey(NullableBoolean),
-  screen_open: Schema.optionalKey(NullableBoolean),
+  exercise_description: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  is_random: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  screen_open: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
   screen_num: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   screen_sec: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   time: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   left_time: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  user_name: Schema.optionalKey(NullableString),
-  student_id: Schema.optionalKey(NullableString),
+  user_name: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  student_id: Schema.optionalKey(Schema.NullishOr(Schema.String)),
   used_screen_num: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   commit_status: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  can_start: Schema.optionalKey(NullableBoolean),
+  can_start: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
 });
 /*
 Sample: GET /api/exercises/198085/start.json
@@ -127,7 +125,7 @@ const QuestionChoice = Schema.Struct({
   choice_id: Schema.Int,
   choice_text: Schema.String,
   choice_position: Schema.Int,
-  user_answer_boolean: NullableBoolean,
+  user_answer_boolean: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
 });
 /*
 Sample: GET /api/exercises/198085/start.json
@@ -185,7 +183,7 @@ Sample: POST /api/exercise_questions/12263457/exercise_answers.json
 const AnswerPayload = Schema.Struct({
   questionId: Schema.Int,
   exercise_choice_id: Schema.Union([Schema.Int, Schema.Array(Schema.Int)]),
-  answer_text: NullableString,
+  answer_text: Schema.optionalKey(Schema.NullishOr(Schema.String)),
 }).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
 /*
 Sample: POST /api/exercise_questions/12263457/exercise_answers.json
@@ -263,7 +261,7 @@ Sample: POST /api/exercises/198085/commit_exercise.json
 const CommitResponse = Schema.Struct({
   status: Schema.Int,
   message: Schema.String,
-  data: Schema.optionalKey(CommitResponseData),
+  data: Schema.optionalKey(Schema.NullishOr(CommitResponseData)),
 });
 
 export const Exam = HttpApiGroup.make("Exam")

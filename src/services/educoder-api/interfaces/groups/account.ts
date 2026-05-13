@@ -15,7 +15,7 @@ export const Account = HttpApiGroup.make("Account")
       payload: Schema.Struct({
         login: Schema.String,
         password: Schema.String,
-        autologin: Schema.optionalKey(Schema.Boolean),
+        autologin: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
       }),
     }),
   )

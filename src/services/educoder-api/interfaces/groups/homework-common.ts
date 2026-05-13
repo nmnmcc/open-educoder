@@ -2,10 +2,7 @@ import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/unstable/httpapi";
 
 const StringValue = Schema.String;
-const NullableString = Schema.NullishOr(Schema.String);
-const NullableNumber = Schema.NullishOr(Schema.Number);
-const NullableBoolean = Schema.NullishOr(Schema.Boolean);
-const TaskOperation = Schema.Tuple([Schema.String, Schema.String, Schema.optionalKey(Schema.Boolean)]);
+const TaskOperation = Schema.Tuple([Schema.String, Schema.String, Schema.optionalKey(Schema.NullishOr(Schema.Boolean))]);
 
 const HomeworkCommonRequestParams = {
   homeworkId: StringValue,
@@ -41,11 +38,11 @@ const HomeworkCommonBaseResponse = Schema.Struct({
   course_id: Schema.Int,
   course_name: Schema.String,
   is_end: Schema.Boolean,
-  course_end_date: NullableString,
+  course_end_date: Schema.optionalKey(Schema.NullishOr(Schema.String)),
   category: HomeworkCategory,
   homework_status: Schema.Array(Schema.String),
   time_status: Schema.Int,
-  open_evaluate: NullableBoolean,
+  open_evaluate: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
   homework_name: Schema.String,
   homework_id: Schema.Int,
   homework_type: Schema.String,
@@ -69,14 +66,14 @@ Sample: GET /api/homework_commons/3487339.json
 */
 const Attachment = Schema.Struct({
   id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  title: Schema.optionalKey(NullableString),
-  filesize: Schema.optionalKey(NullableString),
-  is_pdf: Schema.optionalKey(NullableBoolean),
-  file_type: Schema.optionalKey(NullableString),
-  url: Schema.optionalKey(NullableString),
-  file_sub: Schema.optionalKey(NullableString),
-  is_edit: Schema.optionalKey(NullableBoolean),
-  download_url: Schema.optionalKey(NullableString),
+  title: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  filesize: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  is_pdf: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  file_type: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  url: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  file_sub: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  is_edit: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  download_url: Schema.optionalKey(Schema.NullishOr(Schema.String)),
 });
 
 /*
@@ -108,22 +105,22 @@ Sample: GET /api/homework_commons/3487339.json
 */
 const HomeworkCommonDetailResponse = Schema.Struct({
   ...HomeworkCommonBaseFields,
-  view_answer: Schema.optionalKey(NullableBoolean),
+  view_answer: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
   work_statuses: Schema.optionalKey(Schema.NullishOr(Schema.Array(Schema.String))),
   work_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   submit_size: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  can_submit: Schema.optionalKey(NullableBoolean),
-  answer_public: Schema.optionalKey(NullableBoolean),
-  description: Schema.optionalKey(NullableString),
+  can_submit: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  answer_public: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  description: Schema.optionalKey(Schema.NullishOr(Schema.String)),
   attachments: Schema.optionalKey(Schema.NullishOr(Schema.Array(Attachment))),
-  submit_limit: Schema.optionalKey(NullableBoolean),
+  submit_limit: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
   submit_limit_num: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  must_file: Schema.optionalKey(NullableBoolean),
+  must_file: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
   task_operation: Schema.optionalKey(Schema.NullishOr(TaskOperation)),
-  shixun_identifier: Schema.optionalKey(NullableString),
+  shixun_identifier: Schema.optionalKey(Schema.NullishOr(Schema.String)),
   shixun_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   shixun_status: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  myshixun_identifier: Schema.optionalKey(NullableString),
+  myshixun_identifier: Schema.optionalKey(Schema.NullishOr(Schema.String)),
 });
 
 /*
@@ -220,15 +217,15 @@ Sample: POST /api/homework_commons/3487339/works_list.json
 }
 */
 const WorksGroupData = Schema.Struct({
-  work_count: Schema.optionalKey(NullableNumber),
-  not_submitted_num: Schema.optionalKey(NullableNumber),
-  submitted_num: Schema.optionalKey(NullableNumber),
-  delayed_num: Schema.optionalKey(NullableNumber),
-  no_evaluate: Schema.optionalKey(NullableNumber),
-  evaluate: Schema.optionalKey(NullableNumber),
-  in_evaluate: Schema.optionalKey(NullableNumber),
-  review: Schema.optionalKey(NullableNumber),
-  under_review: Schema.optionalKey(NullableNumber),
+  work_count: Schema.optionalKey(Schema.NullishOr(Schema.Number)),
+  not_submitted_num: Schema.optionalKey(Schema.NullishOr(Schema.Number)),
+  submitted_num: Schema.optionalKey(Schema.NullishOr(Schema.Number)),
+  delayed_num: Schema.optionalKey(Schema.NullishOr(Schema.Number)),
+  no_evaluate: Schema.optionalKey(Schema.NullishOr(Schema.Number)),
+  evaluate: Schema.optionalKey(Schema.NullishOr(Schema.Number)),
+  in_evaluate: Schema.optionalKey(Schema.NullishOr(Schema.Number)),
+  review: Schema.optionalKey(Schema.NullishOr(Schema.Number)),
+  under_review: Schema.optionalKey(Schema.NullishOr(Schema.Number)),
 });
 
 /*
@@ -254,27 +251,27 @@ const WorksListResponse = Schema.Struct({
   ...HomeworkCommonBaseFields,
   work_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   submit_num: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  can_submit: Schema.optionalKey(NullableBoolean),
+  can_submit: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
   submit_size: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   commit_count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   uncommit_count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   left_time: Schema.optionalKey(Schema.NullishOr(LeftTime)),
   id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   work_status: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  update_time: Schema.optionalKey(NullableString),
-  work_score: Schema.optionalKey(Schema.String),
-  final_score: Schema.optionalKey(Schema.String),
-  teacher_score: Schema.optionalKey(Schema.String),
-  student_score: Schema.optionalKey(Schema.String),
-  teaching_asistant_score: Schema.optionalKey(Schema.String),
-  group_leader_score: Schema.optionalKey(Schema.String),
+  update_time: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  work_score: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  final_score: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  teacher_score: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  student_score: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  teaching_asistant_score: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  group_leader_score: Schema.optionalKey(Schema.NullishOr(Schema.String)),
   ta_comment_count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   submit_count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   redo_count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  user_login: Schema.optionalKey(Schema.String),
-  student_id: Schema.optionalKey(Schema.String),
-  user_name: Schema.optionalKey(Schema.String),
-  group_name: Schema.optionalKey(Schema.String),
+  user_login: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  student_id: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  user_name: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  group_name: Schema.optionalKey(Schema.NullishOr(Schema.String)),
   group_data: Schema.optionalKey(Schema.NullishOr(WorksGroupData)),
 });
 
@@ -299,10 +296,10 @@ const SearchMemberListResponse = Schema.Struct({
     Schema.Struct({
       user_id: Schema.Int,
       user_name: Schema.String,
-      group_name: NullableString,
-      student_id: NullableString,
-      commit_status: NullableBoolean,
-      is_team: NullableBoolean,
+      group_name: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+      student_id: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+      commit_status: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+      is_team: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
     }),
   ),
   is_ai: Schema.Boolean,
@@ -340,7 +337,7 @@ Sample: GET /api/homework_commons/3487339/settings.json
 */
 const GroupSetting = Schema.Struct({
   group_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  group_name: Schema.optionalKey(NullableString),
+  group_name: Schema.optionalKey(Schema.NullishOr(Schema.String)),
 });
 
 /*
@@ -352,7 +349,7 @@ Sample: GET /api/homework_commons/3487339/settings.json
 */
 const AllowLateSetting = Schema.Struct({
   group_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  group_name: Schema.optionalKey(NullableString),
+  group_name: Schema.optionalKey(Schema.NullishOr(Schema.String)),
 });
 
 /*
@@ -364,7 +361,7 @@ Sample: GET /api/homework_commons/3487339/settings.json
 */
 const AnonymousCommentSetting = Schema.Struct({
   group_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  group_name: Schema.optionalKey(NullableString),
+  group_name: Schema.optionalKey(Schema.NullishOr(Schema.String)),
 });
 
 /*
@@ -376,7 +373,7 @@ Sample: GET /api/homework_commons/3487339/settings.json
 */
 const AnonymousAppealSetting = Schema.Struct({
   group_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  group_name: Schema.optionalKey(NullableString),
+  group_name: Schema.optionalKey(Schema.NullishOr(Schema.String)),
 });
 
 /*
@@ -396,32 +393,32 @@ Sample: GET /api/homework_commons/3487339/settings.json
 */
 const SettingsResponse = Schema.Struct({
   ...HomeworkCommonBaseFields,
-  publish_time: Schema.optionalKey(NullableString),
-  end_time: Schema.optionalKey(NullableString),
-  late_time: Schema.optionalKey(NullableString),
-  work_public: Schema.optionalKey(NullableBoolean),
-  score_open: Schema.optionalKey(NullableBoolean),
-  answer_public: Schema.optionalKey(NullableBoolean),
-  comment_public: Schema.optionalKey(NullableBoolean),
-  total_score: Schema.optionalKey(NullableNumber),
-  late_penalty: Schema.optionalKey(NullableNumber),
-  allow_late: Schema.optionalKey(NullableBoolean),
+  publish_time: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  end_time: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  late_time: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  work_public: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  score_open: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  answer_public: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  comment_public: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  total_score: Schema.optionalKey(Schema.NullishOr(Schema.Number)),
+  late_penalty: Schema.optionalKey(Schema.NullishOr(Schema.Number)),
+  allow_late: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
   score_details: Schema.optionalKey(Schema.NullishOr(Schema.Array(ScoreDetail))),
   submit_num: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  can_submit: Schema.optionalKey(NullableBoolean),
-  can_make_up: Schema.optionalKey(NullableBoolean),
+  can_submit: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  can_make_up: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
   group_settings: Schema.optionalKey(Schema.NullishOr(Schema.Array(GroupSetting))),
   allow_late_settings: Schema.optionalKey(Schema.NullishOr(Schema.Array(AllowLateSetting))),
-  anonymous_comment: Schema.optionalKey(NullableBoolean),
-  anonymous_appeal: Schema.optionalKey(NullableBoolean),
-  submit_limit: Schema.optionalKey(NullableBoolean),
+  anonymous_comment: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  anonymous_appeal: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  submit_limit: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
   submit_limit_num: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  must_file: Schema.optionalKey(NullableBoolean),
+  must_file: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
   anonymous_comment_settings: Schema.optionalKey(Schema.NullishOr(Schema.Array(AnonymousCommentSetting))),
   all_user_size: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  student_works: Schema.optionalKey(NullableBoolean),
+  student_works: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
   anonymous_appeal_settings: Schema.optionalKey(Schema.NullishOr(Schema.Array(AnonymousAppealSetting))),
-  can_edit: Schema.optionalKey(NullableBoolean),
+  can_edit: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
   submit_size: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
 });
 

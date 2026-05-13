@@ -2,7 +2,6 @@ import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/unstable/httpapi";
 
 const StringValue = Schema.String;
-const NullableString = Schema.NullishOr(Schema.String);
 
 const MyshixunRequestParams = {
   myshixunId: StringValue,
@@ -47,7 +46,7 @@ const UpdateFilePayload = Schema.Struct({
   content: Schema.String,
   game_id: Schema.Int,
   tab_type: Schema.Int,
-  exercise_id: Schema.NullishOr(Schema.String),
+  exercise_id: Schema.optionalKey(Schema.NullishOr(Schema.String)),
   homework_common_id: StringValue,
   extras: Schema.Struct({
     exercise_id: Schema.String,
@@ -77,8 +76,8 @@ const UpdateFileResponse = Schema.Struct({
     commitID: Schema.String,
     size: Schema.Int,
   }),
-  resubmit: NullableString,
-  sec_key: NullableString,
+  resubmit: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  sec_key: Schema.optionalKey(Schema.NullishOr(Schema.String)),
   content_modified: Schema.Int,
 });
 
@@ -99,7 +98,7 @@ Sample: POST /api/myshixuns/iwk6hzbgyf/repository.json
 {}
 */
 const RepositoryPayload = Schema.Struct({
-  path: Schema.optionalKey(Schema.String),
+  path: Schema.optionalKey(Schema.NullishOr(Schema.String)),
 }).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
 
 /*

@@ -3,8 +3,7 @@ import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
 
 const StringValue = Schema.String;
 const IdFromString = Schema.NumberFromString.pipe(Schema.check(Schema.isInt()));
-const NullableString = Schema.NullishOr(Schema.String);
-const TaskOperation = Schema.Tuple([Schema.String, Schema.String, Schema.optionalKey(Schema.Boolean)]);
+const TaskOperation = Schema.Tuple([Schema.String, Schema.String, Schema.optionalKey(Schema.NullishOr(Schema.Boolean))]);
 const CourseRequestParams = {
   courseId: StringValue,
 };
@@ -32,12 +31,12 @@ Sample: GET /api/courses/MOAPGNLO/left_banner.json
 */
 const Category = Schema.Struct({
   root_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  name: Schema.optionalKey(NullableString),
+  name: Schema.optionalKey(Schema.NullishOr(Schema.String)),
   category_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  category_name: Schema.optionalKey(NullableString),
+  category_name: Schema.optionalKey(Schema.NullishOr(Schema.String)),
   position: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  category_type: Schema.optionalKey(NullableString),
-  second_category_url: Schema.optionalKey(NullableString),
+  category_type: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  second_category_url: Schema.optionalKey(Schema.NullishOr(Schema.String)),
 });
 /*
 Sample: GET /api/courses/MOAPGNLO/homework_commons.json
@@ -70,15 +69,15 @@ const Homework = Schema.Struct({
   allow_late: Schema.Boolean,
   author: Schema.String,
   created_at: Schema.String,
-  upper_category_name: Schema.optionalKey(NullableString),
-  lab_status: Schema.optionalKey(NullableString),
+  upper_category_name: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  lab_status: Schema.optionalKey(Schema.NullishOr(Schema.String)),
   work_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   work_status: Schema.optionalKey(Schema.NullishOr(Schema.Array(Schema.String))),
   un_commit_work: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
-  shixun_identifier: Schema.optionalKey(NullableString),
+  shixun_identifier: Schema.optionalKey(Schema.NullishOr(Schema.String)),
   task_operation: Schema.optionalKey(Schema.NullishOr(TaskOperation)),
   shixun_finished_status: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
-  myshixun_identifier: Schema.optionalKey(NullableString),
+  myshixun_identifier: Schema.optionalKey(Schema.NullishOr(Schema.String)),
   publish_time: Schema.String,
   end_time: Schema.String,
   late_time: Schema.String,
@@ -107,8 +106,8 @@ Sample: GET /api/courses/MOAPGNLO/homework_commons.json
 */
 const HomeworkCommonsResponse = Schema.Struct({
   main_category_name: Schema.String,
-  category_id: Schema.NullishOr(Schema.Int),
-  category_name: NullableString,
+  category_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  category_name: Schema.optionalKey(Schema.NullishOr(Schema.String)),
   homeworks: Schema.Array(Homework),
   published_count: Schema.Int,
   unpublished_count: Schema.Int,
@@ -143,13 +142,13 @@ const ExerciseSummary = Schema.Struct({
   is_random: Schema.Boolean,
   exercise_tips: Schema.optionalKey(Schema.NullishOr(Schema.Array(Schema.String))),
   current_status: Schema.Int,
-  exercise_left_time: Schema.optionalKey(NullableString),
+  exercise_left_time: Schema.optionalKey(Schema.NullishOr(Schema.String)),
   time: Schema.Int,
   whole_exercise_status: Schema.Int,
   exercise_status: Schema.Int,
   exercise_user_id: Schema.Int,
-  commit_method: Schema.optionalKey(NullableString),
-  author: Schema.optionalKey(NullableString),
+  commit_method: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  author: Schema.optionalKey(Schema.NullishOr(Schema.String)),
 });
 
 export const Course = HttpApiGroup.make("Course")
@@ -159,8 +158,8 @@ export const Course = HttpApiGroup.make("Course")
         username: StringValue,
       },
       query: {
-        category: Schema.NullishOr(Schema.String),
-        status: Schema.NullishOr(Schema.Literals(["processing", "end"])), // omitted = all
+        category: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+        status: Schema.optionalKey(Schema.NullishOr(Schema.Literals(["processing", "end"]))), // omitted = all
         page: Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1))),
         per_page: Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1))),
         sort_by: Schema.Literals(["updated_at", "created_at", "name"]),
@@ -248,12 +247,12 @@ export const Course = HttpApiGroup.make("Course")
         teacher_count: Schema.Int,
         student_count: Schema.Int,
         course_group_count: Schema.Int,
-        credit: Schema.Number,
+        credit: Schema.optionalKey(Schema.NullishOr(Schema.Number)),
         course_id: Schema.Int,
         class_period: Schema.Int,
         course_end: Schema.Boolean,
         show_invite_code: Schema.Boolean,
-        invite_code: NullableString,
+        invite_code: Schema.optionalKey(Schema.NullishOr(Schema.String)),
         visits: Schema.Int,
       }),
     }),
@@ -286,8 +285,8 @@ export const Course = HttpApiGroup.make("Course")
             name: Schema.String,
             type: Schema.String,
             position: Schema.Int,
-            category_url: Schema.optionalKey(NullableString),
-            second_category: Schema.optionalKey(Schema.Array(Category)),
+            category_url: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+            second_category: Schema.optionalKey(Schema.NullishOr(Schema.Array(Category))),
           }),
         ),
       }),
@@ -297,17 +296,17 @@ export const Course = HttpApiGroup.make("Course")
     HttpApiEndpoint.get("homeworkCommons", "/api/courses/:courseId/homework_commons.json", {
       params: CourseRequestParams,
       query: {
-        coursesId: Schema.NullishOr(StringValue),
+        coursesId: Schema.optionalKey(Schema.NullishOr(StringValue)),
         id: StringValue,
         limit: Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1))),
         type: Schema.Int,
-        status: Schema.NullishOr(Schema.Int),
-        category: Schema.NullishOr(IdFromString),
-        page: Schema.NullishOr(Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1)))),
-        order: Schema.NullishOr(Schema.Int),
-        search: Schema.NullishOr(Schema.String),
-        sort_by: Schema.NullishOr(Schema.Literals(["created_at", "updated_at", "name_pinyin", "position"])),
-        sort_direction: Schema.NullishOr(Schema.Literals(["asc", "desc"])),
+        status: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+        category: Schema.optionalKey(Schema.NullishOr(IdFromString)),
+        page: Schema.optionalKey(Schema.NullishOr(Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1))))),
+        order: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+        search: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+        sort_by: Schema.optionalKey(Schema.NullishOr(Schema.Literals(["created_at", "updated_at", "name_pinyin", "position"]))),
+        sort_direction: Schema.optionalKey(Schema.NullishOr(Schema.Literals(["asc", "desc"]))),
         zzud: StringValue,
       },
       success: HomeworkCommonsResponse,
@@ -321,7 +320,7 @@ export const Course = HttpApiGroup.make("Course")
         limit: Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1))),
         type: Schema.String,
         id: StringValue,
-        page: Schema.NullishOr(Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1)))),
+        page: Schema.optionalKey(Schema.NullishOr(Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1))))),
         zzud: StringValue,
       },
       /*
