@@ -109,8 +109,6 @@ const runProcess = (command: string, args: ReadonlyArray<string>, shell: boolean
       }),
   );
 
-export const runSsh = (args: ReadonlyArray<string>) => runProcess("ssh", args, false);
-
 export const editInExternalEditor = async (repositoryPath: string, content: string): Promise<EditedContent> => {
   const editor = resolveEditor();
 

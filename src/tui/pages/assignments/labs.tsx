@@ -2,10 +2,14 @@ import { Effect } from "effect";
 import { Box, useInput } from "ink";
 import { useState } from "react";
 
-import { LabAssignmentFeature } from "../../../services/features/assignments/lab.js";
+import {
+  DefaultLabSshTemplate,
+  LabAssignmentFeature,
+  renderLabSshTemplate,
+} from "../../../services/features/assignments/lab.js";
 import type { Navigator, PageProps, Route } from "../../app/types.js";
 import { MenuPage } from "../../components/MenuPage.js";
-import { cleanupEditedContent, editInExternalEditor, readUtf8File, runSsh } from "../../runtime/process.js";
+import { cleanupEditedContent, editInExternalEditor, readUtf8File } from "../../runtime/process.js";
 import { askRequired, nonNegativeNumber, renderResult, selectedRecord } from "../../shared/pageHelpers.js";
 import {
   FieldList,
@@ -173,7 +177,7 @@ export const LabDetailPage = Effect.gen(function* () {
       { id: "status", label: "Evaluation status", description: "Check result by sec key" },
       { id: "commit", label: "Commit files", description: "Commit current environment changes" },
       { id: "pull", label: "Pull files", description: "Pull repository files into runtime" },
-      { id: "ssh", label: "SSH", description: "Start SSH session when available" },
+      { id: "ssh", label: "SSH", description: "Render SSH connection template" },
       { id: "reset", label: "Reset repository", description: "Discard edits and reset initial state" },
       { id: "prune", label: "Prune snapshots", description: "Clean expired repository snapshots" },
     ];
@@ -452,13 +456,9 @@ export const LabDetailPage = Effect.gen(function* () {
       }
 
       if (id === "ssh") {
-        const confirmed = await ui.danger(
-          "Start SSH",
-          `Open SSH session for assignment ${route.homeworkId}.`,
-          route.homeworkId,
-        );
+        const template = await askRequired(ui, "SSH template", "Mustache", DefaultLabSshTemplate);
 
-        if (confirmed) {
+        if (template !== null) {
           await ui.runAction(
             "SSH",
             Effect.gen(function* () {
@@ -467,14 +467,9 @@ export const LabDetailPage = Effect.gen(function* () {
                 homeworkId: route.homeworkId,
                 tabType: 4,
               });
-              const args = asRecord(result.view)["sshArgs"];
+              const rendered = yield* renderLabSshTemplate(template, result.view.ssh);
 
-              if (Array.isArray(args)) {
-                yield* Effect.promise(() => runSsh(args.map((item) => String(item))));
-                return { ssh: args };
-              }
-
-              return result.view;
+              return { rendered };
             }),
           );
         }

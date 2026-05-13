@@ -852,6 +852,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/mustache@npm:^4":
+  version: 4.2.6
+  resolution: "@types/mustache@npm:4.2.6"
+  checksum: 10c0/f49a83b189e92c962e9b61094c80c979f115ea876bd746bdb9f725c38ab8981a6691e3d1d5cd008ade24b6e5040602970bc0bc60ade71772501d1df8adc7adad
+  languageName: node
+  linkType: hard
+
 "@types/node@npm:*, @types/node@npm:^25.6.2":
   version: 25.6.2
   resolution: "@types/node@npm:25.6.2"
@@ -1721,6 +1728,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"mustache@npm:^4.2.0":
+  version: 4.2.0
+  resolution: "mustache@npm:4.2.0"
+  bin:
+    mustache: bin/mustache
+  checksum: 10c0/1f8197e8a19e63645a786581d58c41df7853da26702dbc005193e2437c98ca49b255345c173d50c08fe4b4dbb363e53cb655ecc570791f8deb09887248dd34a2
+  languageName: node
+  linkType: hard
+
 "netmask@npm:^2.0.2":
   version: 2.1.1
   resolution: "netmask@npm:2.1.1"
@@ -1804,12 +1820,14 @@ __metadata:
     "@opentelemetry/sdk-trace-web": "npm:^2.7.1"
     "@opentelemetry/semantic-conventions": "npm:^1.40.0"
     "@trivago/prettier-plugin-sort-imports": "npm:^6.0.2"
+    "@types/mustache": "npm:^4"
     "@types/node": "npm:^25.6.2"
     "@types/react": "npm:^19"
     effect: "npm:^4.0.0-beta.65"
     ink: "npm:^7.0.2"
     ioredis: "npm:^5.10.1"
     md4x: "npm:^0.0.25"
+    mustache: "npm:^4.2.0"
     prettier: "npm:^3.8.3"
     proxy-agent: "npm:^8.0.1"
     react: "npm:^19.2.6"

@@ -1,10 +1,14 @@
+import { createRequire } from "node:module";
+
 import { Context, Effect, Layer } from "effect";
 import { init as initMarkdownRenderer, parseMeta, renderToAnsi, renderToText } from "md4x/wasm";
+import type MustacheModule from "mustache";
 
 import { AppContext } from "../../context/index.js";
 import { EducoderApi } from "../../educoder-api/index.js";
 import { type EducoderApiResponse, type FeatureWorkflow } from "../shared.js";
 import {
+  AssignmentInputError,
   type AssignmentSortBy,
   type AssignmentSortDirection,
   AssignmentTypeCode,
@@ -23,6 +27,37 @@ import {
   makeTaskQuery,
   makeUpdateFilePayload,
 } from "./shared.js";
+
+export const DefaultLabSshTemplate = "ssh -p {{port}} {{username}}@{{ssh_address}}";
+
+export type LabSshTemplateData = {
+  readonly host: string;
+  readonly port: string;
+  readonly portNumber: number | null;
+  readonly username: string;
+  readonly password: string;
+  readonly ssh_address: string;
+  readonly sshAddress: string;
+  readonly target: string;
+  readonly remaining_time: number;
+  readonly remainingTime: number;
+};
+
+const require = createRequire(import.meta.url);
+const Mustache = require("mustache") as typeof MustacheModule;
+
+export const renderLabSshTemplate = Effect.fn("features.assignments.labs.ssh.renderTemplate")(function* (
+  template: string,
+  data: LabSshTemplateData,
+) {
+  return yield* Effect.try({
+    try: () => Mustache.render(template, data, undefined, { escape: String }),
+    catch: (error) =>
+      new AssignmentInputError({
+        message: `Failed to render SSH template: ${error instanceof Error ? error.message : String(error)}`,
+      }),
+  });
+});
 
 type ListLabAssignmentsInput = {
   readonly courseId: string;
@@ -138,7 +173,6 @@ type LabEnvironmentInput = LabTaskSelector & {
 type StartLabSshInput = LabTaskSelector & {
   readonly envId?: number | undefined;
   readonly tabType: number;
-  readonly resolveArgs?: boolean | undefined;
 };
 
 type HomeworkCommonsRaw = EducoderApiResponse<"Course", "homeworkCommons">;
@@ -318,7 +352,7 @@ type RemainingTimeView = {
   readonly remainingTime: number;
 };
 type StartSshView = {
-  readonly sshArgs: ReadonlyArray<string> | null;
+  readonly ssh: LabSshTemplateData;
 };
 
 export type LabAssignmentFeatureShape = {
@@ -1353,12 +1387,10 @@ export class LabAssignmentFeature extends Context.Service<LabAssignmentFeature, 
               zzud: user.login,
             },
           });
-          const sshArgs = input.resolveArgs === false ? null : resolveSshArgs(raw);
-
           return {
             raw,
             view: {
-              sshArgs,
+              ssh: makeSshTemplateData(raw),
             },
           };
         },
@@ -1657,11 +1689,22 @@ const parsePort = (value: string) => {
   return Number.isInteger(port) && port >= 1 && port <= 65535 ? port : null;
 };
 
-const resolveSshArgs = (value: StartSshRaw) => {
+const makeSshTemplateData = (value: StartSshRaw): LabSshTemplateData => {
   const port = parsePort(value.data.port);
   const target = `${value.data.username}@${value.data.ssh_address}`;
 
-  return port === null ? [target] : ["-p", String(port), target];
+  return {
+    host: value.data.host,
+    password: value.data.password,
+    port: value.data.port,
+    portNumber: port,
+    remaining_time: value.data.remaining_time,
+    remainingTime: value.data.remaining_time,
+    ssh_address: value.data.ssh_address,
+    sshAddress: value.data.ssh_address,
+    target,
+    username: value.data.username,
+  };
 };
 
 const requiredString = (value: string | null | undefined, name: string) =>
