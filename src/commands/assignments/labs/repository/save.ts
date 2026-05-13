@@ -6,6 +6,7 @@ import {
   AssignmentIdArgument,
   Content,
   ContentFile,
+  ContentStdin,
   CourseId,
   EnvironmentId,
   RepositoryPath,
@@ -26,6 +27,7 @@ export const Save = Command.make(
     challengeId: RequiredChallengeId,
     content: Content,
     file: ContentFile,
+    stdin: ContentStdin,
     evaluate: Flag.boolean("evaluate").pipe(Flag.withDescription("Start evaluation after saving the file.")),
     envId: EnvironmentId,
     tabType: TabType,
@@ -39,6 +41,7 @@ export const Save = Command.make(
     const content = yield* readContent({
       content: input.content,
       file: input.file,
+      stdin: input.stdin,
     });
     const labAssignmentFeature = yield* LabAssignmentFeature;
     const result = yield* labAssignmentFeature.saveRepositoryFile({
@@ -62,6 +65,10 @@ export const Save = Command.make(
 ).pipe(
   Command.withDescription("Save inline or local file content to a lab repository path."),
   Command.withExamples([
+    {
+      command: "cat code.sh | open-educoder assignments labs save 109348 3487324 case1/code.sh --stdin",
+      description: "Upload content read from standard input",
+    },
     {
       command: "open-educoder assignments labs save 109348 3487324 case1/code.sh --file ./code.sh",
       description: "Upload local file content to a repository path",

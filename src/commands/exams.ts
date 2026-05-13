@@ -1,8 +1,9 @@
 import { Console, Effect, Option } from "effect";
 import { Argument, Command, Flag } from "effect/unstable/cli";
 
-import { ExamFeature } from "../services/features/exam.js";
+import { AnswerInputError, ExamFeature } from "../services/features/exam.js";
 import { inspectOptions } from "../utils/inspect-options.js";
+import { readStdinText } from "../utils/stdin.js";
 
 const CourseId = Argument.string("course-id").pipe(
   Argument.withDescription("Course ID shown by `courses list`, such as MOAPGNLO."),
@@ -28,6 +29,29 @@ const PositiveInteger = (name: string) =>
 const printJson = (value: unknown) => Console.log(JSON.stringify(value, null, 2));
 
 const optionalValue = <A>(value: Option.Option<A>): A | undefined => (Option.isSome(value) ? value.value : undefined);
+
+const readAnswerText = Effect.fn("exam.answer.readText")(function* (input: {
+  readonly text: Option.Option<string>;
+  readonly stdin: boolean;
+}) {
+  if (Option.isSome(input.text) && input.stdin) {
+    return yield* new AnswerInputError({
+      message: "Use either a text argument or --stdin, not both.",
+    });
+  }
+
+  if (Option.isSome(input.text)) {
+    return input.text.value;
+  }
+
+  if (input.stdin) {
+    return yield* readStdinText((message) => new AnswerInputError({ message: String(message) }));
+  }
+
+  return yield* new AnswerInputError({
+    message: "Provide answer text as an argument or --stdin.",
+  });
+});
 
 const List = Command.make(
   "list",
@@ -296,15 +320,23 @@ const Text = Command.make(
   "text",
   {
     questionId: QuestionId,
-    text: Argument.string("text").pipe(Argument.withDescription("Answer text to save for the question.")),
+    text: Argument.string("text").pipe(
+      Argument.withDescription("Answer text to save for the question."),
+      Argument.optional,
+    ),
+    stdin: Flag.boolean("stdin").pipe(Flag.withDescription("Read answer text from standard input.")),
     login: OptionalLogin,
   },
   Effect.fn("exam.answer.text")(function* (input) {
+    const answerText = yield* readAnswerText({
+      text: input.text,
+      stdin: input.stdin,
+    });
     const examFeature = yield* ExamFeature;
     const result = yield* examFeature.answer({
       questionId: input.questionId,
       exerciseChoiceId: 1,
-      answerText: input.text,
+      answerText,
       login: optionalValue(input.login),
     });
 
@@ -313,6 +345,10 @@ const Text = Command.make(
 ).pipe(
   Command.withDescription("Save one free-text answer for a question."),
   Command.withExamples([
+    {
+      command: "cat answer.md | open-educoder exams answer text 12263490 --stdin",
+      description: "Save text answer read from standard input",
+    },
     {
       command: 'open-educoder exams answer text 12263490 "12"',
       description: "Save text answer",
@@ -329,6 +365,7 @@ const Answer = Command.make("answer").pipe(
       command: "open-educoder exams answer multiple 12263483 35397470,35397469",
       description: "Save a multiple-choice answer",
     },
+    { command: "cat answer.md | open-educoder exams answer text 12263490 --stdin", description: "Save a text answer" },
     { command: 'open-educoder exams answer text 12263490 "12"', description: "Save a text answer" },
   ]),
   Command.withAlias("A"),

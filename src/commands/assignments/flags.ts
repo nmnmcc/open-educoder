@@ -69,6 +69,9 @@ export const ContentFile = Flag.path("file").pipe(
   Flag.withDescription("Local file whose contents should be uploaded."),
   Flag.optional,
 );
+export const ContentStdin = Flag.boolean("stdin").pipe(
+  Flag.withDescription("Read upload content from standard input."),
+);
 export const EnvironmentId = PositiveInteger("env-id").pipe(
   Flag.withDescription("Runtime environment ID; omit to let the command resolve it when possible."),
   Flag.optional,

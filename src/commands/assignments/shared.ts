@@ -10,6 +10,7 @@ import {
   runningStatusMessage,
 } from "../../services/features/assignments/shared.js";
 import { inspectOptions } from "../../utils/inspect-options.js";
+import { readStdinText } from "../../utils/stdin.js";
 import { renderGeneric } from "./render.js";
 
 export {
@@ -26,6 +27,7 @@ export const printJson = (value: unknown) => Console.log(JSON.stringify(value, n
 export const readContent = Effect.fn("assignments.readContent")(function* (input: {
   readonly content: Option.Option<string>;
   readonly file: Option.Option<string>;
+  readonly stdin: boolean;
 }) {
   const content = yield* readOptionalContent(input);
 
@@ -33,15 +35,19 @@ export const readContent = Effect.fn("assignments.readContent")(function* (input
     return content;
   }
 
-  return yield* failInput("Provide file content with --content or --file.");
+  return yield* failInput("Provide file content with --content, --file, or --stdin.");
 });
 
 export const readOptionalContent = Effect.fn("assignments.readOptionalContent")(function* (input: {
   readonly content: Option.Option<string>;
   readonly file: Option.Option<string>;
+  readonly stdin: boolean;
 }) {
-  if (Option.isSome(input.content) && Option.isSome(input.file)) {
-    return yield* failInput("Use either --content or --file, not both.");
+  const selectedSources =
+    Number(Option.isSome(input.content)) + Number(Option.isSome(input.file)) + Number(input.stdin);
+
+  if (selectedSources >= 2) {
+    return yield* failInput("Use only one of --content, --file, or --stdin.");
   }
 
   if (Option.isSome(input.content)) {
@@ -58,6 +64,10 @@ export const readOptionalContent = Effect.fn("assignments.readOptionalContent")(
           message: `Failed to read ${file}: ${error instanceof Error ? error.message : String(error)}`,
         }),
     });
+  }
+
+  if (input.stdin) {
+    return yield* readStdinText((message) => new AssignmentInputError({ message: String(message) }));
   }
 
   return undefined;
