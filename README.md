@@ -4,7 +4,7 @@ Run authenticated Educoder workflows from a local CLI.
 
 This tool is for accounts and courses you can already access normally. It keeps the workflow local and command-line friendly:
 
-- Add, list, and remove saved login profiles.
+- Add, list, and remove saved Educoder accounts.
 - Find course IDs and course category IDs.
 - List common and lab assignments with copyable next commands.
 - Inspect common assignment details, work status, drafts, members, comments, settings, and redo logs.
@@ -50,11 +50,11 @@ Many commands support `--json` for raw API-shaped output that is easier to inspe
 
 ## First Run
 
-Add a profile first. Account-specific commands use the selected profile for authentication.
+Add an account first. Authenticated commands use the selected account.
 
 ```bash
-open-educoder profiles add --username "$EDUCODER_USERNAME" --password "$EDUCODER_PASSWORD"
-open-educoder profiles list
+open-educoder accounts add --username "$EDUCODER_USERNAME" --password "$EDUCODER_PASSWORD"
+open-educoder accounts list
 ```
 
 Find your courses and optional assignment categories:
@@ -77,33 +77,33 @@ All commands inherit these options:
 
 ```bash
 --url URL
---profile default
+--account default
 --config ~/.config/open-educoder
 --otel false
 ```
 
 | Option      | Purpose                                                          |
 | ----------- | ---------------------------------------------------------------- |
-| `--url`     | Educoder base URL to call. Defaults to the selected profile URL. |
-| `--profile` | Saved login profile to use.                                      |
+| `--url`     | Educoder base URL to call. Defaults to the selected account URL. |
+| `--account` | Saved Educoder account to use.                                   |
 | `--config`  | Local config directory.                                          |
 | `--otel`    | Print OpenTelemetry spans to the console.                        |
 
 ## Command Reference
 
-### Profiles
+### Accounts
 
 | Command                                                                     | Purpose                                                  |
 | --------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `open-educoder profiles list`                                               | List saved login profiles and mark the active one.       |
-| `open-educoder profiles add --username USERNAME --password PASSWORD [NAME]` | Log in and save the returned session as a local profile. |
-| `open-educoder profiles remove PROFILE_NAME`                                | Remove a saved profile and its stored session cookies.   |
+| `open-educoder accounts list`                                               | List saved accounts and mark the active one.             |
+| `open-educoder accounts add --username USERNAME --password PASSWORD [NAME]` | Log in and save the returned session as a local account. |
+| `open-educoder accounts remove ACCOUNT_NAME`                                | Remove a saved account and its stored session cookies.   |
 
 ### Courses
 
 | Command                                          | Purpose                                                          |
 | ------------------------------------------------ | ---------------------------------------------------------------- |
-| `open-educoder courses list`                     | List courses visible to the selected profile.                    |
+| `open-educoder courses list`                     | List courses visible to the selected account.                    |
 | `open-educoder courses list --status all --json` | List all courses as raw JSON.                                    |
 | `open-educoder courses info COURSE_ID`           | Show title, teachers, counts, and visibility for one course.     |
 | `open-educoder courses modules COURSE_ID`        | Show course modules and category IDs used to filter assignments. |
@@ -218,7 +218,7 @@ Opens the interactive terminal UI for browsing courses, assignments, and exams.
 One-letter aliases are provided for faster input. Commands with irreversible or remote state-changing side effects use uppercase aliases where applicable; a few uppercase aliases avoid collisions.
 
 ```text
-profiles: command p, list l, add a, remove R
+accounts: command u, list l, add a, remove R
 courses: command c, list l, info i, modules m
 assignments: command a, list l, common c, labs b
 assignments common: list l, info i, work w, draft n, members u, comments q, settings g, redo-logs d
@@ -238,9 +238,9 @@ open-educoder e H COURSE_ID EXAM_ID --with-choice-content
 
 ## Troubleshooting
 
-- `profiles list` shows `No profiles found.`: run `profiles add` first.
-- A course, assignment, or exam command returning no rows usually means the selected profile cannot see that item.
-- Use `--profile NAME` when you have multiple saved Educoder sessions.
+- `accounts list` shows `No accounts found.`: run `accounts add` first.
+- A course, assignment, or exam command returning no rows usually means the selected account cannot see that item.
+- Use `--account NAME` when you have multiple saved Educoder sessions.
 - Use `--json` to inspect raw fields when a compact view hides something you need.
 - For lab `edit`, set `VISUAL` or `EDITOR`; for GUI editors, use a command that waits, such as `code --wait`.
 - For lab `save` and `evaluate`, pass either `--challenge-index` or `--challenge-id`.

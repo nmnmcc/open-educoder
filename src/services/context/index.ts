@@ -7,7 +7,7 @@ import type { User } from "../educoder-api/interfaces/groups/user.js";
 
 export type AppContextShape = {
   readonly url: string;
-  readonly profile: string;
+  readonly account: string;
   readonly config: AppConfigState;
   readonly user: Effect.Effect<User, AppConfigError | HttpClientError.HttpClientError | Schema.SchemaError>;
 };

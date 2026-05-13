@@ -10,10 +10,10 @@ import { Command, Flag } from "effect/unstable/cli";
 import { ProxyAgent } from "proxy-agent";
 
 import meta from "../package.json" with { type: "json" };
+import { Accounts } from "./commands/accounts.js";
 import { Assignments } from "./commands/assignments/index.js";
 import { Courses } from "./commands/courses.js";
 import { Exams } from "./commands/exams.js";
-import { Profiles } from "./commands/profiles.js";
 import { Tui } from "./commands/tui.js";
 import { AppConfig } from "./services/config/index.js";
 import { AppContext } from "./services/context/index.js";
@@ -27,11 +27,11 @@ const OpenEducoder = Command.make("open-educoder").pipe(
   Command.withAlias("o"),
   Command.withSharedFlags({
     url: Flag.string("url").pipe(
-      Flag.withDescription("Educoder base URL to call. Defaults to the selected profile URL, then data.educoder.net."),
+      Flag.withDescription("Educoder base URL to call. Defaults to the selected account URL, then data.educoder.net."),
       Flag.optional,
     ),
-    profile: Flag.string("profile").pipe(
-      Flag.withDescription("Saved login profile to use for authenticated requests."),
+    account: Flag.string("account").pipe(
+      Flag.withDescription("Saved Educoder account to use for authenticated requests."),
       Flag.withDefault("default"),
     ),
     config: Flag.path("config").pipe(
@@ -43,24 +43,24 @@ const OpenEducoder = Command.make("open-educoder").pipe(
       Flag.withDefault(false),
     ),
   }),
-  Command.withSubcommands([Profiles, Courses, Assignments, Exams, Tui]),
-  Command.provide(({ url, profile, config, otel }) =>
+  Command.withSubcommands([Accounts, Courses, Assignments, Exams, Tui]),
+  Command.provide(({ url, account, config, otel }) =>
     Layer.unwrap(
       Effect.gen(function* () {
         const config = yield* AppConfig.use(({ read }) => read);
         const resolvedUrl = Option.match(url, {
-          onNone: () => config.profile[profile]?.url.href ?? DefaultEducoderUrl,
+          onNone: () => config.account[account]?.url.href ?? DefaultEducoderUrl,
           onSome: identity,
         });
 
-        const educoder = yield* EducoderApi.make({ url: resolvedUrl, profile, config });
+        const educoder = yield* EducoderApi.make({ url: resolvedUrl, account, config });
         const user = yield* Effect.cached(educoder.User.getInfo());
 
         return FeatureLayer.pipe(
           Layer.provideMerge(
             Layer.mergeAll(
               Layer.succeed(EducoderApi, educoder),
-              Layer.succeed(AppContext, { url: resolvedUrl, profile, config, user }),
+              Layer.succeed(AppContext, { url: resolvedUrl, account, config, user }),
             ),
           ),
         );

@@ -8,16 +8,16 @@ import { Interfaces } from "./interfaces/index.js";
 
 export interface EducoderApiConfig {
   readonly url?: string | URL | undefined;
-  readonly profile: string;
+  readonly account: string;
   readonly config: AppConfigState;
 }
 
-const $profile = Optic.id<AppConfigState>().key("profile");
+const $account = Optic.id<AppConfigState>().key("account");
 
-const replaceProfileCookies = (state: AppConfigState, profile: string, cookies: Cookies.Cookies): AppConfigState => {
-  const $$profile = $profile.optionalKey(profile);
+const replaceAccountCookies = (state: AppConfigState, account: string, cookies: Cookies.Cookies): AppConfigState => {
+  const $$account = $account.optionalKey(account);
 
-  return $$profile.modify((saved) =>
+  return $$account.modify((saved) =>
     saved === undefined
       ? saved
       : {
@@ -28,16 +28,16 @@ const replaceProfileCookies = (state: AppConfigState, profile: string, cookies: 
 };
 
 export class EducoderApi extends Context.Service<EducoderApi>()("open-educoder/services/educoder-api/EducoderApi", {
-  make: ({ url: baseUrl, profile, config }: EducoderApiConfig) =>
+  make: ({ url: baseUrl, account, config }: EducoderApiConfig) =>
     Effect.gen(function* () {
       const appConfig = yield* AppConfig;
       const httpClient = yield* HttpClient.HttpClient;
-      const cookiesRef = yield* Ref.make(config.profile[profile]?.cookies ?? Cookies.empty);
+      const cookiesRef = yield* Ref.make(config.account[account]?.cookies ?? Cookies.empty);
       const refreshStoredCookies = (responseCookies: Cookies.Cookies) =>
         Cookies.isEmpty(responseCookies)
           ? Effect.void
           : Ref.get(cookiesRef).pipe(
-              Effect.flatMap((cookies) => appConfig.update((state) => replaceProfileCookies(state, profile, cookies))),
+              Effect.flatMap((cookies) => appConfig.update((state) => replaceAccountCookies(state, account, cookies))),
             );
       const educoderHttpClient = httpClient.pipe(
         HttpClient.withCookiesRef(cookiesRef),

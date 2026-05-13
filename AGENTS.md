@@ -21,9 +21,9 @@
 ### 目录边界
 
 - `src/services/config/` 只负责本地配置文件、配置 schema 和迁移。
-- `src/services/context/` 只承载一次 CLI 运行期间的运行时上下文，例如当前 URL、profile、配置快照和当前用户。
+- `src/services/context/` 只承载一次 CLI 运行期间的运行时上下文，例如当前 URL、account、配置快照和当前用户。
 - `src/services/educoder-api/` 只负责 Educoder HTTP API client、请求头和 API schema 定义。
-- `src/services/features/` 承载 CLI 面向用户的领域 service，例如 profile、course、exam、homework。Feature service 可以组合 `EducoderApi`、`AppContext`、`AppConfig`，但 command 不应绕过 feature service 直接访问 Educoder API。
+- `src/services/features/` 承载 CLI 面向用户的领域 service，例如 account、course、exam、homework。Feature service 可以组合 `EducoderApi`、`AppContext`、`AppConfig`，但 command 不应绕过 feature service 直接访问 Educoder API。
 - `src/commands/` 只负责参数解析、alias、输出格式和调用 feature。除通用文件/终端能力外，不在 command 中实现业务 workflow。
 
 ### Service 结构

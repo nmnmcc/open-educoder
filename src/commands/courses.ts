@@ -67,7 +67,7 @@ const List = Command.make(
     yield* Console.dir(result.view, inspectOptions);
   }),
 ).pipe(
-  Command.withDescription("List courses visible to the selected login profile."),
+  Command.withDescription("List courses visible to the selected account."),
   Command.withExamples([
     { command: "open-educoder courses list", description: "List ongoing courses sorted by latest update" },
     { command: "open-educoder courses list --status all --json", description: "List all courses in JSON format" },

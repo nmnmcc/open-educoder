@@ -9,8 +9,8 @@ import { EducoderApi } from "../educoder-api/index.js";
 import { type FeatureWorkflow, type FeatureWorkflowWithoutInput } from "./shared.js";
 
 const PasswordKey = "5183666c72eec9e4" as const;
-export const DefaultProfileName = "default" as const;
-const $profile = Optic.id<typeof AppConfigSchema.Type>().key("profile");
+export const DefaultAccountName = "default" as const;
+const $account = Optic.id<typeof AppConfigSchema.Type>().key("account");
 
 export class LoginError extends Data.TaggedError("LoginError")<{
   readonly message: string;
@@ -20,7 +20,7 @@ export class LogoutError extends Data.TaggedError("LogoutError")<{
   readonly message: string;
 }> {}
 
-export class ProfileNotFoundError extends Data.TaggedError("ProfileNotFoundError")<{
+export class AccountNotFoundError extends Data.TaggedError("AccountNotFoundError")<{
   readonly message: string;
 }> {}
 
@@ -30,25 +30,25 @@ export const encryptPassword = (password: string) => {
   return Buffer.concat([cipher.update(password, "utf8"), cipher.final()]).toString("base64");
 };
 
-type AddProfileInput = {
+type AddAccountInput = {
   readonly username: string;
   readonly password: string;
   readonly name: string;
 };
 
-type RemoveProfileInput = {
+type RemoveAccountInput = {
   readonly name: string;
 };
 
-type ProfileListItem = {
+type AccountListItem = {
   readonly name: string;
   readonly current: boolean;
   readonly url: string;
 };
 
-type ListProfilesView = {
+type ListAccountsView = {
   readonly current: string;
-  readonly profiles: Record<
+  readonly accounts: Record<
     string,
     {
       readonly current: boolean;
@@ -57,50 +57,50 @@ type ListProfilesView = {
   >;
 };
 
-type ProfileMutationRaw = {
+type AccountMutationRaw = {
   readonly status: number;
 };
 
-type ProfileMutationView = {
+type AccountMutationView = {
   readonly message: string;
 };
 
-export type ProfileFeatureShape = {
-  readonly list: FeatureWorkflowWithoutInput<ReadonlyArray<ProfileListItem>, ListProfilesView>;
-  readonly add: FeatureWorkflow<AddProfileInput, ProfileMutationRaw, ProfileMutationView>;
-  readonly remove: FeatureWorkflow<RemoveProfileInput, ProfileMutationRaw, ProfileMutationView>;
+export type AccountFeatureShape = {
+  readonly list: FeatureWorkflowWithoutInput<ReadonlyArray<AccountListItem>, ListAccountsView>;
+  readonly add: FeatureWorkflow<AddAccountInput, AccountMutationRaw, AccountMutationView>;
+  readonly remove: FeatureWorkflow<RemoveAccountInput, AccountMutationRaw, AccountMutationView>;
 };
 
-export class ProfileFeature extends Context.Service<ProfileFeature, ProfileFeatureShape>()(
-  "open-educoder/services/features/ProfileFeature",
+export class AccountFeature extends Context.Service<AccountFeature, AccountFeatureShape>()(
+  "open-educoder/services/features/AccountFeature",
 ) {
   public static readonly layer = Layer.effect(
-    ProfileFeature,
+    AccountFeature,
     Effect.gen(function* () {
       const ctx = yield* AppContext;
       const educoder = yield* EducoderApi;
       const config = yield* AppConfig;
       const httpClient = yield* HttpClient.HttpClient;
 
-      const list: ProfileFeatureShape["list"] = Effect.fn("features.profile.list")(function* () {
-        const profiles = Object.entries(ctx.config.profile)
+      const list: AccountFeatureShape["list"] = Effect.fn("features.account.list")(function* () {
+        const accounts = Object.entries(ctx.config.account)
           .sort(([a], [b]) => a.localeCompare(b))
-          .map(([name, profile]) => ({
+          .map(([name, account]) => ({
             name,
-            current: name === ctx.profile,
-            url: profile.url.href,
+            current: name === ctx.account,
+            url: account.url.href,
           }));
 
         return {
-          raw: profiles,
+          raw: accounts,
           view: {
-            current: ctx.profile,
-            profiles: Object.fromEntries(
-              profiles.map((profile) => [
-                profile.name,
+            current: ctx.account,
+            accounts: Object.fromEntries(
+              accounts.map((account) => [
+                account.name,
                 {
-                  current: profile.current,
-                  url: profile.url,
+                  current: account.current,
+                  url: account.url,
                 },
               ]),
             ),
@@ -108,7 +108,7 @@ export class ProfileFeature extends Context.Service<ProfileFeature, ProfileFeatu
         };
       });
 
-      const add: ProfileFeatureShape["add"] = Effect.fn("features.profile.add")(function* (input) {
+      const add: AccountFeatureShape["add"] = Effect.fn("features.account.add")(function* (input) {
         const response = yield* educoder.Account.login({
           payload: {
             login: input.username,
@@ -123,12 +123,12 @@ export class ProfileFeature extends Context.Service<ProfileFeature, ProfileFeatu
           });
         }
 
-        const $$profile = $profile.optionalKey(input.name);
+        const $$account = $account.optionalKey(input.name);
         const url = new URL(ctx.url);
 
         yield* config.update((state) =>
-          $$profile.modify((profile) => ({
-            cookies: Cookies.merge(profile?.cookies ?? Cookies.empty, response.cookies),
+          $$account.modify((account) => ({
+            cookies: Cookies.merge(account?.cookies ?? Cookies.empty, response.cookies),
             url,
           }))(state),
         );
@@ -138,29 +138,29 @@ export class ProfileFeature extends Context.Service<ProfileFeature, ProfileFeatu
             status: response.status,
           },
           view: {
-            message: `Profile "${input.name}" added`,
+            message: `Account "${input.name}" added`,
           },
         };
       });
 
-      const remove: ProfileFeatureShape["remove"] = Effect.fn("features.profile.remove")(function* (input) {
+      const remove: AccountFeatureShape["remove"] = Effect.fn("features.account.remove")(function* (input) {
         const state = yield* config.read;
-        const $$profile = $profile.optionalKey(input.name);
-        const profile = $$profile.get(state);
+        const $$account = $account.optionalKey(input.name);
+        const account = $$account.get(state);
 
-        if (profile === undefined) {
-          return yield* new ProfileNotFoundError({
-            message: `Profile "${input.name}" does not exist`,
+        if (account === undefined) {
+          return yield* new AccountNotFoundError({
+            message: `Account "${input.name}" does not exist`,
           });
         }
 
-        const profileEducoder = yield* EducoderApi.make({
-          url: profile.url,
-          profile: input.name,
+        const accountEducoder = yield* EducoderApi.make({
+          url: account.url,
+          account: input.name,
           config: state,
         }).pipe(Effect.provideService(AppConfig, config), Effect.provideService(HttpClient.HttpClient, httpClient));
-        const user = yield* profileEducoder.User.getInfo();
-        const response = yield* profileEducoder.Account.logout({
+        const user = yield* accountEducoder.User.getInfo();
+        const response = yield* accountEducoder.Account.logout({
           query: {
             zzud: user.login,
           },
@@ -173,19 +173,19 @@ export class ProfileFeature extends Context.Service<ProfileFeature, ProfileFeatu
           });
         }
 
-        yield* config.update((state) => $$profile.replace(undefined, state));
+        yield* config.update((state) => $$account.replace(undefined, state));
 
         return {
           raw: {
             status: response.status,
           },
           view: {
-            message: `Profile "${input.name}" removed`,
+            message: `Account "${input.name}" removed`,
           },
         };
       });
 
-      return ProfileFeature.of({
+      return AccountFeature.of({
         list,
         add,
         remove,

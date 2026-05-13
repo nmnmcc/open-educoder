@@ -67,7 +67,7 @@ export const CoursesPage = Effect.gen(function* () {
     return (
       <Page
         title="Open Educoder"
-        subtitle={`profile ${context.profile}  ${context.url}`}
+        subtitle={`account ${context.account}  ${context.url}`}
         footer="Enter open  n/p page  r refresh  Esc back  q quit"
       >
         <RemotePane data={data}>
