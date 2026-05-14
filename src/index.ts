@@ -14,7 +14,6 @@ import { Accounts } from "./commands/accounts.js";
 import { Assignments } from "./commands/assignments/index.js";
 import { Courses } from "./commands/courses.js";
 import { Exams } from "./commands/exams.js";
-import { Tui } from "./commands/tui.js";
 import { AppConfig } from "./services/config/index.js";
 import { AppContext } from "./services/context/index.js";
 import { EducoderApi } from "./services/educoder-api/index.js";
@@ -43,7 +42,7 @@ const OpenEducoder = Command.make("open-educoder").pipe(
       Flag.withDefault(false),
     ),
   }),
-  Command.withSubcommands([Accounts, Courses, Assignments, Exams, Tui]),
+  Command.withSubcommands([Accounts, Courses, Assignments, Exams]),
   Command.provide(({ url, account, config, otel }) =>
     Layer.unwrap(
       Effect.gen(function* () {

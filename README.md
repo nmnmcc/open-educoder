@@ -10,7 +10,6 @@ This tool is for accounts and courses you can already access normally. It keeps 
 - Inspect common assignment details, work status, drafts, members, comments, settings, and redo logs.
 - Work with lab challenges, learning content, repository files, evaluation/status checks, runtime logs, and SSH.
 - List exams, start attempts, show questions, save answers, and submit.
-- Open an interactive terminal UI.
 
 ## Install And Launch
 
@@ -205,14 +204,6 @@ VISUAL='code --wait' open-educoder assignments labs edit COURSE_ID ASSIGNMENT_ID
 | `open-educoder exams answer text QUESTION_ID "TEXT"`                    | Save one free-text answer.                                         |
 | `open-educoder exams submit COURSE_ID EXAM_ID`                          | Submit the current exam attempt with saved answers.                |
 
-### TUI
-
-```bash
-open-educoder tui
-```
-
-Opens the interactive terminal UI for browsing courses, assignments, and exams.
-
 ## Aliases
 
 One-letter aliases are provided for faster input. Commands with irreversible or remote state-changing side effects use uppercase aliases where applicable; a few uppercase aliases avoid collisions.
@@ -224,7 +215,6 @@ assignments: command a, list l, common c, labs b
 assignments common: list l, info i, work w, draft n, members u, comments q, settings g, redo-logs d
 assignments labs: list l, challenges k, task t, learning g, repository f, content c, passed a, edit D, save S, reset R, prune V, evaluate E, status s, logs o, commit C, pull P, remaining-time m, ssh r
 exams: command e, list l, info i, start S, show H, submit U, answer A, single S, multiple M, text T
-tui: command t
 ```
 
 Examples:
@@ -251,7 +241,6 @@ open-educoder e H COURSE_ID EXAM_ID --with-choice-content
 ```bash
 yarn cli       # run the CLI once
 yarn dev       # run the CLI in watch mode
-yarn tui       # open the interactive TUI
 yarn check     # TypeScript type check
 yarn build     # production bundle
 ```
