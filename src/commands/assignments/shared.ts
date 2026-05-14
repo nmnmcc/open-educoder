@@ -9,18 +9,10 @@ import {
   optionToUndefined,
   runningStatusMessage,
 } from "../../services/features/assignments/shared.js";
-import { inspectOptions } from "../../utils/inspect-options.js";
-import { readStdinText } from "../../utils/stdin.js";
+import { readStdinText } from "../shared/stdin.js";
 import { renderGeneric } from "./render.js";
 
-export {
-  AssignmentInputError,
-  failInput,
-  formatStatusResponse,
-  inspectOptions,
-  optionToUndefined,
-  runningStatusMessage,
-};
+export { AssignmentInputError, failInput, formatStatusResponse, optionToUndefined, runningStatusMessage };
 
 export const printJson = (value: unknown) => Console.log(JSON.stringify(value, null, 2));
 

@@ -1,5 +1,6 @@
+/** @jsxImportSource @opentui/react */
+import { useKeyboard } from "@opentui/react";
 import { Effect } from "effect";
-import { Box, Text, useInput } from "ink";
 import { useState } from "react";
 
 import { AppContext } from "../../services/context/index.js";
@@ -7,13 +8,16 @@ import { CourseFeature } from "../../services/features/course.js";
 import type { Navigator, PageProps, Route } from "../app/types.js";
 import { MenuPage } from "../components/MenuPage.js";
 import {
+  Colors,
   FieldList,
   KeyHints,
   Page,
   RemotePane,
   type SelectItem,
   SelectList,
+  TextAttrs,
   asRecord,
+  keyText,
   numberValue,
   objectEntries,
   optionalText,
@@ -45,24 +49,27 @@ export const CoursesPage = Effect.gen(function* () {
       }),
     );
 
-    useInput(
-      (input) => {
-        if (input === "r") {
-          setRefresh((value) => value + 1);
-          return;
-        }
+    useKeyboard((event) => {
+      if (!active) {
+        return;
+      }
 
-        if (input === "n") {
-          setPage((value) => value + 1);
-          return;
-        }
+      const input = keyText(event);
 
-        if (input === "p") {
-          setPage((value) => Math.max(1, value - 1));
-        }
-      },
-      { isActive: active },
-    );
+      if (input === "r") {
+        setRefresh((value) => value + 1);
+        return;
+      }
+
+      if (input === "n") {
+        setPage((value) => value + 1);
+        return;
+      }
+
+      if (input === "p") {
+        setPage((value) => Math.max(1, value - 1));
+      }
+    });
 
     return (
       <Page
@@ -106,7 +113,7 @@ function CoursesContent({
   });
 
   return (
-    <Box flexDirection="column">
+    <box flexDirection="column">
       <FieldList
         fields={[
           ["user", stringValue(asRecord(value.user)["login"], "-")],
@@ -114,7 +121,7 @@ function CoursesContent({
           ["total", numberValue(view["total"])],
         ]}
       />
-      <Box marginTop={1}>
+      <box marginTop={1}>
         <SelectList
           items={items}
           selected={selected}
@@ -123,8 +130,8 @@ function CoursesContent({
           active={active}
           empty="No courses found."
         />
-      </Box>
-    </Box>
+      </box>
+    </box>
   );
 }
 
@@ -187,7 +194,7 @@ export const CourseInfoPage = Effect.gen(function* () {
             const course = asRecord(asRecord(result.view)["course"]);
 
             return (
-              <Box flexDirection="column">
+              <box flexDirection="column">
                 <CourseInfoKeys active={active} onJson={() => ui.showJson("Course info JSON", result.raw)} />
                 <FieldList
                   fields={[
@@ -206,7 +213,7 @@ export const CourseInfoPage = Effect.gen(function* () {
                     ["invite code", course["inviteCode"]],
                   ]}
                 />
-              </Box>
+              </box>
             );
           }}
         </RemotePane>
@@ -216,14 +223,11 @@ export const CourseInfoPage = Effect.gen(function* () {
 });
 
 function CourseInfoKeys({ active, onJson }: { readonly active: boolean; readonly onJson: () => void }) {
-  useInput(
-    (input) => {
-      if (input === "j") {
-        onJson();
-      }
-    },
-    { isActive: active },
-  );
+  useKeyboard((event) => {
+    if (active && keyText(event) === "j") {
+      onJson();
+    }
+  });
 
   return <KeyHints hints={["j JSON"]} />;
 }
@@ -234,17 +238,16 @@ export const ModulesPage = Effect.gen(function* () {
   return function ModulesPage({ route, ui, active }: PageProps<Extract<Route, { name: "modules" }>>) {
     const data = useRemoteData(`modules:${route.courseId}`, () => course.listModules({ courseId: route.courseId }));
 
-    useInput(
-      (input) => {
-        if (input === "j") {
-          void Effect.runPromise(course.listModules({ courseId: route.courseId })).then(
-            (result) => ui.showJson("Modules JSON", result.raw),
-            (error: unknown) => ui.showError("Modules JSON", error),
-          );
-        }
-      },
-      { isActive: active },
-    );
+    useKeyboard((event) => {
+      if (!active || keyText(event) !== "j") {
+        return;
+      }
+
+      void Effect.runPromise(course.listModules({ courseId: route.courseId })).then(
+        (result) => ui.showJson("Modules JSON", result.raw),
+        (error: unknown) => ui.showError("Modules JSON", error),
+      );
+    });
 
     return (
       <Page title="Modules" subtitle={`${route.courseName}  ${route.courseId}`} footer="j raw JSON  Esc back  q quit">
@@ -253,30 +256,32 @@ export const ModulesPage = Effect.gen(function* () {
             const modules = objectEntries(asRecord(result.view)["modules"]);
 
             return modules.length < 1 ? (
-              <Text dimColor>No modules found.</Text>
+              <text fg={Colors.gray} attributes={TextAttrs.dim} wrapMode="word">
+                No modules found.
+              </text>
             ) : (
-              <Box flexDirection="column">
+              <box flexDirection="column">
                 {modules.map(([id, module]) => {
                   const record = asRecord(module);
                   const categories = objectEntries(record["categories"]);
 
                   return (
-                    <Box key={id} flexDirection="column" marginBottom={1}>
-                      <Text bold color="cyan">
+                    <box key={id} flexDirection="column" marginBottom={1}>
+                      <text fg={Colors.cyan} attributes={TextAttrs.bold} wrapMode="word">
                         {stringValue(record["name"], id)}
-                      </Text>
-                      <Text dimColor>
+                      </text>
+                      <text fg={Colors.gray} attributes={TextAttrs.dim} wrapMode="word">
                         {stringValue(record["type"])} position {optionalText(record["position"]) ?? "-"}
-                      </Text>
+                      </text>
                       {categories.map(([categoryId, category]) => (
-                        <Text key={categoryId}>
+                        <text key={categoryId} wrapMode="word">
                           {"  "}- {stringValue(asRecord(category)["name"], categoryId)}
-                        </Text>
+                        </text>
                       ))}
-                    </Box>
+                    </box>
                   );
                 })}
-              </Box>
+              </box>
             );
           }}
         </RemotePane>

@@ -2,8 +2,16 @@ import { Console, Effect, Option } from "effect";
 import { Argument, Command, Flag } from "effect/unstable/cli";
 
 import { AnswerInputError, ExamFeature } from "../services/features/exam.js";
-import { inspectOptions } from "../utils/inspect-options.js";
-import { readStdinText } from "../utils/stdin.js";
+import {
+  array,
+  formatValue,
+  record,
+  renderDetails,
+  renderFields,
+  renderListedCount,
+  renderTable,
+} from "./shared/output.js";
+import { readStdinText } from "./shared/stdin.js";
 
 const CourseId = Argument.string("course-id").pipe(
   Argument.withDescription("Course ID shown by `courses list`, such as MOAPGNLO."),
@@ -29,6 +37,162 @@ const PositiveInteger = (name: string) =>
 const printJson = (value: unknown) => Console.log(JSON.stringify(value, null, 2));
 
 const optionalValue = <A>(value: Option.Option<A>): A | undefined => (Option.isSome(value) ? value.value : undefined);
+
+const indentBlock = (value: string, indent = 2) =>
+  value
+    .split("\n")
+    .map((line) => `${" ".repeat(indent)}${line}`)
+    .join("\n");
+
+const renderExamList = (view: unknown) => {
+  const root = record(view);
+  const exams = Object.entries(record(root["exams"])).map(([id, examValue]) => ({
+    id,
+    exam: record(examValue),
+  }));
+
+  return [
+    "EXAMS",
+    renderFields([["Total", root["total"]]]),
+    "",
+    renderTable(exams, [
+      { header: "EXAM", value: (row) => row.id },
+      { header: "CURRENT", value: (row) => row.exam["currentStatus"] },
+      { header: "EXERCISE", value: (row) => row.exam["exerciseStatus"] },
+      { header: "WHOLE", value: (row) => row.exam["wholeStatus"] },
+      { header: "TIME", value: (row) => row.exam["time"] },
+      { header: "LEFT", value: (row) => row.exam["leftTime"] },
+      { header: "LOCKED", value: (row) => row.exam["locked"] },
+      { header: "RANDOM", value: (row) => row.exam["random"] },
+      { header: "SCREEN", value: (row) => row.exam["screenOpen"] },
+      { header: "USER", value: (row) => row.exam["exerciseUserId"] },
+      { header: "NAME", value: (row) => row.exam["name"] },
+    ]),
+    "",
+    renderListedCount(exams.length, "exam"),
+  ].join("\n");
+};
+
+const renderExamInfo = (value: unknown) => {
+  const root = record(value);
+  const data = record(root["data"]);
+
+  return [
+    "EXAM USER INFO",
+    renderFields([
+      ["Status", root["status"]],
+      ["Message", root["message"]],
+      ["Can Start", data["can_start"]],
+      ["Committed", data["is_commit"]],
+      ["Locked", data["is_locked"]],
+      ["User Locked", data["is_user_locked"]],
+      ["Start Locked", data["start_locked"]],
+      ["Answered Open", data["answered_open"]],
+      ["Score Open", data["open_score"]],
+      ["Total Score Open", data["open_total_score"]],
+      ["Screen", data["screen_open"]],
+      ["Screens Used", `${formatValue(data["used_screen_num"])}/${formatValue(data["screen_num"])}`],
+      ["Screen Seconds", data["screen_sec"]],
+      ["IP Limit", data["ip_limit"]],
+      ["Last IP", data["last_ip"]],
+      ["Exercise User", data["exercise_user_id"]],
+      ["Exercise Type", data["exercise_type"]],
+    ]),
+  ].join("\n");
+};
+
+const renderExamStart = (value: unknown) => {
+  const root = record(value);
+  const exercise = record(root["exercise"]);
+  const questionTypes = array(root["exercise_question_types"]).map((item) => record(item));
+  const questionCount = questionTypes.reduce((count, item) => count + array(item["items"]).length, 0);
+
+  return [
+    "EXAM SESSION",
+    renderFields([
+      ["Exam", exercise["id"]],
+      ["Name", exercise["exercise_name"]],
+      ["Banner", root["left_banner_name"]],
+      ["Time", exercise["time"]],
+      ["Left", exercise["left_time"]],
+      ["User", exercise["user_name"]],
+      ["Student", exercise["student_id"]],
+      ["Random", exercise["is_random"]],
+      ["Screen", exercise["screen_open"]],
+      ["Screens Used", `${formatValue(exercise["used_screen_num"])}/${formatValue(exercise["screen_num"])}`],
+      ["Commit Status", exercise["commit_status"]],
+      ["Can Start", exercise["can_start"]],
+      ["Questions", questionCount],
+    ]),
+  ].join("\n");
+};
+
+const choiceSummary = (choicesValue: unknown) => {
+  const choices = Object.entries(record(choicesValue));
+  const selected = choices
+    .filter(([, choiceValue]) => record(choiceValue)["selected"] === true)
+    .map(([position, choiceValue]) => `${position}:${formatValue(record(choiceValue)["id"])}`);
+
+  return selected.length >= 1 ? selected.join(", ") : "-";
+};
+
+const renderExamQuestions = (view: unknown) => {
+  const questions = array(record(view)["questions"]).map((question) => record(question));
+  const lines = [
+    "EXAM QUESTIONS",
+    renderTable(questions, [
+      { header: "NO", value: (row) => row["number"] },
+      { header: "QUESTION", value: (row) => row["id"] },
+      { header: "TYPE", value: (row) => row["type"] },
+      { header: "SCORE", value: (row) => row["score"] },
+      { header: "SELECTED", value: (row) => choiceSummary(row["choices"]) },
+      { header: "TITLE", value: (row) => row["title"] },
+    ]),
+    "",
+    renderListedCount(questions.length, "question"),
+  ];
+
+  for (const question of questions) {
+    const choices = Object.entries(record(question["choices"])).map(([position, choiceValue]) => ({
+      position,
+      choice: record(choiceValue),
+    }));
+
+    if (!choices.some((choice) => typeof choice.choice["text"] === "string")) {
+      continue;
+    }
+
+    lines.push(
+      "",
+      `[${formatValue(question["number"])}] ${formatValue(question["title"])}`,
+      indentBlock(
+        renderTable(choices, [
+          { header: "POS", value: (row) => row.position },
+          { header: "CHOICE", value: (row) => row.choice["id"] },
+          { header: "SELECTED", value: (row) => row.choice["selected"] },
+          { header: "TEXT", value: (row) => row.choice["text"] },
+        ]),
+      ),
+    );
+  }
+
+  return lines.join("\n").trimEnd();
+};
+
+const renderExamSubmit = (view: unknown) => renderDetails("EXAM SUBMIT", view);
+
+const renderAnswerResponse = (questionId: number, value: unknown) => {
+  const root = record(value);
+
+  return [
+    "EXAM ANSWER",
+    renderFields([
+      ["Question", questionId],
+      ["Status", root["status"]],
+      ["Message", root["message"]],
+    ]),
+  ].join("\n");
+};
 
 const readAnswerText = Effect.fn("exam.answer.readText")(function* (input: {
   readonly text: Option.Option<string>;
@@ -81,7 +245,7 @@ const List = Command.make(
       return yield* Console.log("No exams found.");
     }
 
-    yield* Console.dir(result.view, inspectOptions);
+    yield* Console.log(renderExamList(result.view));
   }),
 ).pipe(
   Command.withDescription("List exams in a course and show the exam IDs needed by other exam commands."),
@@ -101,6 +265,7 @@ const Info = Command.make(
     courseId: CourseId,
     examId: ExamId,
     login: OptionalLogin,
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw exam user info as JSON.")),
   },
   Effect.fn("exam.info")(function* (input) {
     const examFeature = yield* ExamFeature;
@@ -110,7 +275,11 @@ const Info = Command.make(
       login: optionalValue(input.login),
     });
 
-    yield* printJson(result.raw);
+    if (input.json) {
+      return yield* printJson(result.raw);
+    }
+
+    yield* Console.log(renderExamInfo(result.raw));
   }),
 ).pipe(
   Command.withDescription("Show your current exam session state before starting or resuming."),
@@ -130,6 +299,7 @@ const Start = Command.make(
     courseId: CourseId,
     examId: ExamId,
     login: OptionalLogin,
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw exam start response as JSON.")),
   },
   Effect.fn("exam.start")(function* (input) {
     const examFeature = yield* ExamFeature;
@@ -139,7 +309,11 @@ const Start = Command.make(
       login: optionalValue(input.login),
     });
 
-    yield* printJson(result.raw);
+    if (input.json) {
+      return yield* printJson(result.raw);
+    }
+
+    yield* Console.log(renderExamStart(result.raw));
   }),
 ).pipe(
   Command.withDescription("Start an exam attempt or resume the existing attempt."),
@@ -179,23 +353,7 @@ const Show = Command.make(
       return yield* Console.log("No questions found.");
     }
 
-    yield* Console.dir(
-      {
-        questions: Object.fromEntries(
-          result.view.questions.map((question) => [
-            question.number,
-            {
-              id: question.id,
-              type: question.type,
-              score: question.score,
-              choices: question.choices,
-              title: question.title,
-            },
-          ]),
-        ),
-      },
-      inspectOptions,
-    );
+    yield* Console.log(renderExamQuestions(result.view));
   }),
 ).pipe(
   Command.withDescription("Show question IDs, question types, scores, choices, and current selections."),
@@ -237,7 +395,7 @@ const Submit = Command.make(
       return yield* printJson(result.raw);
     }
 
-    yield* Console.dir(result.view, inspectOptions);
+    yield* Console.log(renderExamSubmit(result.view));
   }),
 ).pipe(
   Command.withDescription("Submit the current exam attempt with the saved answers."),
@@ -260,6 +418,7 @@ const Single = Command.make(
     questionId: QuestionId,
     choiceId: Argument.integer("choice-id").pipe(Argument.withDescription("Choice ID shown by `exams show`.")),
     login: OptionalLogin,
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw answer response as JSON.")),
   },
   Effect.fn("exam.answer.single")(function* (input) {
     const examFeature = yield* ExamFeature;
@@ -270,7 +429,11 @@ const Single = Command.make(
       login: optionalValue(input.login),
     });
 
-    yield* printJson(result.raw);
+    if (input.json) {
+      return yield* printJson(result.raw);
+    }
+
+    yield* Console.log(renderAnswerResponse(input.questionId, result.raw));
   }),
 ).pipe(
   Command.withDescription("Save one single-choice answer using a question ID and one choice ID."),
@@ -291,6 +454,7 @@ const Multiple = Command.make(
       Argument.withDescription("Comma-separated choice IDs shown by `exams show`."),
     ),
     login: OptionalLogin,
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw answer response as JSON.")),
   },
   Effect.fn("exam.answer.multiple")(function* (input) {
     const examFeature = yield* ExamFeature;
@@ -303,7 +467,11 @@ const Multiple = Command.make(
       login: optionalValue(input.login),
     });
 
-    yield* printJson(result.raw);
+    if (input.json) {
+      return yield* printJson(result.raw);
+    }
+
+    yield* Console.log(renderAnswerResponse(input.questionId, result.raw));
   }),
 ).pipe(
   Command.withDescription("Save one multiple-choice answer using comma-separated choice IDs."),
@@ -326,6 +494,7 @@ const Text = Command.make(
     ),
     stdin: Flag.boolean("stdin").pipe(Flag.withDescription("Read answer text from standard input.")),
     login: OptionalLogin,
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw answer response as JSON.")),
   },
   Effect.fn("exam.answer.text")(function* (input) {
     const answerText = yield* readAnswerText({
@@ -340,7 +509,11 @@ const Text = Command.make(
       login: optionalValue(input.login),
     });
 
-    yield* printJson(result.raw);
+    if (input.json) {
+      return yield* printJson(result.raw);
+    }
+
+    yield* Console.log(renderAnswerResponse(input.questionId, result.raw));
   }),
 ).pipe(
   Command.withDescription("Save one free-text answer for a question."),

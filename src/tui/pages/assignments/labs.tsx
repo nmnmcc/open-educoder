@@ -1,5 +1,6 @@
+/** @jsxImportSource @opentui/react */
+import { useKeyboard } from "@opentui/react";
 import { Effect } from "effect";
-import { Box, useInput } from "ink";
 import { useState } from "react";
 
 import {
@@ -19,6 +20,7 @@ import {
   type SelectItem,
   SelectList,
   asRecord,
+  keyText,
   objectEntries,
   optionalText,
   stringValue,
@@ -43,34 +45,37 @@ export const LabListPage = Effect.gen(function* () {
       }),
     );
 
-    useInput(
-      (input) => {
-        if (input === "n") {
-          setPage((value) => value + 1);
-          return;
-        }
+    useKeyboard((event) => {
+      if (!active) {
+        return;
+      }
 
-        if (input === "p") {
-          setPage((value) => Math.max(1, value - 1));
-          return;
-        }
+      const input = keyText(event);
 
-        if (input === "r") {
-          setRefresh((value) => value + 1);
-          return;
-        }
+      if (input === "n") {
+        setPage((value) => value + 1);
+        return;
+      }
 
-        if (input === "/") {
-          void ui.prompt("Search lab assignments", "keyword", search).then((value) => {
-            if (value !== null) {
-              setSearch(value.trim());
-              setPage(1);
-            }
-          });
-        }
-      },
-      { isActive: active },
-    );
+      if (input === "p") {
+        setPage((value) => Math.max(1, value - 1));
+        return;
+      }
+
+      if (input === "r") {
+        setRefresh((value) => value + 1);
+        return;
+      }
+
+      if (input === "/") {
+        void ui.prompt("Search lab assignments", "keyword", search).then((value) => {
+          if (value !== null) {
+            setSearch(value.trim());
+            setPage(1);
+          }
+        });
+      }
+    });
 
     return (
       <Page
@@ -130,7 +135,7 @@ function LabListContent({
   });
 
   return (
-    <Box flexDirection="column">
+    <box flexDirection="column">
       <FieldList
         fields={[
           ["page", page],
@@ -138,7 +143,7 @@ function LabListContent({
           ["category", asRecord(view["category"])["name"]],
         ]}
       />
-      <Box marginTop={1}>
+      <box marginTop={1}>
         <SelectList
           items={items}
           selected={selected}
@@ -155,8 +160,8 @@ function LabListContent({
           active={active}
           empty="No lab assignments found."
         />
-      </Box>
-    </Box>
+      </box>
+    </box>
   );
 }
 
@@ -504,14 +509,11 @@ export const LabDetailPage = Effect.gen(function* () {
       }
     };
 
-    useInput(
-      (input) => {
-        if (input === "t") {
-          void resolveTaskId();
-        }
-      },
-      { isActive: active },
-    );
+    useKeyboard((event) => {
+      if (active && keyText(event) === "t") {
+        void resolveTaskId();
+      }
+    });
 
     return (
       <MenuPage
@@ -539,24 +541,23 @@ export const RepositoryPage = Effect.gen(function* () {
       }),
     );
 
-    useInput(
-      (input) => {
-        if (input === "j") {
-          void Effect.runPromise(
-            labAssignment.listRepository({
-              courseId: route.courseId,
-              taskId: route.taskId,
-              homeworkId: route.homeworkId,
-              path: route.path.length >= 1 ? route.path : undefined,
-            }),
-          ).then(
-            (result) => ui.showJson("Repository JSON", result.raw),
-            (error: unknown) => ui.showError("Repository", error),
-          );
-        }
-      },
-      { isActive: active },
-    );
+    useKeyboard((event) => {
+      if (!active || keyText(event) !== "j") {
+        return;
+      }
+
+      void Effect.runPromise(
+        labAssignment.listRepository({
+          courseId: route.courseId,
+          taskId: route.taskId,
+          homeworkId: route.homeworkId,
+          path: route.path.length >= 1 ? route.path : undefined,
+        }),
+      ).then(
+        (result) => ui.showJson("Repository JSON", result.raw),
+        (error: unknown) => ui.showError("Repository", error),
+      );
+    });
 
     return (
       <Page
@@ -677,19 +678,22 @@ export const FilePage = Effect.gen(function* () {
       );
     };
 
-    useInput(
-      (input) => {
-        if (input === "e") {
-          void edit();
-          return;
-        }
+    useKeyboard((event) => {
+      if (!active) {
+        return;
+      }
 
-        if (input === "j" && data.tag === "success") {
-          ui.showJson("Repository file JSON", data.value.raw);
-        }
-      },
-      { isActive: active },
-    );
+      const input = keyText(event);
+
+      if (input === "e") {
+        void edit();
+        return;
+      }
+
+      if (input === "j" && data.tag === "success") {
+        ui.showJson("Repository file JSON", data.value.raw);
+      }
+    });
 
     return (
       <Page title={route.path} subtitle={route.homeworkName} footer="e edit  j raw JSON  Esc back  q quit">

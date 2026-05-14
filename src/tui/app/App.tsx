@@ -1,12 +1,14 @@
+/** @jsxImportSource @opentui/react */
+import { useKeyboard, useRenderer } from "@opentui/react";
 import { Effect } from "effect";
-import { Box, useApp, useInput } from "ink";
 import { useState } from "react";
 
+import { CommonDetailPage, CommonListPage } from "../pages/assignments/common.js";
+import { FilePage, LabDetailPage, LabListPage, RepositoryPage } from "../pages/assignments/labs.js";
 import { CourseInfoPage, CoursesPage, ModulesPage } from "../pages/course.js";
 import { ExamDetailPage, ExamShowPage, ExamsPage } from "../pages/exams.js";
-import { CommonDetailPage, CommonListPage } from "../pages/assignments/common.js";
-import { FilePage, RepositoryPage, LabDetailPage, LabListPage } from "../pages/assignments/labs.js";
 import { formatError } from "../runtime/process.js";
+import { isBackspaceKey, isEscapeKey, keyText } from "../ui/index.js";
 import { OverlayPane } from "./overlay.js";
 import { renderRoute } from "./router.js";
 import type { AppComponents, Navigator, Overlay, Route, UiActions } from "./types.js";
@@ -40,7 +42,7 @@ export const TuiApp = Effect.gen(function* () {
   };
 
   return function App() {
-    const app = useApp();
+    const renderer = useRenderer();
     const [routes, setRoutes] = useState<ReadonlyArray<Route>>([{ name: "courses" }]);
     const [overlay, setOverlay] = useState<Overlay | null>(null);
     const current = routes.at(-1) ?? { name: "courses" as const };
@@ -51,7 +53,7 @@ export const TuiApp = Effect.gen(function* () {
       back: () =>
         setRoutes((value) => {
           if (value.length <= 1) {
-            app.exit();
+            renderer.destroy();
             return value;
           }
 
@@ -90,27 +92,28 @@ export const TuiApp = Effect.gen(function* () {
       setBusy: (title, message) => setOverlay({ type: "busy", title, message }),
     };
 
-    useInput(
-      (input, key) => {
-        if (input === "q") {
-          app.exit();
-          return;
-        }
+    useKeyboard((event) => {
+      if (overlay !== null) {
+        return;
+      }
 
-        if (key.escape || key.backspace) {
-          nav.back();
-        }
-      },
-      { isActive: overlay === null },
-    );
+      if (keyText(event) === "q") {
+        renderer.destroy();
+        return;
+      }
+
+      if (isEscapeKey(event) || isBackspaceKey(event)) {
+        nav.back();
+      }
+    });
 
     return (
-      <Box flexDirection="column" height="100%">
-        <Box flexDirection="column" flexGrow={1}>
+      <box flexDirection="column" height="100%">
+        <box flexDirection="column" flexGrow={1}>
           {renderRoute(current, components, nav, ui, overlay === null)}
-        </Box>
+        </box>
         {overlay !== null ? <OverlayPane overlay={overlay} close={() => setOverlay(null)} /> : null}
-      </Box>
+      </box>
     );
   };
 });

@@ -7,7 +7,7 @@ import {
   CourseStatusChoices,
   SortDirectionChoices,
 } from "../services/features/course.js";
-import { inspectOptions } from "../utils/inspect-options.js";
+import { record, renderFields, renderListedCount, renderTable } from "./shared/output.js";
 
 const PositiveInteger = (name: string) =>
   Flag.integer(name).pipe(
@@ -21,6 +21,103 @@ const CourseId = Argument.string("course-id").pipe(
 );
 
 const printJson = (value: unknown) => Console.log(JSON.stringify(value, null, 2));
+
+const renderCourses = (view: unknown) => {
+  const root = record(view);
+  const courses = Object.entries(record(root["courses"])).map(([id, courseValue]) => ({
+    id,
+    course: record(courseValue),
+  }));
+
+  return [
+    "COURSES",
+    renderFields([["Total", root["total"]]]),
+    "",
+    renderTable(courses, [
+      { header: "COURSE", value: (row) => row.id },
+      { header: "STATE", value: (row) => row.course["status"] },
+      { header: "MEMBERS", value: (row) => row.course["members"] },
+      { header: "ASSIGN", value: (row) => row.course["assignments"] },
+      { header: "VISITS", value: (row) => row.course["visits"] },
+      { header: "TEACHER", value: (row) => row.course["teacher"] },
+      { header: "SCHOOL", value: (row) => row.course["school"] },
+      { header: "NAME", value: (row) => row.course["name"] },
+    ]),
+    "",
+    renderListedCount(courses.length, "course"),
+  ].join("\n");
+};
+
+const renderCourseInfo = (view: unknown) => {
+  const course = record(record(view)["course"]);
+
+  return [
+    "COURSE",
+    renderFields([
+      ["ID", course["id"]],
+      ["Name", course["name"]],
+      ["State", course["ended"] === true ? "end" : "processing"],
+      ["Public", course["public"]],
+      ["Teacher", course["teacher"]],
+      ["School", course["teacherSchool"]],
+      ["Group", course["group"]],
+      ["Teachers", course["teachers"]],
+      ["Teacher Count", course["teacherCount"]],
+      ["Student Count", course["studentCount"]],
+      ["Group Count", course["groupCount"]],
+      ["Credit", course["credit"]],
+      ["Class Period", course["classPeriod"]],
+      ["Visits", course["visits"]],
+      ["Invite Code", course["inviteCode"]],
+      ["Messages", course["allowViewMessage"]],
+    ]),
+  ].join("\n");
+};
+
+const renderCourseModules = (view: unknown) => {
+  const modules = Object.entries(record(record(view)["modules"])).map(([id, moduleValue]) => ({
+    id,
+    module: record(moduleValue),
+  }));
+  const categories = modules.flatMap((moduleRow) =>
+    Object.entries(record(moduleRow.module["categories"])).map(([id, categoryValue]) => ({
+      id,
+      moduleId: moduleRow.id,
+      category: record(categoryValue),
+    })),
+  );
+  const lines = [
+    "COURSE MODULES",
+    renderTable(modules, [
+      { header: "MODULE", value: (row) => row.id },
+      { header: "POS", value: (row) => row.module["position"] },
+      { header: "TYPE", value: (row) => row.module["type"] },
+      { header: "NAME", value: (row) => row.module["name"] },
+      { header: "URL", value: (row) => row.module["url"] },
+    ]),
+    "",
+    renderListedCount(modules.length, "module"),
+  ];
+
+  if (categories.length >= 1) {
+    lines.push(
+      "",
+      "CATEGORIES",
+      renderTable(categories, [
+        { header: "CATEGORY", value: (row) => row.id },
+        { header: "MODULE", value: (row) => row.moduleId },
+        { header: "POS", value: (row) => row.category["position"] },
+        { header: "TYPE", value: (row) => row.category["type"] },
+        { header: "NAME", value: (row) => row.category["name"] },
+        { header: "URL", value: (row) => row.category["url"] },
+      ]),
+      "",
+      renderListedCount(categories.length, "category", "categories"),
+    );
+  }
+
+  return lines.join("\n");
+};
 
 const List = Command.make(
   "list",
@@ -64,7 +161,7 @@ const List = Command.make(
       return yield* Console.log("No courses found.");
     }
 
-    yield* Console.dir(result.view, inspectOptions);
+    yield* Console.log(renderCourses(result.view));
   }),
 ).pipe(
   Command.withDescription("List courses visible to the selected account."),
@@ -93,7 +190,7 @@ const Info = Command.make(
       return yield* printJson(result.raw);
     }
 
-    yield* Console.dir(result.view, inspectOptions);
+    yield* Console.log(renderCourseInfo(result.view));
   }),
 ).pipe(
   Command.withDescription("Show one course's title, teachers, counts, and visibility."),
@@ -125,7 +222,7 @@ const Modules = Command.make(
       return yield* Console.log("No modules found.");
     }
 
-    yield* Console.dir(result.view, inspectOptions);
+    yield* Console.log(renderCourseModules(result.view));
   }),
 ).pipe(
   Command.withDescription("Show course modules and category IDs used to filter assignments."),

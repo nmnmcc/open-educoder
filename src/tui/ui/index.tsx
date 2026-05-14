@@ -1,6 +1,9 @@
+/** @jsxImportSource @opentui/react */
+import { type KeyEvent, createTextAttributes } from "@opentui/core";
+import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { Effect } from "effect";
-import { Box, Text, useInput, useWindowSize } from "ink";
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 
 import { formatError } from "../runtime/process.js";
 
@@ -22,6 +25,56 @@ export type SelectItem = {
   readonly label: string;
   readonly description?: string | undefined;
   readonly meta?: string | undefined;
+};
+
+export const Colors = {
+  cyan: "#00ffff",
+  gray: "#808080",
+  green: "#50fa7b",
+  red: "#ff5555",
+  yellow: "#ffff00",
+} as const;
+
+export const TextAttrs = {
+  bold: createTextAttributes({ bold: true }),
+  dim: createTextAttributes({ dim: true }),
+  boldDim: createTextAttributes({ bold: true, dim: true }),
+} as const;
+
+const normalizedKeyName = (event: KeyEvent) => event.name.toLowerCase().replaceAll("-", "");
+
+export const keyText = (event: KeyEvent) => {
+  if (event.name === "space") {
+    return " ";
+  }
+
+  if (event.sequence.length === 1 && event.sequence >= " ") {
+    return event.sequence;
+  }
+
+  return event.name.length === 1 ? event.name : "";
+};
+
+export const isKeyName = (event: KeyEvent, name: string) => normalizedKeyName(event) === name;
+
+export const isEnterKey = (event: KeyEvent) => {
+  const name = normalizedKeyName(event);
+
+  return name === "return" || name === "enter" || name === "linefeed";
+};
+
+export const isEscapeKey = (event: KeyEvent) => {
+  const name = normalizedKeyName(event);
+
+  return name === "escape" || name === "esc";
+};
+
+export const isBackspaceKey = (event: KeyEvent) => normalizedKeyName(event) === "backspace";
+
+export const isDeleteKey = (event: KeyEvent) => {
+  const name = normalizedKeyName(event);
+
+  return name === "delete" || name === "del";
 };
 
 export const useRemoteData = <A, E>(key: string, load: () => Effect.Effect<A, E>): RemoteData<A> => {
@@ -106,22 +159,30 @@ export function Page({
 }: {
   readonly title: string;
   readonly subtitle?: string | undefined;
-  readonly children: React.ReactNode;
+  readonly children: ReactNode;
   readonly footer?: string | undefined;
 }) {
   return (
-    <Box flexDirection="column" height="100%">
-      <Box borderStyle="single" borderColor="cyan" paddingX={1} flexDirection="column">
-        <Text bold>{title}</Text>
-        {subtitle !== undefined && subtitle.length >= 1 ? <Text dimColor>{subtitle}</Text> : null}
-      </Box>
-      <Box flexDirection="column" flexGrow={1} paddingX={1} paddingY={1}>
+    <box flexDirection="column" height="100%">
+      <box border borderStyle="single" borderColor={Colors.cyan} paddingX={1} flexDirection="column">
+        <text attributes={TextAttrs.bold} wrapMode="word">
+          {title}
+        </text>
+        {subtitle !== undefined && subtitle.length >= 1 ? (
+          <text fg={Colors.gray} attributes={TextAttrs.dim} wrapMode="word">
+            {subtitle}
+          </text>
+        ) : null}
+      </box>
+      <box flexDirection="column" flexGrow={1} paddingX={1} paddingY={1}>
         {children}
-      </Box>
-      <Box borderStyle="single" borderColor="gray" paddingX={1}>
-        <Text dimColor>{footer ?? "Enter open  Esc back  q quit"}</Text>
-      </Box>
-    </Box>
+      </box>
+      <box border borderStyle="single" borderColor={Colors.gray} paddingX={1}>
+        <text fg={Colors.gray} attributes={TextAttrs.dim} wrapMode="word">
+          {footer ?? "Enter open  Esc back  q quit"}
+        </text>
+      </box>
+    </box>
   );
 }
 
@@ -130,14 +191,22 @@ export function RemotePane<A>({
   children,
 }: {
   readonly data: RemoteData<A>;
-  readonly children: (value: A) => React.ReactNode;
+  readonly children: (value: A) => ReactNode;
 }) {
   if (data.tag === "loading") {
-    return <Text color="yellow">Loading...</Text>;
+    return (
+      <text fg={Colors.yellow} wrapMode="word">
+        Loading...
+      </text>
+    );
   }
 
   if (data.tag === "error") {
-    return <Text color="red">{data.error}</Text>;
+    return (
+      <text fg={Colors.red} wrapMode="word">
+        {data.error}
+      </text>
+    );
   }
 
   return <>{children(data.value)}</>;
@@ -158,137 +227,145 @@ export function SelectList({
   readonly active: boolean;
   readonly empty?: string | undefined;
 }) {
-  const size = useWindowSize();
-  const visibleCount = Math.max(1, size.rows - 8);
+  const { height } = useTerminalDimensions();
+  const visibleCount = Math.max(1, height - 8);
   const start = Math.max(
     0,
     Math.min(selected - Math.floor(visibleCount / 2), Math.max(0, items.length - visibleCount)),
   );
   const visibleItems = items.slice(start, start + visibleCount);
 
-  useInput(
-    (_input, key) => {
-      if (items.length < 1) {
-        return;
-      }
+  useKeyboard((event) => {
+    if (!active || items.length < 1) {
+      return;
+    }
 
-      if (key.upArrow) {
-        onSelectedChange(Math.max(0, selected - 1));
-        return;
-      }
+    if (isKeyName(event, "up")) {
+      onSelectedChange(Math.max(0, selected - 1));
+      return;
+    }
 
-      if (key.downArrow) {
-        onSelectedChange(Math.min(items.length - 1, selected + 1));
-        return;
-      }
+    if (isKeyName(event, "down")) {
+      onSelectedChange(Math.min(items.length - 1, selected + 1));
+      return;
+    }
 
-      if (key.pageUp) {
-        onSelectedChange(Math.max(0, selected - visibleCount));
-        return;
-      }
+    if (isKeyName(event, "pageup")) {
+      onSelectedChange(Math.max(0, selected - visibleCount));
+      return;
+    }
 
-      if (key.pageDown) {
-        onSelectedChange(Math.min(items.length - 1, selected + visibleCount));
-        return;
-      }
+    if (isKeyName(event, "pagedown")) {
+      onSelectedChange(Math.min(items.length - 1, selected + visibleCount));
+      return;
+    }
 
-      if (key.home) {
-        onSelectedChange(0);
-        return;
-      }
+    if (isKeyName(event, "home")) {
+      onSelectedChange(0);
+      return;
+    }
 
-      if (key.end) {
-        onSelectedChange(items.length - 1);
-        return;
-      }
+    if (isKeyName(event, "end")) {
+      onSelectedChange(items.length - 1);
+      return;
+    }
 
-      if (key.return) {
-        const item = items[selected];
+    if (isEnterKey(event)) {
+      const item = items[selected];
 
-        if (item !== undefined) {
-          onOpen(item);
-        }
+      if (item !== undefined) {
+        onOpen(item);
       }
-    },
-    { isActive: active },
-  );
+    }
+  });
 
   if (items.length < 1) {
-    return <Text dimColor>{empty ?? "No items."}</Text>;
+    return (
+      <text fg={Colors.gray} attributes={TextAttrs.dim} wrapMode="word">
+        {empty ?? "No items."}
+      </text>
+    );
   }
 
   return (
-    <Box flexDirection="column">
+    <box flexDirection="column">
       {visibleItems.map((item, index) => {
         const absoluteIndex = start + index;
         const focused = absoluteIndex === selected;
 
         return (
-          <Box key={item.id} flexDirection="column">
+          <box key={item.id} flexDirection="column">
             {focused ? (
-              <Text color="cyan" bold>
+              <text fg={Colors.cyan} attributes={TextAttrs.bold} wrapMode="word">
                 &gt; {item.label}
-                {item.meta !== undefined && item.meta.length >= 1 ? <Text dimColor> {item.meta}</Text> : null}
-              </Text>
+                {item.meta !== undefined && item.meta.length >= 1 ? <span fg={Colors.gray}> {item.meta}</span> : null}
+              </text>
             ) : (
-              <Text>
+              <text wrapMode="word">
                 {"  "}
                 {item.label}
-                {item.meta !== undefined && item.meta.length >= 1 ? <Text dimColor> {item.meta}</Text> : null}
-              </Text>
+                {item.meta !== undefined && item.meta.length >= 1 ? <span fg={Colors.gray}> {item.meta}</span> : null}
+              </text>
             )}
             {item.description !== undefined && item.description.length >= 1 ? (
-              <Text dimColor> {item.description}</Text>
+              <text fg={Colors.gray} attributes={TextAttrs.dim} wrapMode="word">
+                {" "}
+                {item.description}
+              </text>
             ) : null}
-          </Box>
+          </box>
         );
       })}
       {items.length > visibleCount ? (
-        <Text dimColor>
+        <text fg={Colors.gray} attributes={TextAttrs.dim} wrapMode="word">
           {selected + 1}/{items.length}
-        </Text>
+        </text>
       ) : null}
-    </Box>
+    </box>
   );
 }
 
 export function KeyHints({ hints }: { readonly hints: ReadonlyArray<string> }) {
   return (
-    <Box flexWrap="wrap">
+    <box flexWrap="wrap">
       {hints.map((hint, index) => (
-        <Text key={`${hint}-${index}`} dimColor>
+        <text key={`${hint}-${index}`} fg={Colors.gray} attributes={TextAttrs.dim} wrapMode="word">
           {index === 0 ? "" : "  "}
           {hint}
-        </Text>
+        </text>
       ))}
-    </Box>
+    </box>
   );
 }
 
 export function FieldList({ fields }: { readonly fields: ReadonlyArray<readonly [string, unknown]> }) {
   return (
-    <Box flexDirection="column">
+    <box flexDirection="column">
       {fields.map(([label, value]) => (
-        <Text key={label}>
-          <Text color="cyan">{label}</Text>: {optionalText(value) ?? "-"}
-        </Text>
+        <text key={label} wrapMode="word">
+          <span fg={Colors.cyan}>{label}</span>: {optionalText(value) ?? "-"}
+        </text>
       ))}
-    </Box>
+    </box>
   );
 }
 
 export function JsonBlock({ value }: { readonly value: unknown }) {
-  const size = useWindowSize();
+  const { height } = useTerminalDimensions();
   const lines = useMemo(() => compactJson(value).split("\n"), [value]);
-  const visible = lines.slice(0, Math.max(1, size.rows - 7));
+  const visible = lines.slice(0, Math.max(1, height - 7));
 
   return (
-    <Box flexDirection="column">
+    <box flexDirection="column">
       {visible.map((line, index) => (
-        <Text key={index}>{line}</Text>
+        <text key={index}>{line}</text>
       ))}
-      {visible.length < lines.length ? <Text dimColor>... {lines.length - visible.length} more lines</Text> : null}
-    </Box>
+      {visible.length < lines.length ? (
+        <text fg={Colors.gray} attributes={TextAttrs.dim} wrapMode="word">
+          ... {lines.length - visible.length} more lines
+        </text>
+      ) : null}
+    </box>
   );
 }
 
@@ -307,35 +384,41 @@ export function TextPrompt({
 }) {
   const [value, setValue] = useState(initialValue);
 
-  useInput((input, key) => {
-    if (key.escape) {
+  useKeyboard((event) => {
+    if (isEscapeKey(event)) {
       onCancel();
       return;
     }
 
-    if (key.return) {
+    if (isEnterKey(event)) {
       onSubmit(value);
       return;
     }
 
-    if (key.backspace || key.delete) {
+    if (isBackspaceKey(event) || isDeleteKey(event)) {
       setValue((current) => current.slice(0, -1));
       return;
     }
 
-    if (!key.ctrl && input.length >= 1) {
+    const input = keyText(event);
+
+    if (!event.ctrl && input.length >= 1) {
       setValue((current) => `${current}${input}`);
     }
   });
 
   return (
-    <Box borderStyle="round" borderColor="yellow" paddingX={1} flexDirection="column">
-      <Text bold>{title}</Text>
-      <Text>
-        {label}: <Text color="cyan">{value}</Text>
-      </Text>
-      <Text dimColor>Enter confirm Esc cancel</Text>
-    </Box>
+    <box border borderStyle="rounded" borderColor={Colors.yellow} paddingX={1} flexDirection="column">
+      <text attributes={TextAttrs.bold} wrapMode="word">
+        {title}
+      </text>
+      <text wrapMode="word">
+        {label}: <span fg={Colors.cyan}>{value}</span>
+      </text>
+      <text fg={Colors.gray} attributes={TextAttrs.dim} wrapMode="word">
+        Enter confirm Esc cancel
+      </text>
+    </box>
   );
 }
 
@@ -355,40 +438,44 @@ export function DangerPrompt({
   const [value, setValue] = useState("");
   const matches = value === expected;
 
-  useInput((input, key) => {
-    if (key.escape) {
+  useKeyboard((event) => {
+    if (isEscapeKey(event)) {
       onCancel();
       return;
     }
 
-    if (key.return) {
+    if (isEnterKey(event)) {
       if (matches) {
         onConfirm();
       }
       return;
     }
 
-    if (key.backspace || key.delete) {
+    if (isBackspaceKey(event) || isDeleteKey(event)) {
       setValue((current) => current.slice(0, -1));
       return;
     }
 
-    if (!key.ctrl && input.length >= 1) {
+    const input = keyText(event);
+
+    if (!event.ctrl && input.length >= 1) {
       setValue((current) => `${current}${input}`);
     }
   });
 
   return (
-    <Box borderStyle="round" borderColor="red" paddingX={1} flexDirection="column">
-      <Text bold color="red">
+    <box border borderStyle="rounded" borderColor={Colors.red} paddingX={1} flexDirection="column">
+      <text fg={Colors.red} attributes={TextAttrs.bold} wrapMode="word">
         {title}
-      </Text>
-      <Text>{message}</Text>
-      <Text>
-        Type <Text color="yellow">{expected}</Text>: <Text color={matches ? "green" : "cyan"}>{value}</Text>
-      </Text>
-      <Text dimColor>Enter confirm after exact match Esc cancel</Text>
-    </Box>
+      </text>
+      <text wrapMode="word">{message}</text>
+      <text wrapMode="word">
+        Type <span fg={Colors.yellow}>{expected}</span>: <span fg={matches ? Colors.green : Colors.cyan}>{value}</span>
+      </text>
+      <text fg={Colors.gray} attributes={TextAttrs.dim} wrapMode="word">
+        Enter confirm after exact match Esc cancel
+      </text>
+    </box>
   );
 }
 
@@ -405,22 +492,24 @@ export function MessageBox({
   readonly tone: "info" | "error";
   readonly onClose: () => void;
 }) {
-  const color = tone === "error" ? "red" : "green";
+  const color = tone === "error" ? Colors.red : Colors.green;
 
-  useInput((_input, key) => {
-    if (key.return || key.escape) {
+  useKeyboard((event) => {
+    if (isEnterKey(event) || isEscapeKey(event)) {
       onClose();
     }
   });
 
   return (
-    <Box borderStyle="round" borderColor={color} paddingX={1} flexDirection="column">
-      <Text bold color={color}>
+    <box border borderStyle="rounded" borderColor={color} paddingX={1} flexDirection="column">
+      <text fg={color} attributes={TextAttrs.bold} wrapMode="word">
         {title}
-      </Text>
-      {message !== undefined ? <Text>{message}</Text> : null}
+      </text>
+      {message !== undefined ? <text wrapMode="word">{message}</text> : null}
       {value !== undefined ? <JsonBlock value={value} /> : null}
-      <Text dimColor>Enter close Esc close</Text>
-    </Box>
+      <text fg={Colors.gray} attributes={TextAttrs.dim} wrapMode="word">
+        Enter close Esc close
+      </text>
+    </box>
   );
 }

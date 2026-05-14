@@ -2,7 +2,28 @@ import { Console, Effect } from "effect";
 import { Argument, Command, Flag } from "effect/unstable/cli";
 
 import { AccountFeature, DefaultAccountName } from "../services/features/account.js";
-import { inspectOptions } from "../utils/inspect-options.js";
+import { record, renderFields, renderListedCount, renderTable } from "./shared/output.js";
+
+const renderAccounts = (view: unknown) => {
+  const root = record(view);
+  const accounts = Object.entries(record(root["accounts"])).map(([name, accountValue]) => ({
+    name,
+    account: record(accountValue),
+  }));
+
+  return [
+    "ACCOUNTS",
+    renderFields([["Current", root["current"]]]),
+    "",
+    renderTable(accounts, [
+      { header: "ACCOUNT", value: (row) => row.name },
+      { header: "CURRENT", value: (row) => row.account["current"] },
+      { header: "URL", value: (row) => row.account["url"] },
+    ]),
+    "",
+    renderListedCount(accounts.length, "account"),
+  ].join("\n");
+};
 
 const List = Command.make(
   "list",
@@ -21,7 +42,7 @@ const List = Command.make(
       return yield* Console.log("No accounts found.");
     }
 
-    yield* Console.dir(result.view, inspectOptions);
+    yield* Console.log(renderAccounts(result.view));
   }),
 ).pipe(
   Command.withDescription("List saved Educoder accounts and mark the active account."),

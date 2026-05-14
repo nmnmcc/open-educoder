@@ -10,8 +10,25 @@ export type EditedContent = {
   readonly content: string;
 };
 
+type TuiTerminalController = {
+  readonly suspend: () => void;
+  readonly resume: () => void;
+};
+
 const AlternateScreenOff = "\u001B[?1049l";
 const AlternateScreenOn = "\u001B[?1049h";
+
+let tuiTerminalController: TuiTerminalController | null = null;
+
+export const setTuiTerminalController = (controller: TuiTerminalController) => {
+  tuiTerminalController = controller;
+
+  return () => {
+    if (tuiTerminalController === controller) {
+      tuiTerminalController = null;
+    }
+  };
+};
 
 export const formatError = (error: unknown) => {
   if (error instanceof Error) {
@@ -69,6 +86,16 @@ const setRawMode = (enabled: boolean) => {
 };
 
 const suspendAlternateScreen = async <A>(run: () => Promise<A>) => {
+  if (tuiTerminalController !== null) {
+    tuiTerminalController.suspend();
+
+    try {
+      return await run();
+    } finally {
+      tuiTerminalController.resume();
+    }
+  }
+
   const stdin = process.stdin as NodeJS.ReadStream & { readonly isRaw?: boolean | undefined };
   const wasRaw = stdin.isRaw === true;
 

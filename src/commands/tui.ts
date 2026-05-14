@@ -1,12 +1,16 @@
 import { Effect } from "effect";
 import { Command } from "effect/unstable/cli";
 
-import { run } from "../tui/index.js";
+import { ensureOpenTuiRuntime } from "../tui/runtime/opentui.js";
 
 export const Tui = Command.make(
   "tui",
   {},
   Effect.fn("tui")(function* () {
+    yield* ensureOpenTuiRuntime();
+
+    const { run } = yield* Effect.promise(() => import("../tui/index.js"));
+
     return yield* run();
   }),
 ).pipe(

@@ -1,6 +1,6 @@
-import { Box, Text } from "ink";
-
+/** @jsxImportSource @opentui/react */
 import { DangerPrompt, MessageBox, TextPrompt } from "../ui/index.js";
+import { Colors, TextAttrs } from "../ui/index.js";
 import type { Overlay } from "./types.js";
 
 export function OverlayPane({ overlay, close }: { readonly overlay: Overlay; readonly close: () => void }) {
@@ -42,12 +42,12 @@ export function OverlayPane({ overlay, close }: { readonly overlay: Overlay; rea
 
   if (overlay.type === "busy") {
     return (
-      <Box borderStyle="round" borderColor="yellow" paddingX={1} flexDirection="column">
-        <Text bold color="yellow">
+      <box border borderStyle="rounded" borderColor={Colors.yellow} paddingX={1} flexDirection="column">
+        <text fg={Colors.yellow} attributes={TextAttrs.bold} wrapMode="word">
           {overlay.title}
-        </Text>
-        <Text>{overlay.message}</Text>
-      </Box>
+        </text>
+        <text wrapMode="word">{overlay.message}</text>
+      </box>
     );
   }
 

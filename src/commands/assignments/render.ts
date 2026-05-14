@@ -1,144 +1,149 @@
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
+import {
+  array,
+  formatValue,
+  record,
+  renderDetails,
+  renderFields,
+  renderListedCount,
+  renderTable,
+} from "../shared/output.js";
 
-const record = (value: unknown): Record<string, unknown> => (isRecord(value) ? value : {});
+const text = (value: unknown, fallback = "-") => formatValue(value, fallback);
 
-const array = (value: unknown): ReadonlyArray<unknown> => (Array.isArray(value) ? value : []);
-
-const text = (value: unknown, fallback = "-") => {
-  if (typeof value === "string" && value.length >= 1) {
-    return value;
-  }
-
-  if (typeof value === "number" || typeof value === "boolean") {
-    return String(value);
-  }
-
-  return fallback;
-};
-
-const yesNo = (value: unknown) => (value === true ? "是 yes" : value === false ? "否 no" : "-");
-
-const field = (label: string, value: unknown) => `  ${label}: ${text(value)}`;
-
-const command = (value: string) => `    ${value}`;
-
-const stringify = (value: unknown) => JSON.stringify(value, null, 2);
-
-const answerText = (value: unknown) => {
-  if (Array.isArray(value)) {
-    return value.map((item) => text(item)).join(" | ");
-  }
-
-  return text(value);
-};
+const answerText = (value: unknown) =>
+  Array.isArray(value) ? value.map((item) => text(item)).join(" | ") : text(value);
 
 const orderedEntries = (view: unknown) => {
   const root = record(view);
   const assignments = record(root["assignments"]);
   const order = array(root["order"]).map((item) => String(item));
   const ids = order.length >= 1 ? order : Object.keys(assignments);
+  const entries: Array<readonly [string, Record<string, unknown>]> = [];
 
-  return ids.flatMap((id) => (Object.hasOwn(assignments, id) ? ([[id, record(assignments[id])]] as const) : []));
+  for (const id of ids) {
+    if (Object.hasOwn(assignments, id)) {
+      entries.push([id, record(assignments[id])]);
+    }
+  }
+
+  return entries;
 };
 
-const heading = (title: string, courseId?: string) =>
-  courseId === undefined ? title : `${title}\n课程ID / course-id: ${courseId}`;
+const indentBlock = (value: string, indent = 2) =>
+  value
+    .split("\n")
+    .map((line) => `${" ".repeat(indent)}${line}`)
+    .join("\n");
 
-export const renderGeneric = (title: string, value: unknown) => `${title}\n${stringify(value)}`;
+const commands = (values: ReadonlyArray<string>) => ["COMMANDS", ...values.map((value) => `  ${value}`)].join("\n");
+
+const progressText = (progress: Record<string, unknown>) => `${text(progress["finished"])}/${text(progress["total"])}`;
+
+export const renderGeneric = (title: string, value: unknown) => renderDetails(title, value);
 
 export const renderCommonAssignments = (courseId: string, view: unknown) => {
   const root = record(view);
   const category = record(root["category"]);
-  const lines = [
-    heading("普通作业列表 / Common Assignment List", courseId),
-    `分类 / category: ${text(category["name"])}`,
-    `总数 / total: ${text(root["total"])}`,
-    "",
-  ];
+  const rows = orderedEntries(view).map(([id, item]) => ({ id, item }));
 
-  for (const [index, [id, item]] of orderedEntries(view).entries()) {
-    lines.push(
-      `[${index + 1}] ${text(item["name"], id)}`,
-      field("作业ID / assignment-id", id),
-      field("作品ID / work-id", item["workId"]),
-      field("状态 / status", item["status"]),
-      field("提交状态 / work-status", item["workStatus"]),
-      field("截止 / due", item["endTime"]),
-      field("允许补交 / allow-late", yesNo(item["allowLate"])),
-      "  下一步 / next:",
-      command(`open-educoder a c info ${id}`),
-      command(`open-educoder a c work ${courseId} ${id}`),
-      "",
-    );
+  if (rows.length === 0) {
+    return "";
   }
 
-  return lines.join("\n").trimEnd();
+  return [
+    "COMMON ASSIGNMENTS",
+    renderFields([
+      ["Course", courseId],
+      ["Category", `${text(category["name"])} (${text(category["id"])})`],
+      ["Total", root["total"]],
+    ]),
+    "",
+    renderTable(rows, [
+      { header: "ASSIGNMENT", value: (row) => row.id },
+      { header: "WORK", value: (row) => row.item["workId"] },
+      { header: "STATE", value: (row) => row.item["status"] },
+      { header: "WORK-STATE", value: (row) => row.item["workStatus"] },
+      { header: "DUE", value: (row) => row.item["endTime"] },
+      { header: "LATE", value: (row) => row.item["allowLate"] },
+      { header: "NAME", value: (row) => row.item["name"] },
+    ]),
+    "",
+    renderListedCount(rows.length, "common assignment"),
+    "",
+    commands([`open-educoder a c info <assignment-id>`, `open-educoder a c work ${courseId} <assignment-id>`]),
+  ].join("\n");
 };
 
 export const renderLabAssignments = (courseId: string, view: unknown) => {
   const root = record(view);
   const category = record(root["category"]);
-  const lines = [
-    heading("实训作业列表 / Lab Assignment List", courseId),
-    `分类 / category: ${text(category["name"])}`,
-    `总数 / total: ${text(root["total"])}`,
-    "",
-  ];
+  const rows = orderedEntries(view).map(([id, item]) => ({ id, item }));
 
-  for (const [index, [id, item]] of orderedEntries(view).entries()) {
-    const progress = record(item["progress"]);
-
-    lines.push(
-      `[${index + 1}] ${text(item["name"], id)}`,
-      field("作业ID / assignment-id", id),
-      field("实训ID / lab-id", item["labIdentifier"]),
-      field("工作区ID / workspace-id", item["workspaceIdentifier"]),
-      field("状态 / status", item["status"]),
-      field("截止 / due", item["endTime"]),
-      `  进度 / progress: ${text(progress["finished"])}/${text(progress["total"])}`,
-      "  下一步 / next:",
-      command(`open-educoder a b challenges ${courseId} ${id}`),
-      command(`open-educoder a b task ${courseId} ${id}`),
-      command(`open-educoder a b learning ${courseId} ${id}`),
-      command(`open-educoder a b content ${courseId} ${id} <path>`),
-      "",
-    );
+  if (rows.length === 0) {
+    return "";
   }
 
-  return lines.join("\n").trimEnd();
+  return [
+    "LAB ASSIGNMENTS",
+    renderFields([
+      ["Course", courseId],
+      ["Category", `${text(category["name"])} (${text(category["id"])})`],
+      ["Total", root["total"]],
+    ]),
+    "",
+    renderTable(rows, [
+      { header: "ASSIGNMENT", value: (row) => row.id },
+      { header: "LAB", value: (row) => row.item["labIdentifier"] },
+      { header: "WORKSPACE", value: (row) => row.item["workspaceIdentifier"] },
+      { header: "PROGRESS", value: (row) => progressText(record(row.item["progress"])) },
+      { header: "STATE", value: (row) => row.item["status"] },
+      { header: "DUE", value: (row) => row.item["endTime"] },
+      { header: "NAME", value: (row) => row.item["name"] },
+    ]),
+    "",
+    renderListedCount(rows.length, "lab assignment"),
+    "",
+    commands([
+      `open-educoder a b challenges ${courseId} <assignment-id>`,
+      `open-educoder a b task ${courseId} <assignment-id>`,
+      `open-educoder a b learning ${courseId} <assignment-id>`,
+      `open-educoder a b content ${courseId} <assignment-id> <path>`,
+    ]),
+  ].join("\n");
 };
 
 export const renderChallenges = (view: unknown) => {
   const root = record(view);
   const assignment = record(root["assignment"]);
   const summary = record(root["summary"]);
-  const challenges = array(root["challenges"]).map(record);
-  const lines = [
-    "实训关卡 / Lab Challenges",
-    field("课程ID / course-id", assignment["courseId"]),
-    field("作业ID / assignment-id", assignment["homeworkId"]),
-    field("实训ID / lab-id", assignment["labIdentifier"]),
-    field("作业名称 / assignment-name", assignment["name"]),
-    field("成绩 / score", summary["score"]),
-    `  进度 / progress: ${text(summary["passed"])}/${challenges.length}`,
+  const rows = array(root["challenges"]).map((challenge) => record(challenge));
+
+  return [
+    "LAB CHALLENGES",
+    renderFields([
+      ["Course", assignment["courseId"]],
+      ["Assignment", assignment["homeworkId"]],
+      ["Lab", assignment["labIdentifier"]],
+      ["Name", assignment["name"]],
+      ["Score", summary["score"]],
+      ["Progress", `${text(summary["passed"])}/${rows.length}`],
+      ["Evaluations", summary["evaluateCount"]],
+    ]),
     "",
-  ];
-
-  for (const challenge of challenges) {
-    lines.push(
-      `[${text(challenge["index"])}] ${text(challenge["name"])}`,
-      field("关卡序号 / challenge-index", challenge["index"]),
-      field("关卡ID / challenge-id", challenge["challengeId"]),
-      field("分数 / score", challenge["score"]),
-      field("状态 / status", challenge["status"]),
-      field("通过状态 / passed-status", challenge["passedStatus"]),
-      field("评测次数 / evaluate-count", challenge["evaluateCount"]),
-      "",
-    );
-  }
-
-  return lines.join("\n").trimEnd();
+    renderTable(rows, [
+      { header: "IDX", value: (row) => row["index"] },
+      { header: "CHALLENGE", value: (row) => row["challengeId"] },
+      { header: "STATE", value: (row) => row["status"] },
+      { header: "PASSED", value: (row) => row["passedStatus"] },
+      { header: "SCORE", value: (row) => row["score"] },
+      { header: "EVAL", value: (row) => row["evaluateCount"] },
+      { header: "NAME", value: (row) => row["name"] },
+    ]),
+    "",
+    renderListedCount(rows.length, "challenge"),
+  ]
+    .join("\n")
+    .trimEnd();
 };
 
 export const renderLabTask = (view: unknown) => {
@@ -146,29 +151,30 @@ export const renderLabTask = (view: unknown) => {
   const resolved = record(root["resolved"]);
   const challenge = record(root["challenge"]);
   const repositoryPath = text(challenge["path"]);
+  const courseId = text(resolved["courseId"], "<course-id>");
+  const homeworkId = text(resolved["homeworkId"], "<assignment-id>");
   const challengeIndex = text(resolved["challengeIndex"]);
   const challengeFlag = challengeIndex === "-" ? "" : ` --challenge-index ${challengeIndex}`;
-  const lines = [
-    "实训任务 / Lab Task",
-    field("课程ID / course-id", resolved["courseId"]),
-    field("作业ID / assignment-id", resolved["homeworkId"]),
-    field("实训ID / lab-id", resolved["labIdentifier"]),
-    field("任务ID / task-id", resolved["taskId"]),
-    field("关卡序号 / challenge-index", resolved["challengeIndex"]),
-    field("关卡ID / challenge-id", resolved["challengeId"]),
-    field("关卡名称 / challenge-name", resolved["challengeName"]),
-    field("仓库路径 / repository-path", repositoryPath),
-    "  下一步 / next:",
-    command(`open-educoder a b repository ${text(resolved["courseId"])} ${text(resolved["homeworkId"])}`),
-    command(`open-educoder a b learning ${text(resolved["courseId"])} ${text(resolved["homeworkId"])}${challengeFlag}`),
-    command(
-      `open-educoder a b content ${text(resolved["courseId"])} ${text(
-        resolved["homeworkId"],
-      )} ${repositoryPath}${challengeFlag}`,
-    ),
-  ];
 
-  return lines.join("\n");
+  return [
+    "LAB TASK",
+    renderFields([
+      ["Course", resolved["courseId"]],
+      ["Assignment", resolved["homeworkId"]],
+      ["Lab", resolved["labIdentifier"]],
+      ["Task", resolved["taskId"]],
+      ["Challenge", resolved["challengeId"]],
+      ["Index", resolved["challengeIndex"]],
+      ["Name", resolved["challengeName"]],
+      ["Repository", repositoryPath],
+    ]),
+    "",
+    commands([
+      `open-educoder a b repository ${courseId} ${homeworkId}`,
+      `open-educoder a b learning ${courseId} ${homeworkId}${challengeFlag}`,
+      `open-educoder a b content ${courseId} ${homeworkId} ${repositoryPath}${challengeFlag}`,
+    ]),
+  ].join("\n");
 };
 
 export const renderChoiceQuestions = (view: unknown) => {
@@ -177,35 +183,48 @@ export const renderChoiceQuestions = (view: unknown) => {
   const summary = record(root["summary"]);
   const questions = record(root["questions"]);
   const lines = [
-    "客观题 / Objective Questions",
-    field("课程ID / course-id", resolved["courseId"]),
-    field("作业ID / assignment-id", resolved["homeworkId"]),
-    field("任务ID / task-id", resolved["taskId"]),
-    field("关卡序号 / challenge-index", resolved["challengeIndex"]),
-    field("题目数 / count", summary["count"]),
-    field("已提交 / submitted", summary["submitted"]),
-    field("全部提交 / all-submitted", summary["allSubmitted"]),
-    "",
+    "OBJECTIVE QUESTIONS",
+    renderFields([
+      ["Course", resolved["courseId"]],
+      ["Assignment", resolved["homeworkId"]],
+      ["Task", resolved["taskId"]],
+      ["Challenge", resolved["challengeIndex"]],
+      ["Count", summary["count"]],
+      ["Submitted", summary["submitted"]],
+      ["Complete", summary["allSubmitted"]],
+    ]),
   ];
 
   for (const [position, questionValue] of Object.entries(questions)) {
     const question = record(questionValue);
     const type = record(question["type"]);
-    const options = record(question["options"]);
+    const options = Object.entries(record(question["options"])).map(([label, optionValue]) => ({
+      label,
+      option: record(optionValue),
+    }));
 
     lines.push(
+      "",
       `[${position}] ${text(type["name"])} ${text(question["subject"])}`,
-      field("当前答案 / answer", answerText(question["answer"])),
-      field("结果 / result", question["result"]),
+      renderFields(
+        [
+          ["Answer", answerText(question["answer"])],
+          ["Result", question["result"]],
+        ],
+        2,
+      ),
     );
 
-    for (const [label, optionValue] of Object.entries(options)) {
-      const option = record(optionValue);
-
-      lines.push(`    ${label}. ${text(option["text"])}`);
+    if (options.length >= 1) {
+      lines.push(
+        indentBlock(
+          renderTable(options, [
+            { header: "OPT", value: (row) => row.label },
+            { header: "TEXT", value: (row) => row.option["text"] },
+          ]),
+        ),
+      );
     }
-
-    lines.push("");
   }
 
   return lines.join("\n").trimEnd();
@@ -216,12 +235,13 @@ export const renderChoiceSubmit = (view: unknown) => {
   const summary = record(root["summary"]);
   const results = record(root["results"]);
   const lines = [
-    "客观题提交结果 / Objective Answer Result",
-    field("成绩 / grade", summary["grade"]),
-    field("正确数 / correct", summary["correct"]),
-    field("题目数 / count", summary["count"]),
-    field("全部提交 / all-submitted", summary["allSubmitted"]),
-    "",
+    "OBJECTIVE ANSWER RESULT",
+    renderFields([
+      ["Grade", summary["grade"]],
+      ["Correct", `${text(summary["correct"])}/${text(summary["count"])}`],
+      ["Complete", summary["allSubmitted"]],
+      ["Next", summary["nextTaskId"]],
+    ]),
   ];
 
   for (const [position, resultValue] of Object.entries(results)) {
@@ -229,11 +249,16 @@ export const renderChoiceSubmit = (view: unknown) => {
     const type = record(result["type"]);
 
     lines.push(
-      `[${position}] ${text(type["name"])} ${text(result["subject"])}`,
-      field("提交答案 / actual", answerText(result["actual"])),
-      field("标准答案 / standard", answerText(result["standard"])),
-      field("结果 / result", result["result"]),
       "",
+      `[${position}] ${text(type["name"])} ${text(result["subject"])}`,
+      renderFields(
+        [
+          ["Actual", answerText(result["actual"])],
+          ["Standard", answerText(result["standard"])],
+          ["Result", result["result"]],
+        ],
+        2,
+      ),
     );
   }
 
@@ -242,14 +267,27 @@ export const renderChoiceSubmit = (view: unknown) => {
 
 export const renderRepository = (view: unknown) => {
   const repository = record(record(view)["repository"]);
-  const entries = record(repository["entries"]);
-  const lines = ["仓库目录 / Repository", field("路径 / path", repository["path"]), ""];
-
-  for (const [name, entry] of Object.entries(entries)) {
+  const rows = Object.entries(record(repository["entries"])).map(([name, entry]) => {
     const item = record(entry);
 
-    lines.push(`${text(item["type"])}\t${text(item["path"], name)}`);
-  }
+    return {
+      name,
+      type: item["type"],
+      path: item["path"],
+    };
+  });
 
-  return lines.join("\n").trimEnd();
+  return [
+    "REPOSITORY",
+    renderFields([["Path", repository["path"]]]),
+    "",
+    renderTable(rows, [
+      { header: "TYPE", value: (row) => row.type },
+      { header: "PATH", value: (row) => row.path ?? row.name },
+    ]),
+    "",
+    renderListedCount(rows.length, "entry", "entries"),
+  ]
+    .join("\n")
+    .trimEnd();
 };

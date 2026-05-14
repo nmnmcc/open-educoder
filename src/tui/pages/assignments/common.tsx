@@ -1,5 +1,6 @@
+/** @jsxImportSource @opentui/react */
+import { useKeyboard } from "@opentui/react";
 import { Effect } from "effect";
-import { Box, useInput } from "ink";
 import { useState } from "react";
 
 import { CommonAssignmentFeature } from "../../../services/features/assignments/common.js";
@@ -13,6 +14,7 @@ import {
   SelectList,
   asRecord,
   booleanValue,
+  keyText,
   optionalText,
   stringValue,
   useRemoteData,
@@ -36,34 +38,37 @@ export const CommonListPage = Effect.gen(function* () {
       }),
     );
 
-    useInput(
-      (input) => {
-        if (input === "n") {
-          setPage((value) => value + 1);
-          return;
-        }
+    useKeyboard((event) => {
+      if (!active) {
+        return;
+      }
 
-        if (input === "p") {
-          setPage((value) => Math.max(1, value - 1));
-          return;
-        }
+      const input = keyText(event);
 
-        if (input === "r") {
-          setRefresh((value) => value + 1);
-          return;
-        }
+      if (input === "n") {
+        setPage((value) => value + 1);
+        return;
+      }
 
-        if (input === "/") {
-          void ui.prompt("Search common assignments", "keyword", search).then((value) => {
-            if (value !== null) {
-              setSearch(value.trim());
-              setPage(1);
-            }
-          });
-        }
-      },
-      { isActive: active },
-    );
+      if (input === "p") {
+        setPage((value) => Math.max(1, value - 1));
+        return;
+      }
+
+      if (input === "r") {
+        setRefresh((value) => value + 1);
+        return;
+      }
+
+      if (input === "/") {
+        void ui.prompt("Search common assignments", "keyword", search).then((value) => {
+          if (value !== null) {
+            setSearch(value.trim());
+            setPage(1);
+          }
+        });
+      }
+    });
 
     return (
       <Page
@@ -122,7 +127,7 @@ function CommonListContent({
   });
 
   return (
-    <Box flexDirection="column">
+    <box flexDirection="column">
       <FieldList
         fields={[
           ["page", page],
@@ -130,7 +135,7 @@ function CommonListContent({
           ["category", asRecord(view["category"])["name"]],
         ]}
       />
-      <Box marginTop={1}>
+      <box marginTop={1}>
         <SelectList
           items={items}
           selected={selected}
@@ -147,8 +152,8 @@ function CommonListContent({
           active={active}
           empty="No common assignments found."
         />
-      </Box>
-    </Box>
+      </box>
+    </box>
   );
 }
 

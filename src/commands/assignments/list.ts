@@ -71,7 +71,7 @@ export const List = Command.make(
     yield* Console.log(sections.length >= 1 ? sections.join("\n\n") : "没有作业 / No assignments found.");
   }),
 ).pipe(
-  Command.withDescription("List assignments in a course and print copyable next commands with IDs."),
+  Command.withDescription("List assignments in a course and show IDs with next command templates."),
   Command.withExamples([
     {
       command: "open-educoder assignments list 109348 --type all",

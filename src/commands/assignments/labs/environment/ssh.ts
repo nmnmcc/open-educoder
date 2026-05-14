@@ -8,7 +8,7 @@ import {
   LabAssignmentFeature,
   renderLabSshTemplate,
 } from "../../../../services/features/assignments/lab.js";
-import { readStdinText } from "../../../../utils/stdin.js";
+import { readStdinText } from "../../../shared/stdin.js";
 import {
   AssignmentIdArgument,
   ChallengeId,

@@ -1,5 +1,6 @@
+/** @jsxImportSource @opentui/react */
+import { useKeyboard } from "@opentui/react";
 import { Effect } from "effect";
-import { Box, Text, useInput } from "ink";
 import { useState } from "react";
 
 import { ExamFeature } from "../../services/features/exam.js";
@@ -7,12 +8,15 @@ import type { Navigator, PageProps, Route } from "../app/types.js";
 import { MenuPage } from "../components/MenuPage.js";
 import { askRequired } from "../shared/pageHelpers.js";
 import {
+  Colors,
   FieldList,
   Page,
   RemotePane,
   type SelectItem,
   SelectList,
+  TextAttrs,
   asRecord,
+  keyText,
   optionalText,
   stringValue,
   useRemoteData,
@@ -29,24 +33,27 @@ export const ExamsPage = Effect.gen(function* () {
       exam.list({ courseId: route.courseId, page, limit: 20, type: "" }),
     );
 
-    useInput(
-      (input) => {
-        if (input === "n") {
-          setPage((value) => value + 1);
-          return;
-        }
+    useKeyboard((event) => {
+      if (!active) {
+        return;
+      }
 
-        if (input === "p") {
-          setPage((value) => Math.max(1, value - 1));
-          return;
-        }
+      const input = keyText(event);
 
-        if (input === "r") {
-          setRefresh((value) => value + 1);
-        }
-      },
-      { isActive: active },
-    );
+      if (input === "n") {
+        setPage((value) => value + 1);
+        return;
+      }
+
+      if (input === "p") {
+        setPage((value) => Math.max(1, value - 1));
+        return;
+      }
+
+      if (input === "r") {
+        setRefresh((value) => value + 1);
+      }
+    });
 
     return (
       <Page title="Exams" subtitle={route.courseName} footer="Enter open  n/p page  r refresh  Esc back  q quit">
@@ -91,14 +98,14 @@ function ExamsContent({
   });
 
   return (
-    <Box flexDirection="column">
+    <box flexDirection="column">
       <FieldList
         fields={[
           ["page", page],
           ["total", view["total"]],
         ]}
       />
-      <Box marginTop={1}>
+      <box marginTop={1}>
         <SelectList
           items={items}
           selected={selected}
@@ -116,8 +123,8 @@ function ExamsContent({
           active={active}
           empty="No exams found."
         />
-      </Box>
-    </Box>
+      </box>
+    </box>
   );
 }
 
@@ -270,14 +277,11 @@ export const ExamShowPage = Effect.gen(function* () {
       exam.show({ courseId: route.courseId, examId: route.examId, withChoiceContent: true }),
     );
 
-    useInput(
-      (input) => {
-        if (input === "j" && data.tag === "success") {
-          ui.showJson("Exam questions JSON", data.value.view);
-        }
-      },
-      { isActive: active },
-    );
+    useKeyboard((event) => {
+      if (active && keyText(event) === "j" && data.tag === "success") {
+        ui.showJson("Exam questions JSON", data.value.view);
+      }
+    });
 
     return (
       <Page title="Exam Questions" subtitle={`${route.examName}  ${route.examId}`} footer="j JSON  Esc back  q quit">
@@ -287,24 +291,28 @@ export const ExamShowPage = Effect.gen(function* () {
             const questions: ReadonlyArray<unknown> = Array.isArray(value) ? value : [];
 
             return questions.length < 1 ? (
-              <Text dimColor>No questions found.</Text>
+              <text fg={Colors.gray} attributes={TextAttrs.dim} wrapMode="word">
+                No questions found.
+              </text>
             ) : (
-              <Box flexDirection="column">
+              <box flexDirection="column">
                 {questions.map((question, index) => {
                   const record = asRecord(question);
 
                   return (
-                    <Box key={index} flexDirection="column" marginBottom={1}>
-                      <Text bold color="cyan">
+                    <box key={index} flexDirection="column" marginBottom={1}>
+                      <text fg={Colors.cyan} attributes={TextAttrs.bold} wrapMode="word">
                         {optionalText(record["number"]) ?? index + 1}. {stringValue(record["type"])}{" "}
                         {optionalText(record["score"]) ?? "-"} pts
-                      </Text>
-                      <Text>{stringValue(record["title"])}</Text>
-                      <Text dimColor>question id {optionalText(record["id"]) ?? "-"}</Text>
-                    </Box>
+                      </text>
+                      <text wrapMode="word">{stringValue(record["title"])}</text>
+                      <text fg={Colors.gray} attributes={TextAttrs.dim} wrapMode="word">
+                        question id {optionalText(record["id"]) ?? "-"}
+                      </text>
+                    </box>
                   );
                 })}
-              </Box>
+              </box>
             );
           }}
         </RemotePane>
