@@ -130,11 +130,48 @@ const QuestionChoice = Schema.Struct({
 /*
 Sample: GET /api/exercises/198085/start.json
 {
+  "model": 1,
+  "position": 1
+}
+*/
+const StandardAnswer = Schema.Struct({
+  model: Schema.Int,
+  position: Schema.Int,
+});
+/*
+Sample: GET /api/exercises/198085/start.json
+{
+  "choice_id": 1,
+  "answer_text": "<blank answer>"
+}
+*/
+const BlankUserAnswer = Schema.Struct({
+  choice_id: Schema.Int,
+  answer_text: Schema.String,
+});
+/*
+Sample: GET /api/exercises/198085/start.json
+[
+  { "choice_id": 1, "answer_text": "<blank answer>" },
+  "<free text answer>"
+]
+*/
+const UserAnswer = Schema.Union([BlankUserAnswer, Schema.String]);
+/*
+Sample: GET /api/exercises/198085/start.json
+{
   "question_num": 13,
   "question_id": 12263490,
   "question_title": "<question title>",
   "question_score": "4.0",
   "question_type": 3,
+  "is_ordered": true,
+  "no_space": true,
+  "downcase": true,
+  "multi_count": 1,
+  "standard_answers": ["<StandardAnswer>"],
+  "user_answer": ["<UserAnswer>"],
+  "ques_status": 0,
   "question_choices": ["<QuestionChoice>"]
 }
 */
@@ -144,18 +181,48 @@ const ExerciseQuestion = Schema.Struct({
   question_title: Schema.String,
   question_score: Schema.String,
   question_type: Schema.Int,
+  repeat_answer: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  is_marked: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  is_ordered: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  no_space: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  downcase: Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+  multi_count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  standard_answers: Schema.optionalKey(Schema.NullishOr(Schema.Array(StandardAnswer))),
+  user_answer: Schema.optionalKey(Schema.NullishOr(Schema.Array(UserAnswer))),
+  ques_status: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   question_choices: Schema.optionalKey(Schema.NullishOr(Schema.Array(QuestionChoice))),
 });
 /*
 Sample: GET /api/exercises/198085/start.json
 {
+  "question_type_id": 4,
+  "question_type": 3,
+  "count": 1,
   "name": "<question type name>",
-  "items": ["<ExerciseQuestion>"]
+  "score": "4.0",
+  "items": ["<ExerciseQuestion>"],
+  "sub_questions_count": 0
 }
 */
 const ExerciseQuestionType = Schema.Struct({
+  question_type_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  question_type: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
   name: Schema.String,
+  score: Schema.optionalKey(Schema.NullishOr(Schema.String)),
   items: Schema.Array(ExerciseQuestion),
+  sub_questions_count: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+});
+/*
+Sample: GET /api/exercises/198085/start.json
+{
+  "q_counts": 17,
+  "q_scores": "100.0"
+}
+*/
+const ExerciseTypes = Schema.Struct({
+  q_counts: Schema.Int,
+  q_scores: Schema.String,
 });
 /*
 Sample: GET /api/exercises/198085/start.json
@@ -163,7 +230,8 @@ Sample: GET /api/exercises/198085/start.json
   "left_banner_id": 1809409,
   "left_banner_name": "<banner name>",
   "exercise": "<Exercise>",
-  "exercise_question_types": ["<ExerciseQuestionType>"]
+  "exercise_question_types": ["<ExerciseQuestionType>"],
+  "exercise_types": "<ExerciseTypes>"
 }
 */
 const ExerciseStartResponse = Schema.Struct({
@@ -171,6 +239,7 @@ const ExerciseStartResponse = Schema.Struct({
   left_banner_name: Schema.String,
   exercise: Exercise,
   exercise_question_types: Schema.Array(ExerciseQuestionType),
+  exercise_types: Schema.optionalKey(Schema.NullishOr(ExerciseTypes)),
 });
 /*
 Sample: POST /api/exercise_questions/12263457/exercise_answers.json

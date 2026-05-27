@@ -49,6 +49,11 @@ type ExamChoiceView = {
   readonly text?: string;
 };
 
+type ExamTextAnswerView = {
+  readonly position: number;
+  readonly text: string;
+};
+
 const formatChoices = (
   choices: ReadonlyArray<{
     readonly choice_id: number;
@@ -71,6 +76,38 @@ const formatChoices = (
           id: choice.choice_id,
           selected: choice.user_answer_boolean ?? false,
         };
+  }
+
+  return formatted;
+};
+
+const formatTextAnswers = (
+  answers:
+    | ReadonlyArray<
+        | string
+        | {
+            readonly choice_id: number;
+            readonly answer_text: string;
+          }
+      >
+    | null
+    | undefined,
+) => {
+  const formatted: Record<number, ExamTextAnswerView> = {};
+
+  for (const [index, answer] of (answers ?? []).entries()) {
+    if (typeof answer === "string") {
+      formatted[index + 1] = {
+        position: index + 1,
+        text: answer,
+      };
+      continue;
+    }
+
+    formatted[answer.choice_id] = {
+      position: answer.choice_id,
+      text: answer.answer_text,
+    };
   }
 
   return formatted;
@@ -104,7 +141,10 @@ type ShowExamView = {
     readonly type: string;
     readonly typeId: number;
     readonly score: string;
+    readonly blankCount: number | null;
+    readonly answers: Record<number, ExamTextAnswerView>;
     readonly choices: Record<number, ExamChoiceView>;
+    readonly status: number | null;
     readonly title: string;
   }>;
 };
@@ -123,6 +163,12 @@ type AnswerQuestionInput = {
   readonly login?: string | undefined;
 };
 
+type AnswerBlanksInput = {
+  readonly questionId: number;
+  readonly answers: ReadonlyArray<string>;
+  readonly login?: string | undefined;
+};
+
 type ListExamsRaw = EducoderApiResponse<"Course", "exercises">;
 type ExamInfoRaw = EducoderApiResponse<"Exam", "info">;
 type ExamStartRaw = EducoderApiResponse<"Exam", "start">;
@@ -130,6 +176,7 @@ type ExamTimeRaw = EducoderApiResponse<"Exam", "time">;
 type ExamBeginCommitRaw = EducoderApiResponse<"Exam", "beginCommit">;
 type ExamCommitRaw = EducoderApiResponse<"Exam", "commit">;
 type AnswerQuestionRaw = EducoderApiResponse<"Exam", "answer">;
+type AnswerBlanksRaw = ReadonlyArray<AnswerQuestionRaw>;
 
 type ListExamsView = {
   readonly total: number;
@@ -178,6 +225,14 @@ type SubmitExamView = {
   };
 };
 
+type AnswerBlanksView = {
+  readonly answers: ReadonlyArray<{
+    readonly position: number;
+    readonly status: number;
+    readonly message: string;
+  }>;
+};
+
 export type ExamFeatureShape = {
   readonly parseChoiceIds: (value: string) => Effect.Effect<ReadonlyArray<number>, AnswerInputError>;
   readonly list: FeatureWorkflow<ListExamsInput, ListExamsRaw, ListExamsView>;
@@ -186,6 +241,7 @@ export type ExamFeatureShape = {
   readonly show: FeatureWorkflow<ShowExamInput, ExamStartRaw, ShowExamView>;
   readonly submit: FeatureWorkflow<SubmitExamInput, SubmitExamRaw, SubmitExamView>;
   readonly answer: FeatureWorkflow<AnswerQuestionInput, AnswerQuestionRaw, AnswerQuestionRaw>;
+  readonly answerBlanks: FeatureWorkflow<AnswerBlanksInput, AnswerBlanksRaw, AnswerBlanksView>;
 };
 
 export class ExamFeature extends Context.Service<ExamFeature, ExamFeatureShape>()(
@@ -206,6 +262,28 @@ export class ExamFeature extends Context.Service<ExamFeature, ExamFeatureShape>(
 
         return user.login;
       });
+
+      const saveAnswer = (
+        login: string,
+        input: {
+          readonly questionId: number;
+          readonly exerciseChoiceId: number | ReadonlyArray<number>;
+          readonly answerText: string | null;
+        },
+      ) =>
+        educoder.Exam.answer({
+          params: {
+            questionId: input.questionId,
+          },
+          query: {
+            zzud: login,
+          },
+          payload: {
+            questionId: input.questionId,
+            exercise_choice_id: input.exerciseChoiceId,
+            answer_text: input.answerText,
+          },
+        });
 
       const parseChoiceIds: ExamFeatureShape["parseChoiceIds"] = Effect.fn("features.exam.parseChoiceIds")(
         function* (value) {
@@ -303,7 +381,10 @@ export class ExamFeature extends Context.Service<ExamFeature, ExamFeatureShape>(
               type: questionType.name,
               typeId: question.question_type,
               score: question.question_score,
+              blankCount: question.multi_count ?? null,
+              answers: formatTextAnswers(question.user_answer),
               choices: formatChoices(choices, input.withChoiceContent),
+              status: question.ques_status ?? null,
               title: question.question_title,
             };
           }),
@@ -354,23 +435,39 @@ export class ExamFeature extends Context.Service<ExamFeature, ExamFeatureShape>(
 
       const answer: ExamFeatureShape["answer"] = Effect.fn("features.exam.answer")(function* (input) {
         const login = yield* resolveLogin(input.login);
-        const raw = yield* educoder.Exam.answer({
-          params: {
-            questionId: input.questionId,
-          },
-          query: {
-            zzud: login,
-          },
-          payload: {
-            questionId: input.questionId,
-            exercise_choice_id: input.exerciseChoiceId,
-            answer_text: input.answerText,
-          },
-        });
+        const raw = yield* saveAnswer(login, input);
 
         return {
           raw,
           view: raw,
+        };
+      });
+
+      const answerBlanks: ExamFeatureShape["answerBlanks"] = Effect.fn("features.exam.answerBlanks")(function* (input) {
+        if (input.answers.length < 1) {
+          return yield* new AnswerInputError({
+            message: "Provide at least one blank answer.",
+          });
+        }
+
+        const login = yield* resolveLogin(input.login);
+        const raw = yield* Effect.forEach(input.answers, (answerText, index) =>
+          saveAnswer(login, {
+            questionId: input.questionId,
+            exerciseChoiceId: index + 1,
+            answerText,
+          }),
+        );
+
+        return {
+          raw,
+          view: {
+            answers: raw.map((response, index) => ({
+              position: index + 1,
+              status: response.status,
+              message: response.message,
+            })),
+          },
         };
       });
 
@@ -382,6 +479,7 @@ export class ExamFeature extends Context.Service<ExamFeature, ExamFeatureShape>(
         show,
         submit,
         answer,
+        answerBlanks,
       });
     }),
   );

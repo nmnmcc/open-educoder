@@ -136,6 +136,28 @@ const choiceSummary = (choicesValue: unknown) => {
   return selected.length >= 1 ? selected.join(", ") : "-";
 };
 
+const textAnswerSummary = (answersValue: unknown, blankCountValue: unknown) => {
+  const answers = record(answersValue);
+  const blankCount = typeof blankCountValue === "number" && Number.isInteger(blankCountValue) ? blankCountValue : 0;
+  const positions = new Set<number>();
+
+  for (let position = 1; position <= blankCount; position += 1) {
+    positions.add(position);
+  }
+
+  for (const position of Object.keys(answers).map((value) => Number(value))) {
+    if (Number.isInteger(position)) {
+      positions.add(position);
+    }
+  }
+
+  const formatted = [...positions]
+    .sort((left, right) => left - right)
+    .map((position) => `${position}:${formatValue(record(answers[String(position)])["text"])}`);
+
+  return formatted.length >= 1 ? formatted.join(", ") : "-";
+};
+
 const renderExamQuestions = (view: unknown) => {
   const questions = array(record(view)["questions"]).map((question) => record(question));
   const lines = [
@@ -146,6 +168,7 @@ const renderExamQuestions = (view: unknown) => {
       { header: "TYPE", value: (row) => row["type"] },
       { header: "SCORE", value: (row) => row["score"] },
       { header: "SELECTED", value: (row) => choiceSummary(row["choices"]) },
+      { header: "ANSWER", value: (row) => textAnswerSummary(row["answers"], row["blankCount"]) },
       { header: "TITLE", value: (row) => row["title"] },
     ]),
     "",
@@ -192,6 +215,27 @@ const renderAnswerResponse = (questionId: number, value: unknown) => {
       ["Message", root["message"]],
     ]),
   ].join("\n");
+};
+
+const renderBlankAnswerResponse = (questionId: number, value: unknown) => {
+  const root = record(value);
+  const answers = array(root["answers"]).map((item) => record(item));
+
+  return [
+    "EXAM BLANK ANSWERS",
+    renderFields([
+      ["Question", questionId],
+      ["Saved", answers.length],
+    ]),
+    "",
+    renderTable(answers, [
+      { header: "BLANK", value: (row) => row["position"] },
+      { header: "STATUS", value: (row) => row["status"] },
+      { header: "MESSAGE", value: (row) => row["message"] },
+    ]),
+  ]
+    .join("\n")
+    .trimEnd();
 };
 
 const readAnswerText = Effect.fn("exam.answer.readText")(function* (input: {
@@ -484,6 +528,42 @@ const Multiple = Command.make(
   Command.withAlias("M"),
 );
 
+const Blanks = Command.make(
+  "blanks",
+  {
+    questionId: QuestionId,
+    answers: Argument.string("answer").pipe(
+      Argument.withDescription("Blank answers in order; quote answers that contain spaces."),
+      Argument.variadic({ min: 1 }),
+    ),
+    login: OptionalLogin,
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw answer responses as JSON.")),
+  },
+  Effect.fn("exam.answer.blanks")(function* (input) {
+    const examFeature = yield* ExamFeature;
+    const result = yield* examFeature.answerBlanks({
+      questionId: input.questionId,
+      answers: input.answers,
+      login: optionalValue(input.login),
+    });
+
+    if (input.json) {
+      return yield* printJson(result.raw);
+    }
+
+    yield* Console.log(renderBlankAnswerResponse(input.questionId, result.view));
+  }),
+).pipe(
+  Command.withDescription("Save ordered blank answers by sending one answer per blank position."),
+  Command.withExamples([
+    {
+      command: 'open-educoder exams answer blanks 687230 "data definition" "data manipulation" "data control" "query"',
+      description: "Save four blank answers in order",
+    },
+  ]),
+  Command.withAlias("B"),
+);
+
 const Text = Command.make(
   "text",
   {
@@ -531,18 +611,22 @@ const Text = Command.make(
 );
 
 const Answer = Command.make("answer").pipe(
-  Command.withDescription("Save one exam answer; choose single, multiple, or text by question type."),
+  Command.withDescription("Save one exam answer; choose single, multiple, blanks, or text by question type."),
   Command.withExamples([
     { command: "open-educoder exams answer single 12263457 35397429", description: "Save a single-choice answer" },
     {
       command: "open-educoder exams answer multiple 12263483 35397470,35397469",
       description: "Save a multiple-choice answer",
     },
+    {
+      command: 'open-educoder exams answer blanks 687230 "data definition" "data manipulation"',
+      description: "Save ordered blank answers",
+    },
     { command: "cat answer.md | open-educoder exams answer text 12263490 --stdin", description: "Save a text answer" },
     { command: 'open-educoder exams answer text 12263490 "12"', description: "Save a text answer" },
   ]),
   Command.withAlias("A"),
-  Command.withSubcommands([Single, Multiple, Text]),
+  Command.withSubcommands([Single, Multiple, Blanks, Text]),
 );
 
 export const Exams = Command.make("exams").pipe(

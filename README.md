@@ -43,7 +43,7 @@ Most commands take IDs that are returned by earlier commands:
 | `sec-key`                          | lab evaluation responses                                                                                      |
 | `commit-id`                        | lab save, commit, or snapshot evaluation responses                                                            |
 | `exam-id`                          | `open-educoder exams list COURSE_ID`                                                                          |
-| `question-id` and `choice-id`      | `open-educoder exams show COURSE_ID EXAM_ID --with-choice-content`                                            |
+| `question-id`, `choice-id`, blanks | `open-educoder exams show COURSE_ID EXAM_ID --with-choice-content`                                            |
 
 Many commands support `--json` for raw API-shaped output that is easier to inspect or pipe into scripts.
 
@@ -201,6 +201,7 @@ VISUAL='code --wait' open-educoder assignments labs edit COURSE_ID ASSIGNMENT_ID
 | `open-educoder exams show COURSE_ID EXAM_ID --with-choice-content`      | Include full choice text.                                          |
 | `open-educoder exams answer single QUESTION_ID CHOICE_ID`               | Save one single-choice answer.                                     |
 | `open-educoder exams answer multiple QUESTION_ID CHOICE_ID1,CHOICE_ID2` | Save one multiple-choice answer.                                   |
+| `open-educoder exams answer blanks QUESTION_ID ANSWER1 ANSWER2`         | Save ordered blank answers.                                        |
 | `open-educoder exams answer text QUESTION_ID "TEXT"`                    | Save one free-text answer.                                         |
 | `open-educoder exams submit COURSE_ID EXAM_ID`                          | Submit the current exam attempt with saved answers.                |
 
@@ -214,7 +215,7 @@ courses: command c, list l, info i, modules m
 assignments: command a, list l, common c, labs b
 assignments common: list l, info i, work w, draft n, members u, comments q, settings g, redo-logs d
 assignments labs: list l, challenges k, task t, learning g, repository f, content c, passed a, edit D, save S, reset R, prune V, evaluate E, status s, logs o, commit C, pull P, remaining-time m, ssh r
-exams: command e, list l, info i, start S, show H, submit U, answer A, single S, multiple M, text T
+exams: command e, list l, info i, start S, show H, submit U, answer A, single S, multiple M, blanks B, text T
 ```
 
 Examples:
