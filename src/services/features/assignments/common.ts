@@ -229,11 +229,14 @@ const makeOssHeaders = (input: {
   });
   const headers: Record<string, string> = {
     Accept: "*/*",
-    "Content-Type": input.contentType,
     Date: date,
     ...xHeaders,
     Authorization: authorization,
   };
+
+  if (input.contentType !== "") {
+    headers["Content-Type"] = input.contentType;
+  }
 
   if (input.contentMd5 !== undefined) {
     headers["Content-MD5"] = input.contentMd5;
@@ -320,8 +323,24 @@ const parseUploadId = (xml: string) =>
       }),
   });
 
+const redactOssErrorBody = (text: string) =>
+  text
+    .replace(/(x-oss-security-token:)[^\n<]+/gi, "$1<redacted>")
+    .replace(/(<StringToSignBytes>)[^<]+(<\/StringToSignBytes>)/gi, "$1<redacted>$2")
+    .slice(0, 4_000);
+
 const readResponseText = (response: HttpClientResponse.HttpClientResponse) =>
-  HttpClientResponse.filterStatusOk(response).pipe(Effect.flatMap((ok) => ok.text));
+  response.text.pipe(
+    Effect.flatMap((text) =>
+      response.status >= 200 && response.status < 300
+        ? Effect.succeed(text)
+        : Effect.fail(
+            new AssignmentInputError({
+              message: `OSS request failed: ${response.status} ${response.request.method} ${response.request.url}\n${redactOssErrorBody(text)}`,
+            }),
+          ),
+    ),
+  );
 
 const readResponseHeader = (response: HttpClientResponse.HttpClientResponse, header: string) =>
   response.headers[header.toLowerCase()] ?? response.headers[header];
@@ -397,6 +416,9 @@ type StudentWorkCommentsRaw = EducoderApiResponse<"StudentWork", "commentList">;
 type CommonHomeworkSubmitRaw = {
   readonly attachments: ReadonlyArray<AttachmentUploadRaw>;
   readonly submit: SubmitStudentWorkResponseRaw;
+};
+type CommonHomeworkAttachmentUploadRaw = {
+  readonly attachments: ReadonlyArray<AttachmentUploadRaw>;
 };
 
 type CommonHomeworkBaseRaw = {
@@ -542,6 +564,14 @@ const formatSubmitResponse = (value: CommonHomeworkSubmitRaw) => {
         value.attachments.map((attachment) => [attachment.id, formatUploadedAttachment(attachment)]),
       ),
     },
+  };
+};
+
+const formatAttachmentUploadResponse = (value: CommonHomeworkAttachmentUploadRaw) => {
+  return {
+    attachments: Object.fromEntries(
+      value.attachments.map((attachment) => [attachment.id, formatUploadedAttachment(attachment)]),
+    ),
   };
 };
 
@@ -752,6 +782,10 @@ type SubmitCommonHomeworkInput = {
   readonly type: number;
 };
 
+type UploadCommonHomeworkAttachmentsInput = {
+  readonly files: ReadonlyArray<string>;
+};
+
 type StudentWorkWithCourseInput = {
   readonly courseId: string;
   readonly homeworkId: string;
@@ -835,6 +869,7 @@ type CommonHomeworkRedoLogsView = {
   };
 };
 type CommonHomeworkSubmitView = ReturnType<typeof formatSubmitResponse>;
+type CommonHomeworkAttachmentUploadView = ReturnType<typeof formatAttachmentUploadResponse>;
 type StudentWorkDetailView = ReturnType<typeof formatStudentWorkResponse>;
 type StudentWorkSupplyAttachmentsView = ReturnType<typeof formatSupplyAttachmentsResponse>;
 type StudentWorkCommentsView = ReturnType<typeof formatWorkCommentsResponse>;
@@ -864,6 +899,11 @@ export type CommonAssignmentFeatureShape = {
     CommonHomeworkRedoLogsRaw,
     CommonHomeworkRedoLogsView
   >;
+  readonly uploadAttachments: FeatureWorkflow<
+    UploadCommonHomeworkAttachmentsInput,
+    CommonHomeworkAttachmentUploadRaw,
+    CommonHomeworkAttachmentUploadView
+  >;
   readonly submit: FeatureWorkflow<SubmitCommonHomeworkInput, CommonHomeworkSubmitRaw, CommonHomeworkSubmitView>;
   readonly getStudentWork: FeatureWorkflow<StudentWorkDetailInput, StudentWorkDetailRaw, StudentWorkDetailView>;
   readonly getSupplyAttachments: FeatureWorkflow<
@@ -892,7 +932,7 @@ export class CommonAssignmentFeature extends Context.Service<CommonAssignmentFea
       });
 
       const initiateMultipartUpload = Effect.fn("features.assignments.common.attachments.initiateMultipartUpload")(
-        function* (token: AttachmentUploadToken, objectKey: string, contentType: string) {
+        function* (token: AttachmentUploadToken, objectKey: string) {
           const query: ReadonlyArray<OssQueryEntry> = [["uploads"]];
           const response = yield* httpClient.post(makeOssUrl(token, objectKey, query), {
             headers: makeOssHeaders({
@@ -900,7 +940,7 @@ export class CommonAssignmentFeature extends Context.Service<CommonAssignmentFea
               method: "POST",
               objectKey,
               query,
-              contentType,
+              contentType: "",
             }),
             body: HttpBody.empty,
           });
@@ -1001,7 +1041,7 @@ export class CommonAssignmentFeature extends Context.Service<CommonAssignmentFea
         const contentType = makeMimeType(fileName);
         const diskDirectory = makeDiskDirectory();
         const objectKey = makeObjectKey(fileName, diskDirectory);
-        const uploadId = yield* initiateMultipartUpload(token, objectKey, contentType);
+        const uploadId = yield* initiateMultipartUpload(token, objectKey);
         const parts = yield* Effect.forEach(splitFileParts(bytes), (part, index) =>
           uploadMultipartPart(token, objectKey, uploadId, index + 1, part, contentType),
         );
@@ -1265,6 +1305,23 @@ export class CommonAssignmentFeature extends Context.Service<CommonAssignmentFea
         };
       });
 
+      const uploadAttachments: CommonAssignmentFeatureShape["uploadAttachments"] = Effect.fn(
+        "features.assignments.common.uploadAttachments",
+      )(function* (input) {
+        const login = yield* resolveLogin();
+        const attachments = yield* Effect.forEach(input.files, (file) => uploadAttachment(file, login), {
+          concurrency: 1,
+        });
+        const result = {
+          attachments,
+        };
+
+        return {
+          raw: result,
+          view: formatAttachmentUploadResponse(result),
+        };
+      });
+
       const submit: CommonAssignmentFeatureShape["submit"] = Effect.fn("features.assignments.common.submit")(
         function* (input) {
           const login = yield* resolveLogin();
@@ -1375,6 +1432,7 @@ export class CommonAssignmentFeature extends Context.Service<CommonAssignmentFea
         getComments,
         getSettings,
         getRedoLogs,
+        uploadAttachments,
         submit,
         getStudentWork,
         getSupplyAttachments,

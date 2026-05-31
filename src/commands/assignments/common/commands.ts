@@ -16,6 +16,10 @@ const AttachmentFiles = Argument.path("file", { pathType: "file", mustExist: tru
   Argument.variadic(),
   Argument.withDefault([] as ReadonlyArray<string>),
 );
+const RequiredAttachmentFiles = Argument.path("file", { pathType: "file", mustExist: true }).pipe(
+  Argument.withDescription("Local attachment file to upload."),
+  Argument.variadic({ min: 1 }),
+);
 const Description = Flag.string("description").pipe(
   Flag.withDescription("Submission text description."),
   Flag.withDefault(""),
@@ -169,6 +173,35 @@ export const Submit = Command.make(
     },
   ]),
   Command.withAlias("S"),
+);
+
+export const UploadAttachments = Command.make(
+  "upload-attachments",
+  {
+    files: RequiredAttachmentFiles,
+    json: Flag.boolean("json").pipe(Flag.withDescription("Print the raw attachment upload response as JSON.")),
+  },
+  Effect.fn("assignments.common.uploadAttachments")(function* (input) {
+    const commonAssignmentFeature = yield* CommonAssignmentFeature;
+    const result = yield* commonAssignmentFeature.uploadAttachments({
+      files: input.files,
+    });
+
+    if (input.json) {
+      return yield* printJson(result.raw);
+    }
+
+    yield* Console.log(renderGeneric("附件上传 / Attachment Upload", result.view));
+  }),
+).pipe(
+  Command.withDescription("Upload attachment files and print attachment IDs without submitting homework."),
+  Command.withExamples([
+    {
+      command: "open-educoder assignments common upload-attachments ./report.doc",
+      description: "Upload one attachment without submitting",
+    },
+  ]),
+  Command.withAlias("A"),
 );
 
 export const Submission = Command.make(

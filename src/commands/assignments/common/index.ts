@@ -10,6 +10,7 @@ import {
   Submission,
   Submit,
   SupplyAttachments,
+  UploadAttachments,
   Work,
   WorkComments,
 } from "./commands.js";
@@ -37,6 +38,10 @@ export const Common = Command.make("common").pipe(
       description: "Upload attachments and submit a common assignment",
     },
     {
+      command: "open-educoder assignments common upload-attachments ./report.doc",
+      description: "Upload attachments without submitting",
+    },
+    {
       command: "open-educoder assignments common settings 109348 3487339",
       description: "View assignment settings and constraints",
     },
@@ -48,6 +53,7 @@ export const Common = Command.make("common").pipe(
     Work,
     Draft,
     Submit,
+    UploadAttachments,
     Submission,
     SupplyAttachments,
     WorkComments,
