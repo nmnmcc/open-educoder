@@ -1,11 +1,385 @@
-import { Context, Effect, Layer } from "effect";
+import { Buffer } from "node:buffer";
+import { createDecipheriv, createHash, createHmac, randomUUID } from "node:crypto";
+import path from "node:path";
+
+import { Context, Effect, FileSystem, Layer } from "effect";
+import { HttpBody, HttpClient, HttpClientResponse } from "effect/unstable/http";
 
 import { AppContext } from "../../context/index.js";
 import { EducoderApi } from "../../educoder-api/index.js";
 import { type EducoderApiResponse, type FeatureWorkflow } from "../shared.js";
-import { type AssignmentSortBy, type AssignmentSortDirection, AssignmentTypeCode, formatLabels } from "./shared.js";
+import {
+  AssignmentInputError,
+  type AssignmentSortBy,
+  type AssignmentSortDirection,
+  AssignmentTypeCode,
+  failInput,
+  formatLabels,
+} from "./shared.js";
 
 const resolveCategoryId = (homeworkId: string, categoryId?: string | undefined) => categoryId ?? homeworkId;
+const AttachmentTokenKey = "bf3c199c2470cb477d907b1e0917c17b";
+const AttachmentTokenIv = "5183666c72eec9e4";
+const OssUserAgent = "aliyun-sdk-js/6.18.1 open-educoder";
+const AttachmentPartSize = 1_002_400;
+
+type AssignmentAttachmentRaw =
+  | ReadonlyArray<{
+      readonly id?: number | null | undefined;
+      readonly title?: string | null | undefined;
+      readonly filesize?: string | null | undefined;
+      readonly is_pdf?: boolean | null | undefined;
+      readonly file_type?: string | null | undefined;
+      readonly url?: string | null | undefined;
+      readonly file_sub?: string | null | undefined;
+      readonly is_edit?: boolean | null | undefined;
+      readonly download_url?: string | null | undefined;
+    }>
+  | null
+  | undefined;
+
+type AttachmentUploadToken = {
+  readonly access_key_id: string;
+  readonly access_key_secret: string;
+  readonly end_point: string;
+  readonly security_token: string;
+  readonly bucket: string;
+  readonly region: string;
+  readonly callback_url: string;
+  readonly bucket_host: string;
+};
+
+type AttachmentUploadRaw = {
+  readonly status: number;
+  readonly message: string;
+  readonly url: string;
+  readonly id: string;
+  readonly content_type: string;
+  readonly filename: string;
+  readonly saved_file_path: string;
+};
+
+type OssQueryEntry = readonly [key: string, value?: string | undefined];
+
+type UploadedPart = {
+  readonly partNumber: number;
+  readonly etag: string;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const readStringField = (record: Record<string, unknown>, field: string) => {
+  const value = record[field];
+
+  if (typeof value !== "string") {
+    throw new Error(`Expected ${field} to be a string.`);
+  }
+
+  return value;
+};
+
+const readNumberField = (record: Record<string, unknown>, field: string) => {
+  const value = record[field];
+
+  if (typeof value !== "number") {
+    throw new Error(`Expected ${field} to be a number.`);
+  }
+
+  return value;
+};
+
+const parseAttachmentUploadToken = (value: unknown): AttachmentUploadToken => {
+  if (!isRecord(value)) {
+    throw new Error("Expected decrypted upload token to be an object.");
+  }
+
+  return {
+    access_key_id: readStringField(value, "access_key_id"),
+    access_key_secret: readStringField(value, "access_key_secret"),
+    end_point: readStringField(value, "end_point"),
+    security_token: readStringField(value, "security_token"),
+    bucket: readStringField(value, "bucket"),
+    region: readStringField(value, "region"),
+    callback_url: readStringField(value, "callback_url"),
+    bucket_host: readStringField(value, "bucket_host"),
+  };
+};
+
+const decryptAttachmentToken = (encrypted: string) =>
+  Effect.try({
+    try: () => {
+      const decipher = createDecipheriv(
+        "aes-256-cbc",
+        Buffer.from(AttachmentTokenKey, "utf8"),
+        Buffer.from(AttachmentTokenIv, "utf8"),
+      );
+      const plaintext = Buffer.concat([decipher.update(Buffer.from(encrypted, "base64")), decipher.final()]).toString(
+        "utf8",
+      );
+
+      return parseAttachmentUploadToken(JSON.parse(plaintext));
+    },
+    catch: (error) =>
+      new AssignmentInputError({
+        message: `Failed to decrypt attachment upload token: ${error instanceof Error ? error.message : String(error)}`,
+      }),
+  });
+
+const makeDiskDirectory = (date = new Date()) =>
+  `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, "0")}`;
+
+const makeObjectKey = (fileName: string, diskDirectory: string) =>
+  `${diskDirectory}/${randomUUID()}${path.extname(fileName)}`;
+
+const encodeObjectKey = (objectKey: string) => objectKey.split("/").map(encodeURIComponent).join("/");
+
+const makeEndpointUrl = (token: AttachmentUploadToken) => {
+  const endpoint = token.end_point.startsWith("http") ? token.end_point : `https://${token.end_point}`;
+  const url = new URL(endpoint);
+
+  url.hostname = `${token.bucket}.${url.hostname}`;
+
+  return url;
+};
+
+const makeOssUrl = (token: AttachmentUploadToken, objectKey: string, query: ReadonlyArray<OssQueryEntry>) => {
+  const url = makeEndpointUrl(token);
+
+  url.pathname = `/${encodeObjectKey(objectKey)}`;
+  for (const [key, value] of query) {
+    url.searchParams.append(key, value ?? "");
+  }
+
+  return url.toString();
+};
+
+const makeCanonicalSubresource = (query: ReadonlyArray<OssQueryEntry>) => {
+  if (query.length === 0) {
+    return "";
+  }
+
+  const params = [...query]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => (value === undefined ? key : `${key}=${value}`))
+    .join("&");
+
+  return `?${params}`;
+};
+
+const normalizeHeaderValue = (value: string) => value.replace(/\s+/g, " ").trim();
+
+const makeCanonicalOssHeaders = (headers: Readonly<Record<string, string>>) =>
+  Object.entries(headers)
+    .filter(([key]) => key.toLowerCase().startsWith("x-oss-"))
+    .map(([key, value]) => [key.toLowerCase(), normalizeHeaderValue(value)] as const)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => `${key}:${value}`)
+    .join("\n");
+
+const makeOssAuthorization = (input: {
+  readonly token: AttachmentUploadToken;
+  readonly method: string;
+  readonly objectKey: string;
+  readonly query: ReadonlyArray<OssQueryEntry>;
+  readonly date: string;
+  readonly contentType: string;
+  readonly contentMd5?: string | undefined;
+  readonly xHeaders: Readonly<Record<string, string>>;
+}) => {
+  const canonicalHeaders = makeCanonicalOssHeaders(input.xHeaders);
+  const canonicalResource = `/${input.token.bucket}/${input.objectKey}${makeCanonicalSubresource(input.query)}`;
+  const canonicalString = [
+    input.method,
+    input.contentMd5 ?? "",
+    input.contentType,
+    input.date,
+    canonicalHeaders === "" ? canonicalResource : `${canonicalHeaders}\n${canonicalResource}`,
+  ].join("\n");
+  const signature = createHmac("sha1", input.token.access_key_secret).update(canonicalString).digest("base64");
+
+  return `OSS ${input.token.access_key_id}:${signature}`;
+};
+
+const makeOssHeaders = (input: {
+  readonly token: AttachmentUploadToken;
+  readonly method: string;
+  readonly objectKey: string;
+  readonly query: ReadonlyArray<OssQueryEntry>;
+  readonly contentType: string;
+  readonly contentMd5?: string | undefined;
+  readonly extraXHeaders?: Readonly<Record<string, string>> | undefined;
+}) => {
+  const date = new Date().toUTCString();
+  const xHeaders = {
+    "x-oss-date": date,
+    "x-oss-security-token": input.token.security_token,
+    "x-oss-user-agent": OssUserAgent,
+    ...(input.extraXHeaders ?? {}),
+  };
+  const authorization = makeOssAuthorization({
+    token: input.token,
+    method: input.method,
+    objectKey: input.objectKey,
+    query: input.query,
+    date,
+    contentType: input.contentType,
+    contentMd5: input.contentMd5,
+    xHeaders,
+  });
+  const headers: Record<string, string> = {
+    Accept: "*/*",
+    "Content-Type": input.contentType,
+    Date: date,
+    ...xHeaders,
+    Authorization: authorization,
+  };
+
+  if (input.contentMd5 !== undefined) {
+    headers["Content-MD5"] = input.contentMd5;
+  }
+
+  return headers;
+};
+
+const makeMimeType = (fileName: string) => {
+  switch (path.extname(fileName).toLowerCase()) {
+    case ".doc":
+      return "application/msword";
+    case ".docx":
+      return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    case ".pdf":
+      return "application/pdf";
+    case ".png":
+      return "image/png";
+    case ".jpg":
+    case ".jpeg":
+      return "image/jpeg";
+    case ".txt":
+      return "text/plain";
+    case ".zip":
+      return "application/zip";
+    default:
+      return "application/octet-stream";
+  }
+};
+
+const encodeQuery = (params: Readonly<Record<string, string | number | boolean | null | undefined>>) =>
+  Object.entries(params)
+    .filter((entry): entry is [string, string | number | boolean] => entry[1] != null)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
+    .join("&");
+
+const base64Json = (value: unknown) => Buffer.from(JSON.stringify(value), "utf8").toString("base64");
+
+const makeCallbackHeaders = (input: {
+  readonly token: AttachmentUploadToken;
+  readonly login: string;
+  readonly fileName: string;
+  readonly diskDirectory: string;
+}) => {
+  const callbackBody = [
+    "bucket=${bucket}&object=${object}&etag=${etag}&size=${size}&mimeType=${mimeType}&my_var=${x:my_var}",
+    encodeQuery({
+      container_type: "Attachment",
+      login: input.login,
+      description: "",
+      realFileName: false,
+      file_name: input.fileName,
+      disk_directory: input.diskDirectory,
+    }),
+  ].join("&");
+
+  return {
+    "x-oss-callback": base64Json({
+      callbackUrl: input.token.callback_url,
+      callbackBody,
+      callbackHost: input.token.bucket_host,
+    }),
+    "x-oss-callback-var": base64Json({
+      "x:id": input.fileName,
+    }),
+  };
+};
+
+const parseUploadId = (xml: string) =>
+  Effect.try({
+    try: () => {
+      const match = /<UploadId>([^<]+)<\/UploadId>/.exec(xml);
+      const uploadId = match?.[1];
+
+      if (uploadId === undefined || uploadId.length === 0) {
+        throw new Error("UploadId is missing.");
+      }
+
+      return uploadId;
+    },
+    catch: (error) =>
+      new AssignmentInputError({
+        message: `Failed to read OSS multipart upload id: ${error instanceof Error ? error.message : String(error)}`,
+      }),
+  });
+
+const readResponseText = (response: HttpClientResponse.HttpClientResponse) =>
+  HttpClientResponse.filterStatusOk(response).pipe(Effect.flatMap((ok) => ok.text));
+
+const readResponseHeader = (response: HttpClientResponse.HttpClientResponse, header: string) =>
+  response.headers[header.toLowerCase()] ?? response.headers[header];
+
+const escapeXml = (value: string) =>
+  value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
+
+const makeCompleteMultipartXml = (parts: ReadonlyArray<UploadedPart>) =>
+  [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    "<CompleteMultipartUpload>",
+    ...parts.map(
+      (part) => `<Part><PartNumber>${part.partNumber}</PartNumber><ETag>${escapeXml(part.etag)}</ETag></Part>`,
+    ),
+    "</CompleteMultipartUpload>",
+  ].join("");
+
+const parseAttachmentUploadResponse = (text: string) =>
+  Effect.try({
+    try: () => {
+      const value = JSON.parse(text);
+
+      if (!isRecord(value)) {
+        throw new Error("Expected attachment callback response to be an object.");
+      }
+
+      return {
+        status: readNumberField(value, "status"),
+        message: readStringField(value, "message"),
+        url: readStringField(value, "url"),
+        id: readStringField(value, "id"),
+        content_type: readStringField(value, "content_type"),
+        filename: readStringField(value, "filename"),
+        saved_file_path: readStringField(value, "saved_file_path"),
+      } satisfies AttachmentUploadRaw;
+    },
+    catch: (error) =>
+      new AssignmentInputError({
+        message: `Failed to decode attachment upload response: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      }),
+  });
+
+const splitFileParts = (bytes: Uint8Array) => {
+  const parts: Array<Uint8Array> = [];
+
+  for (let offset = 0; offset < bytes.length; offset += AttachmentPartSize) {
+    parts.push(bytes.slice(offset, offset + AttachmentPartSize));
+  }
+
+  return parts;
+};
 
 type HomeworkCommonsRaw = EducoderApiResponse<"Course", "homeworkCommons">;
 type CommonHomeworkInfoRaw = EducoderApiResponse<"HomeworkCommon", "info">;
@@ -15,6 +389,15 @@ type CommonHomeworkMembersRaw = EducoderApiResponse<"HomeworkCommon", "searchMem
 type CommonHomeworkCommentsRaw = EducoderApiResponse<"HomeworkCommon", "showComment">;
 type CommonHomeworkSettingsRaw = EducoderApiResponse<"HomeworkCommon", "settings">;
 type CommonHomeworkRedoLogsRaw = EducoderApiResponse<"HomeworkCommon", "redoLogs">;
+type SubmitStudentWorkResponseRaw = EducoderApiResponse<"HomeworkCommon", "submitStudentWork">;
+type StudentWorkDetailRaw = EducoderApiResponse<"StudentWork", "info">;
+type StudentWorkSupplyAttachmentsRaw = EducoderApiResponse<"StudentWork", "supplyAttachments">;
+type StudentWorkCommentsRaw = EducoderApiResponse<"StudentWork", "commentList">;
+
+type CommonHomeworkSubmitRaw = {
+  readonly attachments: ReadonlyArray<AttachmentUploadRaw>;
+  readonly submit: SubmitStudentWorkResponseRaw;
+};
 
 type CommonHomeworkBaseRaw = {
   readonly course_id: number;
@@ -56,7 +439,7 @@ const formatBaseAssignment = (value: CommonHomeworkBaseRaw) => {
   };
 };
 
-const formatAttachments = (value: CommonHomeworkInfoRaw["attachments"]) =>
+const formatAttachments = (value: AssignmentAttachmentRaw) =>
   Object.fromEntries(
     (value ?? []).map((attachment, index) => {
       const id = attachment.id ?? index + 1;
@@ -137,6 +520,125 @@ const formatWorksResponse = (value: CommonHomeworkWorksRaw) => {
       taCommentCount: value.ta_comment_count ?? null,
       groupData: value.group_data ?? null,
       studentWorksCount: null,
+    },
+  };
+};
+
+const formatUploadedAttachment = (value: AttachmentUploadRaw) => ({
+  id: value.id,
+  filename: value.filename,
+  contentType: value.content_type,
+  url: value.url,
+  savedFilePath: value.saved_file_path,
+});
+
+const formatSubmitResponse = (value: CommonHomeworkSubmitRaw) => {
+  return {
+    submit: {
+      status: value.submit.status,
+      message: value.submit.message,
+      workId: value.submit.work_id,
+      attachments: Object.fromEntries(
+        value.attachments.map((attachment) => [attachment.id, formatUploadedAttachment(attachment)]),
+      ),
+    },
+  };
+};
+
+const formatStudentWorkResponse = (value: StudentWorkDetailRaw, workId: string) => {
+  const parsedWorkId = Number(workId);
+
+  return {
+    assignment: formatBaseAssignment(value),
+    work: {
+      id: value.work_id ?? (Number.isFinite(parsedWorkId) ? parsedWorkId : null),
+      description: value.description ?? null,
+      status: value.work_status ?? null,
+      commitTime: value.commit_time ?? null,
+      updateTime: value.update_time ?? null,
+      redoCount: value.redo_count ?? null,
+      canFeedback: value.can_feedback ?? null,
+      scores: {
+        work: value.work_score ?? null,
+        final: value.final_score ?? null,
+        teacher: value.teacher_score ?? null,
+        student: value.student_score ?? null,
+        assistant: value.teaching_asistant_score ?? null,
+        groupLeader: value.group_leader_score ?? null,
+      },
+      penalties: {
+        late: value.late_penalty ?? null,
+        absence: value.absence_penalty ?? null,
+        appeal: value.appeal_penalty ?? null,
+        repeat: value.repeat_minus_score ?? null,
+      },
+      submit: {
+        canSubmit: value.can_submit ?? null,
+        size: value.submit_size ?? null,
+        commitCount: value.commit_count ?? null,
+      },
+      author: {
+        name: value.author_name ?? null,
+        studentId: value.student_id ?? null,
+        group: value.group_name ?? null,
+        imageUrl: value.image_url ?? null,
+        currentUser: value.is_author ?? null,
+      },
+      operators: {
+        commitUser: value.commit_user_name ?? null,
+        updateUser: value.update_user_name ?? null,
+      },
+      review: {
+        anonymousComment: value.anonymous_comment ?? null,
+        allCommentedFinished: value.all_commented_finished ?? null,
+        labStatus: value.lab_status ?? null,
+        showEvaluation: value.show_evaluation ?? null,
+      },
+      navigation: {
+        nextWorkId: value.next_work_id ?? null,
+        previousWorkId: value.prev_work_id ?? null,
+      },
+      attachments: formatAttachments(value.attachments),
+    },
+  };
+};
+
+const formatSupplyAttachmentsResponse = (value: StudentWorkSupplyAttachmentsRaw) => {
+  return {
+    supply: {
+      reviseReason: value.revise_reason ?? null,
+      updateTime: value.atta_update_time ?? null,
+      updateUser: {
+        name: value.atta_update_user ?? null,
+        login: value.atta_update_user_login ?? null,
+      },
+      attachments: formatAttachments(value.revise_attachments),
+    },
+  };
+};
+
+const formatWorkCommentsResponse = (value: StudentWorkCommentsRaw) => {
+  return {
+    comments: {
+      count: value.comment_count,
+      allowScore: value.allow_score,
+      ultimate: value.ultimate,
+      singleScore: value.single_score,
+      author: value.is_author,
+      lastComment: {
+        content: value.last_comment.last_content ?? null,
+        score: value.last_comment.last_score ?? null,
+      },
+      lastHiddenComment: {
+        content: value.last_hidden_comment.last_content ?? null,
+        score: value.last_hidden_comment.last_score ?? null,
+      },
+      lists: {
+        teachers: value.teacher_list.length,
+        assistants: value.teaching_assistant_list.length,
+        students: value.student_list.length,
+        scores: value.comment_scores.length,
+      },
     },
   };
 };
@@ -242,6 +744,29 @@ type CommonHomeworkRedoLogsInput = {
   readonly limit: number;
 };
 
+type SubmitCommonHomeworkInput = {
+  readonly courseId: string;
+  readonly homeworkId: string;
+  readonly description: string;
+  readonly files: ReadonlyArray<string>;
+  readonly type: number;
+};
+
+type StudentWorkWithCourseInput = {
+  readonly courseId: string;
+  readonly homeworkId: string;
+  readonly workId: string;
+  readonly userId?: string | undefined;
+};
+
+type StudentWorkDetailInput = StudentWorkWithCourseInput & {
+  readonly historyId?: string | undefined;
+};
+
+type StudentWorkCommentsInput = StudentWorkWithCourseInput & {
+  readonly invalid: boolean;
+};
+
 type ListCommonAssignmentsView = {
   readonly total: number;
   readonly order: ReadonlyArray<string>;
@@ -309,6 +834,10 @@ type CommonHomeworkRedoLogsView = {
     readonly list: ReadonlyArray<unknown>;
   };
 };
+type CommonHomeworkSubmitView = ReturnType<typeof formatSubmitResponse>;
+type StudentWorkDetailView = ReturnType<typeof formatStudentWorkResponse>;
+type StudentWorkSupplyAttachmentsView = ReturnType<typeof formatSupplyAttachmentsResponse>;
+type StudentWorkCommentsView = ReturnType<typeof formatWorkCommentsResponse>;
 
 export type CommonAssignmentFeatureShape = {
   readonly list: FeatureWorkflow<ListCommonAssignmentsInput, HomeworkCommonsRaw, ListCommonAssignmentsView>;
@@ -335,6 +864,14 @@ export type CommonAssignmentFeatureShape = {
     CommonHomeworkRedoLogsRaw,
     CommonHomeworkRedoLogsView
   >;
+  readonly submit: FeatureWorkflow<SubmitCommonHomeworkInput, CommonHomeworkSubmitRaw, CommonHomeworkSubmitView>;
+  readonly getStudentWork: FeatureWorkflow<StudentWorkDetailInput, StudentWorkDetailRaw, StudentWorkDetailView>;
+  readonly getSupplyAttachments: FeatureWorkflow<
+    StudentWorkWithCourseInput,
+    StudentWorkSupplyAttachmentsRaw,
+    StudentWorkSupplyAttachmentsView
+  >;
+  readonly getWorkComments: FeatureWorkflow<StudentWorkCommentsInput, StudentWorkCommentsRaw, StudentWorkCommentsView>;
 };
 
 export class CommonAssignmentFeature extends Context.Service<CommonAssignmentFeature, CommonAssignmentFeatureShape>()(
@@ -345,11 +882,140 @@ export class CommonAssignmentFeature extends Context.Service<CommonAssignmentFea
     Effect.gen(function* () {
       const ctx = yield* AppContext;
       const educoder = yield* EducoderApi;
+      const fs = yield* FileSystem.FileSystem;
+      const httpClient = yield* HttpClient.HttpClient;
 
       const resolveLogin = Effect.fn("features.assignments.common.resolveLogin")(function* () {
         const user = yield* ctx.user;
 
         return user.login;
+      });
+
+      const initiateMultipartUpload = Effect.fn("features.assignments.common.attachments.initiateMultipartUpload")(
+        function* (token: AttachmentUploadToken, objectKey: string, contentType: string) {
+          const query: ReadonlyArray<OssQueryEntry> = [["uploads"]];
+          const response = yield* httpClient.post(makeOssUrl(token, objectKey, query), {
+            headers: makeOssHeaders({
+              token,
+              method: "POST",
+              objectKey,
+              query,
+              contentType,
+            }),
+            body: HttpBody.empty,
+          });
+          const xml = yield* readResponseText(response);
+
+          return yield* parseUploadId(xml);
+        },
+      );
+
+      const uploadMultipartPart = Effect.fn("features.assignments.common.attachments.uploadMultipartPart")(function* (
+        token: AttachmentUploadToken,
+        objectKey: string,
+        uploadId: string,
+        partNumber: number,
+        bytes: Uint8Array,
+        contentType: string,
+      ) {
+        const query: ReadonlyArray<OssQueryEntry> = [
+          ["partNumber", String(partNumber)],
+          ["uploadId", uploadId],
+        ];
+        const response = yield* httpClient.put(makeOssUrl(token, objectKey, query), {
+          headers: makeOssHeaders({
+            token,
+            method: "PUT",
+            objectKey,
+            query,
+            contentType,
+          }),
+          body: HttpBody.uint8Array(bytes, contentType),
+        });
+        const ok = yield* HttpClientResponse.filterStatusOk(response);
+        const etag = readResponseHeader(ok, "etag");
+
+        if (etag === undefined || etag.length === 0) {
+          return yield* failInput("OSS multipart upload did not return an ETag.");
+        }
+
+        return {
+          partNumber,
+          etag,
+        };
+      });
+
+      const completeMultipartUpload = Effect.fn("features.assignments.common.attachments.completeMultipartUpload")(
+        function* (
+          token: AttachmentUploadToken,
+          objectKey: string,
+          uploadId: string,
+          parts: ReadonlyArray<UploadedPart>,
+          login: string,
+          fileName: string,
+          diskDirectory: string,
+        ) {
+          const query: ReadonlyArray<OssQueryEntry> = [["uploadId", uploadId]];
+          const xml = makeCompleteMultipartXml([...parts].sort((left, right) => left.partNumber - right.partNumber));
+          const contentMd5 = createHash("md5").update(xml, "utf8").digest("base64");
+          const response = yield* httpClient.post(makeOssUrl(token, objectKey, query), {
+            headers: makeOssHeaders({
+              token,
+              method: "POST",
+              objectKey,
+              query,
+              contentType: "application/xml",
+              contentMd5,
+              extraXHeaders: makeCallbackHeaders({
+                token,
+                login,
+                fileName,
+                diskDirectory,
+              }),
+            }),
+            body: HttpBody.text(xml, "application/xml"),
+          });
+          const text = yield* readResponseText(response);
+
+          return yield* parseAttachmentUploadResponse(text);
+        },
+      );
+
+      const uploadAttachment = Effect.fn("features.assignments.common.attachments.upload")(function* (
+        filePath: string,
+        login: string,
+      ) {
+        const fileName = path.basename(filePath);
+        const bytes = yield* fs.readFile(filePath);
+
+        if (bytes.length === 0) {
+          return yield* failInput(`Attachment file is empty: ${filePath}`);
+        }
+
+        const tokenResponse = yield* educoder.Bucket.getAttachmentToken({
+          query: {
+            zzud: login,
+          },
+        });
+        const token = yield* decryptAttachmentToken(tokenResponse.data);
+        const contentType = makeMimeType(fileName);
+        const diskDirectory = makeDiskDirectory();
+        const objectKey = makeObjectKey(fileName, diskDirectory);
+        const uploadId = yield* initiateMultipartUpload(token, objectKey, contentType);
+        const parts = yield* Effect.forEach(splitFileParts(bytes), (part, index) =>
+          uploadMultipartPart(token, objectKey, uploadId, index + 1, part, contentType),
+        );
+        const attachment = yield* completeMultipartUpload(
+          token,
+          objectKey,
+          uploadId,
+          parts,
+          login,
+          fileName,
+          diskDirectory,
+        );
+
+        return attachment;
       });
 
       const list: CommonAssignmentFeatureShape["list"] = Effect.fn("features.assignments.common.list")(
@@ -599,6 +1265,107 @@ export class CommonAssignmentFeature extends Context.Service<CommonAssignmentFea
         };
       });
 
+      const submit: CommonAssignmentFeatureShape["submit"] = Effect.fn("features.assignments.common.submit")(
+        function* (input) {
+          const login = yield* resolveLogin();
+          const uploads = yield* Effect.forEach(input.files, (file) => uploadAttachment(file, login), {
+            concurrency: 1,
+          });
+          const raw = yield* educoder.HomeworkCommon.submitStudentWork({
+            params: {
+              homeworkId: input.homeworkId,
+            },
+            query: {
+              zzud: login,
+            },
+            payload: {
+              coursesId: input.courseId,
+              commonHomeworkId: input.homeworkId,
+              description: input.description,
+              attachment_ids: uploads.map((attachment) => attachment.id),
+              type: input.type,
+            },
+          });
+          const result = {
+            attachments: uploads,
+            submit: raw,
+          };
+
+          return {
+            raw: result,
+            view: formatSubmitResponse(result),
+          };
+        },
+      );
+
+      const getStudentWork: CommonAssignmentFeatureShape["getStudentWork"] = Effect.fn(
+        "features.assignments.common.studentWork",
+      )(function* (input) {
+        const login = yield* resolveLogin();
+        const raw = yield* educoder.StudentWork.info({
+          params: {
+            workId: input.workId,
+          },
+          query: {
+            coursesId: input.courseId,
+            categoryId: input.homeworkId,
+            userId: input.userId ?? input.workId,
+            history_id: input.historyId ?? "",
+            zzud: login,
+          },
+        });
+
+        return {
+          raw,
+          view: formatStudentWorkResponse(raw, input.workId),
+        };
+      });
+
+      const getSupplyAttachments: CommonAssignmentFeatureShape["getSupplyAttachments"] = Effect.fn(
+        "features.assignments.common.supplyAttachments",
+      )(function* (input) {
+        const login = yield* resolveLogin();
+        const raw = yield* educoder.StudentWork.supplyAttachments({
+          params: {
+            workId: input.workId,
+          },
+          query: {
+            coursesId: input.courseId,
+            categoryId: input.homeworkId,
+            userId: input.userId ?? input.workId,
+            zzud: login,
+          },
+        });
+
+        return {
+          raw,
+          view: formatSupplyAttachmentsResponse(raw),
+        };
+      });
+
+      const getWorkComments: CommonAssignmentFeatureShape["getWorkComments"] = Effect.fn(
+        "features.assignments.common.workComments",
+      )(function* (input) {
+        const login = yield* resolveLogin();
+        const raw = yield* educoder.StudentWork.commentList({
+          params: {
+            workId: input.workId,
+          },
+          query: {
+            is_invalid: input.invalid ? "true" : "false",
+            coursesId: input.courseId,
+            categoryId: input.homeworkId,
+            userId: input.userId ?? input.workId,
+            zzud: login,
+          },
+        });
+
+        return {
+          raw,
+          view: formatWorkCommentsResponse(raw),
+        };
+      });
+
       return CommonAssignmentFeature.of({
         list,
         getInfo,
@@ -608,6 +1375,10 @@ export class CommonAssignmentFeature extends Context.Service<CommonAssignmentFea
         getComments,
         getSettings,
         getRedoLogs,
+        submit,
+        getStudentWork,
+        getSupplyAttachments,
+        getWorkComments,
       });
     }),
   );

@@ -1,11 +1,23 @@
 import { Command } from "effect/unstable/cli";
 
-import { Comments, Draft, Info, Members, RedoLogs, Settings, Work } from "./commands.js";
+import {
+  Comments,
+  Draft,
+  Info,
+  Members,
+  RedoLogs,
+  Settings,
+  Submission,
+  Submit,
+  SupplyAttachments,
+  Work,
+  WorkComments,
+} from "./commands.js";
 import { List } from "./list.js";
 
 export const Common = Command.make("common").pipe(
   Command.withDescription(
-    "List common assignments and inspect details, work state, comments, settings, and redo logs.",
+    "List common assignments, submit work, and inspect details, work state, comments, settings, and redo logs.",
   ),
   Command.withExamples([
     {
@@ -21,10 +33,27 @@ export const Common = Command.make("common").pipe(
       description: "Check member work status summary",
     },
     {
+      command: 'open-educoder assignments common submit 109348 3487337 ./report.doc --description "见附件。"',
+      description: "Upload attachments and submit a common assignment",
+    },
+    {
       command: "open-educoder assignments common settings 109348 3487339",
       description: "View assignment settings and constraints",
     },
   ]),
   Command.withAlias("c"),
-  Command.withSubcommands([List, Info, Work, Draft, Members, Comments, Settings, RedoLogs]),
+  Command.withSubcommands([
+    List,
+    Info,
+    Work,
+    Draft,
+    Submit,
+    Submission,
+    SupplyAttachments,
+    WorkComments,
+    Members,
+    Comments,
+    Settings,
+    RedoLogs,
+  ]),
 );

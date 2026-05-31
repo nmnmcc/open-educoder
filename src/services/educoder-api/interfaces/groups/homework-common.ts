@@ -2,7 +2,11 @@ import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/unstable/httpapi";
 
 const StringValue = Schema.String;
-const TaskOperation = Schema.Tuple([Schema.String, Schema.String, Schema.optionalKey(Schema.NullishOr(Schema.Boolean))]);
+const TaskOperation = Schema.Tuple([
+  Schema.String,
+  Schema.String,
+  Schema.optionalKey(Schema.NullishOr(Schema.Boolean)),
+]);
 
 const HomeworkCommonRequestParams = {
   homeworkId: StringValue,
@@ -192,6 +196,34 @@ const WorksListPayload = Schema.Struct({
   coursesId: StringValue,
   categoryId: StringValue,
 }).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
+
+/*
+Sample: POST /api/homework_commons/3487337/student_works.json
+{
+  "coursesId": "109348",
+  "commonHomeworkId": "3487337",
+  "description": "<submission description>",
+  "attachment_ids": ["att-19e7df0fac61a78da"],
+  "type": 3
+}
+*/
+const SubmitStudentWorkPayload = Schema.Struct({
+  coursesId: StringValue,
+  commonHomeworkId: StringValue,
+  description: Schema.String,
+  attachment_ids: Schema.Array(Schema.String),
+  type: Schema.Int,
+}).pipe(HttpApiSchema.asJson({ contentType: "application/json; charset=utf-8" }));
+
+/*
+Sample: POST /api/homework_commons/3487337/student_works.json
+{ "status": 0, "message": "提交成功", "work_id": 284733932 }
+*/
+const SubmitStudentWorkResponse = Schema.Struct({
+  status: Schema.Int,
+  message: Schema.String,
+  work_id: Schema.Int,
+});
 
 /*
 Sample: POST /api/homework_commons/3487339/works_list.json
@@ -486,6 +518,16 @@ export const HomeworkCommon = HttpApiGroup.make("HomeworkCommon")
       },
       payload: WorksListPayload,
       success: WorksListResponse,
+    }),
+  )
+  .add(
+    HttpApiEndpoint.post("submitStudentWork", "/api/homework_commons/:homeworkId/student_works.json", {
+      params: HomeworkCommonRequestParams,
+      query: {
+        zzud: StringValue,
+      },
+      payload: SubmitStudentWorkPayload,
+      success: SubmitStudentWorkResponse,
     }),
   )
   .add(
