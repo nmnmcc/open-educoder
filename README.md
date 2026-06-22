@@ -10,6 +10,7 @@ This tool is for accounts and courses you can already access normally. It keeps 
 - Inspect common assignment details, work status, drafts, members, comments, settings, and redo logs.
 - Work with lab challenges, learning content, repository files, evaluation/status checks, runtime logs, and SSH.
 - List exams, start attempts, show questions, save answers, and submit.
+- Browse online judge problems, filter by source, start attempts, read statements, debug, and submit code.
 
 ## Install And Launch
 
@@ -44,6 +45,9 @@ Most commands take IDs that are returned by earlier commands:
 | `commit-id`                        | lab save, commit, or snapshot evaluation responses                                                            |
 | `exam-id`                          | `open-educoder exams list COURSE_ID`                                                                          |
 | `question-id`, `choice-id`, blanks | `open-educoder exams show COURSE_ID EXAM_ID --with-choice-content`                                            |
+| problem `identifier`               | `open-educoder problems list`                                                                                 |
+| problem `source` ID                | `open-educoder problems sources`                                                                              |
+| problem `workspace`                | `open-educoder problems start IDENTIFIER`                                                                     |
 
 Many commands support `--json` for raw API-shaped output that is easier to inspect or pipe into scripts.
 
@@ -205,6 +209,40 @@ VISUAL='code --wait' open-educoder assignments labs edit COURSE_ID ASSIGNMENT_ID
 | `open-educoder exams answer text QUESTION_ID "TEXT"`                    | Save one free-text answer.                                         |
 | `open-educoder exams submit COURSE_ID EXAM_ID`                          | Submit the current exam attempt with saved answers.                |
 
+### Problems
+
+Online judge problems live under `problems`. A problem `identifier` (from `problems list`) identifies the problem; a `workspace` (returned by `problems start`) identifies your attempt and is required by the code commands.
+
+| Command                                                                         | Purpose                                                                 |
+| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `open-educoder problems list`                                                   | List problems with paging, search, and visibility filter.               |
+| `open-educoder problems list --source 2906 --source 2945`                       | Filter by one or more source IDs (repeat `--source` for multiple).      |
+| `open-educoder problems list --filter all --json`                               | List all problems as raw JSON.                                          |
+| `open-educoder problems sources`                                                | List problem sources (题库) with their IDs and counts.                  |
+| `open-educoder problems disciplines`                                            | List discipline tags with their IDs and counts.                         |
+| `open-educoder problems start IDENTIFIER`                                       | Start or resume an attempt and print its workspace identifier.          |
+| `open-educoder problems info IDENTIFIER`                                        | Show statement, sample, limits, and your last saved code (auto-starts). |
+| `open-educoder problems info WORKSPACE --workspace`                             | Show detail for an existing workspace without starting.                 |
+| `open-educoder problems code WORKSPACE`                                         | Show starter code templates for each language.                          |
+| `open-educoder problems debug WORKSPACE "INPUT" --content "CODE"`               | Save code, run a one-off debug against custom input, and poll result.   |
+| `cat sol.cpp \| open-educoder problems debug WORKSPACE "INPUT" --stdin`         | Debug code read from standard input.                                    |
+| `open-educoder problems submit WORKSPACE --content "CODE" --language C++`       | Save code, submit for evaluation against all tests, and poll result.    |
+| `cat sol.cpp \| open-educoder problems submit WORKSPACE --stdin --language C++` | Submit code read from standard input.                                   |
+| `open-educoder problems records WORKSPACE`                                      | List your submission records for a workspace.                           |
+
+Useful list flags: `--page`, `--per-page`, `--search`, `--filter` (`public`/`mine`/`all`), `--source` (repeatable), `--json`.
+
+Code commands take code from `--content` or `--stdin`, and `--language` is one of `C`, `C++`, `Java`, `Python` (default `C++`). `debug` and `submit` save the code first, then poll the judge until a result is ready.
+
+```bash
+# Typical flow: find a problem, read it, start an attempt, then submit a solution.
+open-educoder problems list --search 阶乘
+open-educoder problems info zevwolft
+open-educoder problems start zevwolft   # prints the workspace identifier
+cat sol.cpp | open-educoder problems submit WORKSPACE --stdin --language C++
+open-educoder problems records WORKSPACE
+```
+
 ## Aliases
 
 One-letter aliases are provided for faster input. Commands with irreversible or remote state-changing side effects use uppercase aliases where applicable; a few uppercase aliases avoid collisions.
@@ -216,6 +254,7 @@ assignments: command a, list l, common c, labs b
 assignments common: list l, info i, work w, draft n, members u, comments q, settings g, redo-logs d
 assignments labs: list l, challenges k, task t, learning g, repository f, content c, passed a, edit D, save S, reset R, prune V, evaluate E, status s, logs o, commit C, pull P, remaining-time m, ssh r
 exams: command e, list l, info i, start S, show H, submit U, answer A, single S, multiple M, blanks B, text T
+problems: command p, list l, disciplines d, sources o, start S, info i, code c, debug D, submit U, records r
 ```
 
 Examples:
@@ -225,6 +264,7 @@ open-educoder c l
 open-educoder a l COURSE_ID --type lab
 open-educoder a b content COURSE_ID ASSIGNMENT_ID case1/code.sh
 open-educoder e H COURSE_ID EXAM_ID --with-choice-content
+open-educoder p l --source 2906 --source 2945
 ```
 
 ## Troubleshooting
@@ -236,6 +276,8 @@ open-educoder e H COURSE_ID EXAM_ID --with-choice-content
 - For lab `edit`, set `VISUAL` or `EDITOR`; for GUI editors, use a command that waits, such as `code --wait`.
 - For lab `save` and `evaluate`, pass either `--challenge-index` or `--challenge-id`.
 - For lab `ssh`, make sure local `ssh` is installed; use `--json` to inspect the generated connection arguments without connecting.
+- For `problems`, code commands (`code`, `debug`, `submit`, `records`) need a `workspace` from `problems start`, not a problem `identifier`. `problems info IDENTIFIER` auto-starts; pass `--workspace` to read an existing workspace without starting.
+- For `problems list --source`, pass numeric source IDs from `problems sources`, and repeat `--source` to select multiple.
 
 ## Development Scripts
 

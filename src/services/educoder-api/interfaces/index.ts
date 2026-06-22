@@ -6,6 +6,7 @@ import { Course } from "./groups/course.js";
 import { Exam } from "./groups/exam.js";
 import { HomeworkCommon } from "./groups/homework-common.js";
 import { Myshixun } from "./groups/myshixun.js";
+import { Practice } from "./groups/practice.js";
 import { Shixun } from "./groups/shixun.js";
 import { StudentWork } from "./groups/student-work.js";
 import { Task } from "./groups/task.js";
@@ -22,4 +23,5 @@ export const Interfaces = HttpApi.make("educoder").add(
   HomeworkCommon,
   Bucket,
   StudentWork,
+  Practice,
 );
