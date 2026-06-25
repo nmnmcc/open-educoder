@@ -8,6 +8,11 @@ export class AnswerInputError extends Data.TaggedError("AnswerInputError")<{
   readonly message: string;
 }> {}
 
+export class ExamAccessError extends Data.TaggedError("ExamAccessError")<{
+  readonly status: number;
+  readonly message: string;
+}> {}
+
 const makeExamRequest = (courseId: string, examId: number, login: string) => ({
   params: {
     examId,
@@ -187,7 +192,7 @@ type ListExamsView = {
       readonly author: string;
       readonly tips: string;
       readonly created: string;
-      readonly time: number;
+      readonly time: number | null;
       readonly random: boolean;
       readonly locked: boolean;
       readonly screenOpen: boolean;
@@ -213,9 +218,9 @@ type SubmitExamView = {
     readonly message: string;
     readonly commitTime: string | null;
     readonly userExerciseTime: string | null;
-    readonly leftTime: number;
-    readonly studentLeftMinutes: number;
-    readonly userEndTime: string;
+    readonly leftTime: number | null;
+    readonly studentLeftMinutes: number | null;
+    readonly userEndTime: string | null;
     readonly unanswered: {
       readonly lab: number;
       readonly question: number;
@@ -332,7 +337,7 @@ export class ExamFeature extends Context.Service<ExamFeature, ExamFeatureShape>(
                   author: exam.author ?? "",
                   tips: (exam.exercise_tips ?? []).join(", "),
                   created: exam.created_at,
-                  time: exam.time,
+                  time: exam.time ?? null,
                   random: exam.is_random,
                   locked: exam.is_locked,
                   screenOpen: exam.screen_open,
@@ -353,6 +358,10 @@ export class ExamFeature extends Context.Service<ExamFeature, ExamFeatureShape>(
         const login = yield* resolveLogin(input.login);
         const raw = yield* educoder.Exam.info(makeExamRequest(input.courseId, input.examId, login));
 
+        if (raw.status !== 0) {
+          return yield* new ExamAccessError({ status: raw.status, message: raw.message });
+        }
+
         return {
           raw,
           view: raw,
@@ -363,6 +372,12 @@ export class ExamFeature extends Context.Service<ExamFeature, ExamFeatureShape>(
         const login = yield* resolveLogin(input.login);
         const raw = yield* educoder.Exam.start(makeExamRequest(input.courseId, input.examId, login));
 
+        const status = raw.status ?? 0;
+
+        if (status !== 0) {
+          return yield* new ExamAccessError({ status, message: raw.message ?? "" });
+        }
+
         return {
           raw,
           view: raw,
@@ -371,7 +386,8 @@ export class ExamFeature extends Context.Service<ExamFeature, ExamFeatureShape>(
 
       const show: ExamFeatureShape["show"] = Effect.fn("features.exam.show")(function* (input) {
         const started = yield* start(input);
-        const questions = started.raw.exercise_question_types.flatMap((questionType) =>
+        const questionTypes = started.raw.exercise_question_types ?? [];
+        const questions = questionTypes.flatMap((questionType) =>
           questionType.items.map((question) => {
             const choices = question.question_choices ?? [];
 
@@ -419,9 +435,9 @@ export class ExamFeature extends Context.Service<ExamFeature, ExamFeatureShape>(
               message: commit.message,
               commitTime: commit.data?.commit_time ?? null,
               userExerciseTime: commit.data?.user_exercise_time ?? null,
-              leftTime: time.left_time,
-              studentLeftMinutes: time.student_left_minutes,
-              userEndTime: time.user_end_time,
+              leftTime: time.left_time ?? null,
+              studentLeftMinutes: time.student_left_minutes ?? null,
+              userEndTime: time.user_end_time ?? null,
               unanswered: {
                 lab: preview.shixun_undo,
                 question: preview.question_undo,

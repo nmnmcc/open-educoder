@@ -71,11 +71,17 @@ Sample: GET /api/exercises/198085/get_exercise_user_info.json
   "message": "success",
   "data": "<ExerciseInfoData>"
 }
+
+Error sample (no permission):
+{
+  "status": 409,
+  "message": "您没有权限进入"
+}
 */
 const ExerciseInfoResponse = Schema.Struct({
   status: Schema.Int,
   message: Schema.String,
-  data: ExerciseInfoData,
+  data: Schema.optionalKey(Schema.NullishOr(ExerciseInfoData)),
 });
 /*
 Sample: GET /api/exercises/198085/start.json
@@ -233,12 +239,20 @@ Sample: GET /api/exercises/198085/start.json
   "exercise_question_types": ["<ExerciseQuestionType>"],
   "exercise_types": "<ExerciseTypes>"
 }
+
+Error sample (no permission):
+{
+  "status": 409,
+  "message": "您没有权限进入"
+}
 */
 const ExerciseStartResponse = Schema.Struct({
-  left_banner_id: Schema.Int,
-  left_banner_name: Schema.String,
-  exercise: Exercise,
-  exercise_question_types: Schema.Array(ExerciseQuestionType),
+  status: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  message: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  left_banner_id: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  left_banner_name: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  exercise: Schema.optionalKey(Schema.NullishOr(Exercise)),
+  exercise_question_types: Schema.optionalKey(Schema.NullishOr(Schema.Array(ExerciseQuestionType))),
   exercise_types: Schema.optionalKey(Schema.NullishOr(ExerciseTypes)),
 });
 /*
@@ -274,13 +288,22 @@ Sample: GET /api/exercises/198085/exercise_time.json
   "user_end_time": "2026-05-11 11:22:12",
   "user_total_end_time": "2026-06-30T00:18:00.000+08:00"
 }
+
+No-time-limit sample:
+{
+  "has_time": false,
+  "left_time": null,
+  "student_left_minutes": null,
+  "user_end_time": null,
+  "user_total_end_time": null
+}
 */
 const ExerciseTimeResponse = Schema.Struct({
   has_time: Schema.Boolean,
-  left_time: Schema.Int,
-  student_left_minutes: Schema.Int,
-  user_end_time: Schema.String,
-  user_total_end_time: Schema.String,
+  left_time: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  student_left_minutes: Schema.optionalKey(Schema.NullishOr(Schema.Int)),
+  user_end_time: Schema.optionalKey(Schema.NullishOr(Schema.String)),
+  user_total_end_time: Schema.optionalKey(Schema.NullishOr(Schema.String)),
 });
 /*
 Sample: GET /api/exercises/198085/begin_commit.json
