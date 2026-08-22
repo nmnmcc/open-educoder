@@ -1,5 +1,5 @@
 import type { Effect } from "effect";
-import type { HttpApi, HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
+import type { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
 
 import type { Interfaces } from "../educoder-api/interfaces/index.js";
 
@@ -8,15 +8,20 @@ export type FeatureResult<Raw, View> = {
   readonly view: View;
 };
 
-type EducoderApiGroups = typeof Interfaces extends HttpApi.HttpApi<string, infer Groups> ? Groups : never;
-type EducoderApiGroupName = HttpApiGroup.Name<EducoderApiGroups>;
-type EducoderApiGroup<GroupName extends EducoderApiGroupName> = HttpApiGroup.WithName<EducoderApiGroups, GroupName>;
-type EducoderApiEndpoint<GroupName extends EducoderApiGroupName> = HttpApiGroup.Endpoints<EducoderApiGroup<GroupName>>;
+type EducoderApiGroups = (typeof Interfaces.groups)[keyof typeof Interfaces.groups];
+type EducoderApiGroupIdentifier = HttpApiGroup.Identifier<EducoderApiGroups>;
+type EducoderApiGroup<GroupIdentifier extends EducoderApiGroupIdentifier> = HttpApiGroup.WithIdentifier<
+  EducoderApiGroups,
+  GroupIdentifier
+>;
+type EducoderApiEndpoint<GroupIdentifier extends EducoderApiGroupIdentifier> = HttpApiGroup.Endpoints<
+  EducoderApiGroup<GroupIdentifier>
+>;
 
 export type EducoderApiResponse<
-  GroupName extends EducoderApiGroupName,
-  EndpointName extends HttpApiEndpoint.Name<EducoderApiEndpoint<GroupName>>,
-> = HttpApiEndpoint.Success<HttpApiEndpoint.WithName<EducoderApiEndpoint<GroupName>, EndpointName>>["Type"];
+  GroupIdentifier extends EducoderApiGroupIdentifier,
+  EndpointIdentifier extends HttpApiEndpoint.Identifier<EducoderApiEndpoint<GroupIdentifier>>,
+> = HttpApiEndpoint.SuccessWithIdentifier<EducoderApiEndpoint<GroupIdentifier>, EndpointIdentifier>;
 
 export type FeatureWorkflow<Input, Raw, View, Error = unknown> = (
   input: Input,

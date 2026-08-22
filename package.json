@@ -21,7 +21,7 @@
     "cli"
   ],
   "license": "AGPL-3.0-only",
-  "packageManager": "yarn@4.14.1",
+  "packageManager": "yarn@4.18.0",
   "scripts": {
     "build": "tsdown",
     "prepack": "yarn check && yarn build",
@@ -34,33 +34,33 @@
     "check": "yarn tsc"
   },
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=26.0.0"
   },
   "dependencies": {
-    "@effect/opentelemetry": "^4.0.0-beta.90",
-    "@effect/platform-node": "^4.0.0-beta.90",
+    "@effect/opentelemetry": "^4.0.0-rc.111",
+    "@effect/platform-node": "^4.0.0-rc.111",
     "@opentelemetry/api": "^1.9.1",
-    "@opentelemetry/api-logs": "^0.219.0",
-    "@opentelemetry/sdk-logs": "^0.219.0",
-    "@opentelemetry/sdk-metrics": "^2.8.0",
-    "@opentelemetry/sdk-trace-base": "^2.8.0",
-    "@opentelemetry/sdk-trace-node": "^2.8.0",
-    "@opentelemetry/sdk-trace-web": "^2.8.0",
-    "@opentelemetry/semantic-conventions": "^1.41.1",
-    "effect": "^4.0.0-beta.90",
-    "ioredis": "^5.11.1",
-    "md4x": "^0.0.25",
+    "@opentelemetry/api-logs": "^0.221.0",
+    "@opentelemetry/sdk-logs": "^0.221.0",
+    "@opentelemetry/sdk-metrics": "^2.10.0",
+    "@opentelemetry/sdk-trace-base": "^2.10.0",
+    "@opentelemetry/sdk-trace-node": "^2.10.0",
+    "@opentelemetry/sdk-trace-web": "^2.10.0",
+    "@opentelemetry/semantic-conventions": "^1.43.0",
+    "effect": "^4.0.0-rc.111",
+    "md4x": "^0.0.29",
     "mustache": "^4.2.0",
-    "proxy-agent": "^8.0.2"
+    "proxy-agent": "^8.0.2",
+    "redis": "^6.2.1"
   },
   "devDependencies": {
-    "@effect/language-service": "^0.86.2",
+    "@effect/language-service": "^0.87.2",
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "@types/mustache": "^4.2.6",
-    "@types/node": "^24.13.2",
-    "prettier": "^3.8.4",
-    "tsdown": "^0.22.3",
-    "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "@types/node": "^26.2.0",
+    "prettier": "^3.9.6",
+    "tsdown": "^0.22.14",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
   }
 }
